@@ -26,6 +26,8 @@ function bitablePerson(id: string): number[] {
  if (typeof value !== 'number' || !Number.isSafeInteger(value) || String(value) !== id) throw new BadRequestException('人员帐号无法无损写入。');
  return [value];
 }
+const workLabel=(type:string)=>type==='迟到'?'晚到':type==='早退'?'提前离开':type;
+const escapeName=(name:string)=>name.replace(/[\r\n]/g,' ').replace(/[\\`*_{}\[\]<>]/g,'\\$&');
 const dateText = (ms: number) => new Date(ms + 480*60000).toISOString().slice(0,16).replace('T',' ');
 const dayText = (ms: number) => dateText(ms).slice(0,10);
 function stamp(text: string): number {
@@ -33,6 +35,9 @@ function stamp(text: string): number {
  const ms = Date.parse(text + ':00+08:00');
  if (!Number.isFinite(ms) || dateText(ms).replace(' ','T') !== text) throw new BadRequestException('日期或时刻无效。');
  return ms;
+}
+function notificationContent(input:z.infer<typeof inputSchema>,actorName:string,mentorName:string,hrName:string,mentorId:string,hrId:string,start:number,end:number,now:number):string {
+ return `${input.kind==='leave'?'申请人':'登记人'}：${actorName}\n${input.kind==='leave'?'类型：'+input.leaveType+'\n起止：'+dateText(start)+' 至 '+dateText(end):'登记时间：'+dateText(now)+(input.kind==='late'?'\n预计到达：'+dateText(end):'\n今天提前离开')}\nMentor：${mentorName}\n人事：${hrName}\n通知对象：<at ids="${[...new Set([mentorId,hrId])].join(',')}">\n仅通知，无审批。\n登记编号：${input.requestKey}`;
 }
 @Injectable()
 export class CalendarService {
@@ -98,8 +103,8 @@ export class CalendarService {
    ()=>this.records('duck-attendance',{filter:this.overlap(today,today+86400000),fieldNames:['申请人','登记类型','开始时间','结束时间','状态']})
   ]);
   const [a,b]=await this.readBatch([()=>this.todayPeople('duck-leave',today,today+86400000),()=>this.todayPeople('duck-attendance',today,today+86400000)]);
-  const events:CalendarEvent[]=[...leaves,...attendance].map(r=>({id:r.id,userIds:userIds(r.record['申请人']),type:z.string().parse(r.record['类型'] ?? r.record['登记类型']),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])}));
-  const activeEvents:CalendarEvent[]=[...activeLeaves,...activeAttendance].map(r=>({id:r.id,userIds:userIds(r.record['申请人']),type:z.string().parse(r.record['类型'] ?? r.record['登记类型']),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])})).filter(e=>e.start<=now&&e.end>now);
+  const events:CalendarEvent[]=[...leaves,...attendance].map(r=>({id:r.id,userIds:userIds(r.record['申请人']),type:workLabel(z.string().parse(r.record['类型'] ?? r.record['登记类型'])),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])}));
+  const activeEvents:CalendarEvent[]=[...activeLeaves,...activeAttendance].map(r=>({id:r.id,userIds:userIds(r.record['申请人']),type:workLabel(z.string().parse(r.record['类型'] ?? r.record['登记类型'])),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])})).filter(e=>e.start<=now&&e.end>now);
   const holidayData:Holiday[]=holidays.map(r=>({date:dayText(z.number().parse(r.record['日期'])),name:textValue(r.record['节日名']),type:z.string().parse(r.record['类型'])}));
   const ids=[...new Set([...events,...activeEvents].flatMap(e=>e.userIds).concat(a,b))];
   const people:CalendarData['people']=[];
@@ -120,21 +125,25 @@ export class CalendarService {
   if(existing){if(existing.applicant!==userId)throw new ForbiddenException('不能读取其他员工的登记。');if(existing.payloadHash!==hash)throw new ConflictException('这次登记内容已更改，请关闭后重新打开表单。');return this.result(existing);}
   const now=Date.now(),day=dayText(now);let start:number,end:number;
   if(input.kind==='leave') {if(!input.leaveType)throw new BadRequestException('请选择请假类型。');start=stamp(input.start);end=stamp(input.end);if(end<=start)throw new BadRequestException('结束时间须晚于开始时间。');if(end-start>366*86400000)throw new BadRequestException('单次登记不能超过一年。');}
-  else if(input.kind==='late') {if(!/^\d{2}:\d{2}$/.test(input.arrivalTime))throw new BadRequestException('请选择预计到达时刻。');end=stamp(day+'T'+input.arrivalTime);start=stamp(day+'T09:00');if(end<=now||end<=stamp(day+'T10:00'))throw new BadRequestException('预计到达时间须晚于今天 10:00 和当前时间。');}
+  else if(input.kind==='late') {if(!/^\d{2}:\d{2}$/.test(input.arrivalTime))throw new BadRequestException('请选择预计到达时刻。');end=stamp(day+'T'+input.arrivalTime);start=stamp(day+'T10:00');if(end<=now||end<=stamp(day+'T10:00'))throw new BadRequestException('预计到达时间须晚于今天 10:00 和当前时间。');}
   else {start=now;end=Date.parse(day+'T00:00:00+08:00')+86400000;}
   const config=await this.config();const hrId:string=config.hrUserId,mentorId:string=input.mentorId;
   const [profiles,employeeIds]=await Promise.all([this.authn.listUsersByIds([userId,mentorId,hrId]),this.authn.getBatchLarkUserIds([userId,mentorId,hrId])]);
-  if(profiles.some(p=>!p)||employeeIds.some(id=>!id))throw new BadRequestException('申请人、Mentor 和人事均须为有效的公司内部员工。');
+  if(profiles.length!==3||employeeIds.length!==3||profiles.some(p=>!p)||employeeIds.some(id=>!id))throw new BadRequestException('登记人、Mentor 和人事均须为有效的公司内部员工。');
+  const nameFor=(id:string)=>{const person=profiles.find(p=>p?.miaodaUserID===id);const name=person?.name?.zh_cn||person?.name?.en_us;if(!name)throw new BadRequestException('人员身份或姓名尚未核实，请稍后重试。');return escapeName(name);};
+  const actorName=nameFor(userId),mentorName=nameFor(mentorId),hrName=nameFor(hrId);
   const applicantNumber=bitablePerson(userId),mentorNumber=bitablePerson(mentorId),hrNumber=bitablePerson(hrId);
   const [created]=await this.db.insert(calendarSubmission).values({requestKey:input.requestKey,applicant:userId,mentor:mentorId,hr:hrId,kind:input.kind,leaveType:input.leaveType,startMs:start,endMs:end,submittedMs:now,payloadHash:hash,createdBy:userId,updatedBy:userId}).onConflictDoNothing({target:calendarSubmission.requestKey}).returning();
   if(!created){const [row]=await this.db.select().from(calendarSubmission).where(eq(calendarSubmission.requestKey,input.requestKey)).limit(1);if(!row||row.applicant!==userId||row.payloadHash!==hash)throw new ConflictException('登记编号冲突。');return this.result(row);}
   const cap=input.kind==='leave'?'duck-leave-write':'duck-attendance';
-  const fields={ '登记编号':input.requestKey,'申请人':applicantNumber,'Mentor':mentorNumber,'人事':hrNumber,'开始时间':start,'结束时间':end,'状态':'已登记','通知状态':'发送中',...(input.kind==='leave'?{'类型':input.leaveType}:{'登记类型':input.kind==='late'?'迟到':'早退','登记时间':now}) };
+  const fields={ '登记编号':input.requestKey,'申请人':applicantNumber,'Mentor':mentorNumber,'人事':hrNumber,'开始时间':start,'结束时间':end,'状态':'已登记','通知状态':'发送中',...(input.kind==='leave'?{'类型':input.leaveType}:{'登记类型':input.kind==='late'?'晚到':'提前离开','登记时间':now}) };
   let recordId:string;
   try {recordId=addSchema.parse(await this.capability.load(cap).call('batchAddRecords',{records:[{record:fields}]})).records[0].id;await this.db.update(calendarSubmission).set({recordId,recordState:'created'}).where(eq(calendarSubmission.id,created.id));}
   catch {await this.db.update(calendarSubmission).set({recordState:'requires_review'}).where(eq(calendarSubmission.id,created.id));this.logger.warn('Calendar record creation requires reconciliation');return this.result({...created,recordState:'requires_review'});}
-  const title={leave:'请假登记',late:'迟到登记',early:'早退登记'}[input.kind];
-  const content=`申请人：<person id="${userId}">\n${input.kind==='leave'?'类型：'+input.leaveType+'\n起止：'+dateText(start)+' 至 '+dateText(end):'登记时间：'+dateText(now)+(input.kind==='late'?'\n预计到达：'+dateText(end):'\n今天提前下班')}\nMentor：<at id="${mentorId}">\n人事：<at id="${hrId}">\n仅通知，无审批。\n登记编号：${input.requestKey}`;
+  const title={leave:'请假登记',late:'晚到知会',early:'提前离开知会'}[input.kind];
+  // Names are bound by Miaoda ID, not the order of remote tag conversion. A single
+  // unordered mention list contains only the two notified roles, never the applicant.
+  const content=notificationContent(input,actorName,mentorName,hrName,mentorId,hrId,start,end,now);
   let mentorState='pending_review',hrState='pending_review';
   const send=async(recipient:string,field:'mentorState'|'hrState')=>{
    const [claim]=await this.db.update(calendarSubmission).set({[field]:'sending'}).where(and(eq(calendarSubmission.id,created.id),eq(calendarSubmission[field],'pending'))).returning();if(!claim)return false;

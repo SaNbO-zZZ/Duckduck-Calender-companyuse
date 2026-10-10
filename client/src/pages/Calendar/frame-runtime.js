@@ -5,7 +5,7 @@ window.duckWeatherUnavailable = true;
  const runtimeOrigin=parent.location.origin;
  const day=ms=>new Date(ms+480*60000).toISOString().slice(0,10);
  const send=payload=>parent.postMessage({duckCalendar:true,...payload},runtimeOrigin);
- const colors={'年假':'#ff8a5c','调休':'#7c8cf0','事假':'#f2b84b','病假':'#4cb7a5','今天不想上班':'#ef6f9a','迟到':'#a399eb','早退':'#60b5cd'};
+ const colors={'年假':'#ff8a5c','调休':'#7c8cf0','事假':'#f2b84b','病假':'#4cb7a5','今天不想上班':'#ef6f9a','晚到':'#a399eb','提前离开':'#60b5cd'};
  const txt=(tag,value,className)=>{const el=document.createElement(tag);el.textContent=value;if(className)el.className=className;return el;};
  const person=(id,type)=>{const p=data?.people.find(p=>p.id===id),item=txt('div','','live-person');if(p?.avatar&&p.avatar.startsWith('https://')){const img=document.createElement('img');img.src=p.avatar;img.alt='';item.append(img);}else item.append(txt('span',(p?.name||'同事').slice(0,1),'initial'));item.append(txt('strong',p?.name||'帐号暂不可用'),txt('small',type));return item;};
  window.duckRenderCalendar=(date,now)=>{

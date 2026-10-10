@@ -29,6 +29,8 @@
         "readable": true,
         "writeable": true,
         "enumValues": [
+          "晚到",
+          "提前离开",
           "迟到",
           "早退"
         ]
