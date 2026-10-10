@@ -45,8 +45,21 @@ export class CalendarService {
    return JSON.parse(await result.content.text());
   },86400000);
  }
+ // Retry only idempotent reads on a confirmed transport failure. Never retry writes or notifications.
+ private async read(id:string,action:'getRecord'|'searchRecords'|'aggregateQuery',input:Record<string,unknown>):Promise<unknown> {
+  for(let attempt=0;attempt<3;attempt++) {
+   try{return await this.capability.load(id).call(action,input);}
+   catch(error){const transient=error instanceof Error&&error.message.includes('fetch failed');this.logger.warn({pluginInstanceId:id,actionKey:action,outputMode:'unary',inputKeys:Object.keys(input),error:transient?'transport-failure':'read-failure',attempt:attempt+1});if(!transient||attempt===2)throw new BadGatewayException('日历数据连接暂时不可用，请稍后重试。');await new Promise(resolve=>setTimeout(resolve,200*(attempt+1)));}
+  }
+  throw new BadGatewayException('日历数据暂不可用。');
+ }
+ private async readBatch<T>(tasks:(()=>Promise<T>)[]):Promise<T[]> {
+  const result:T[]=[];
+  for(let i=0;i<tasks.length;i+=2)result.push(...await Promise.all(tasks.slice(i,i+2).map(task=>task())));
+  return result;
+ }
  async config(): Promise<CalendarConfig> {
-  const result = recordSchema.parse(await this.capability.load('duck-settings').call('getRecord',{recordID:'reczz28HhfCiJdot'}));
+  const result = recordSchema.parse(await this.read('duck-settings','getRecord',{recordID:'reczz28HhfCiJdot'}));
   const ids = userIds(result.record['人事人员']);
   if (ids.length !== 1) throw new BadGatewayException('后台人事配置须有且只有一位有效人员。');
   return {hrUserId:ids[0],serverTime:Date.now()};
@@ -57,7 +70,7 @@ export class CalendarService {
  private async records(id:string,input:Record<string,unknown>) {
   const result: z.infer<typeof recordSchema>[] = []; let token: string | undefined;
   for(let page=0;page<20;page++) {
-   const data=searchSchema.parse(await this.capability.load(id).call('searchRecords',{...input,pageSize:500,...(token?{pageToken:token}:{})}));
+   const data=searchSchema.parse(await this.read(id,'searchRecords',{...input,pageSize:500,...(token?{pageToken:token}:{})}));
    result.push(...data.records); if(!data.hasMore) return result;
    if(!data.pageToken||data.pageToken===token) throw new BadGatewayException('日历分页响应不完整。'); token=data.pageToken;
   }
@@ -67,7 +80,7 @@ export class CalendarService {
   const ids = new Set<string>(); let token: string|undefined;
   const schema=z.object({result:z.array(z.object({'申请人':z.object({value:z.array(z.object({id:z.union([z.string(),z.number().int().safe()])}))})})),hasMore:z.boolean(),pageToken:z.string().optional()});
   for(let page=0;page<20;page++) {
-   const data=schema.parse(await this.capability.load(id).call('aggregateQuery',{dimensions:['申请人'],measures:[{fieldName:'申请人',aggregation:'count_all',alias:'entries'}],filter:this.overlap(start,end),pageSize:500,...(token?{pageToken:token}:{})}));
+   const data=schema.parse(await this.read(id,'aggregateQuery',{dimensions:['申请人'],measures:[{fieldName:'申请人',aggregation:'count_all',alias:'entries'}],filter:this.overlap(start,end),pageSize:500,...(token?{pageToken:token}:{})}));
    data.result.forEach(r=>r['申请人'].value.forEach(p=>ids.add(String(p.id)))); if(!data.hasMore)return [...ids];
    if(!data.pageToken||data.pageToken===token)throw new BadGatewayException('今日统计分页响应不完整。');token=data.pageToken;
   }
@@ -77,12 +90,14 @@ export class CalendarService {
   if (!/^20\d{2}-(0[1-9]|1[0-2])$/.test(month)) throw new BadRequestException('月份格式应为 YYYY-MM。');
   const start=Date.parse(month+'-01T00:00:00+08:00'),d=new Date(start+480*60000),end=Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1)-480*60000;
   const now=Date.now(),today=Date.parse(dayText(now)+'T00:00:00+08:00');
-  const [leaves,attendance,holidays,a,b,activeLeaves,activeAttendance]=await Promise.all([
-   this.records('duck-leave',{filter:this.overlap(start,end),fieldNames:['申请人','类型','开始时间','结束时间','状态']}),
-   this.records('duck-attendance',{filter:this.overlap(start,end),fieldNames:['申请人','登记类型','开始时间','结束时间','状态']}),
-   this.records('duck-holiday',{filter:{conjunction:'and',conditions:[{fieldName:'日期',operator:'isGreater',value:['ExactDate',String(start-1)]},{fieldName:'日期',operator:'isLess',value:['ExactDate',String(end)]}]},fieldNames:['日期','节日名','类型']}),
-   this.todayPeople('duck-leave',today,today+86400000),this.todayPeople('duck-attendance',today,today+86400000),this.records('duck-leave',{filter:this.overlap(today,today+86400000),fieldNames:['申请人','类型','开始时间','结束时间','状态']}),this.records('duck-attendance',{filter:this.overlap(today,today+86400000),fieldNames:['申请人','登记类型','开始时间','结束时间','状态']})
+  const [leaves,attendance,holidays,activeLeaves,activeAttendance]=await this.readBatch([
+   ()=>this.records('duck-leave',{filter:this.overlap(start,end),fieldNames:['申请人','类型','开始时间','结束时间','状态']}),
+   ()=>this.records('duck-attendance',{filter:this.overlap(start,end),fieldNames:['申请人','登记类型','开始时间','结束时间','状态']}),
+   ()=>this.records('duck-holiday',{filter:{conjunction:'and',conditions:[{fieldName:'日期',operator:'isGreater',value:['ExactDate',String(start-1)]},{fieldName:'日期',operator:'isLess',value:['ExactDate',String(end)]}]},fieldNames:['日期','节日名','类型']}),
+   ()=>this.records('duck-leave',{filter:this.overlap(today,today+86400000),fieldNames:['申请人','类型','开始时间','结束时间','状态']}),
+   ()=>this.records('duck-attendance',{filter:this.overlap(today,today+86400000),fieldNames:['申请人','登记类型','开始时间','结束时间','状态']})
   ]);
+  const [a,b]=await this.readBatch([()=>this.todayPeople('duck-leave',today,today+86400000),()=>this.todayPeople('duck-attendance',today,today+86400000)]);
   const events:CalendarEvent[]=[...leaves,...attendance].map(r=>({id:r.id,userIds:userIds(r.record['申请人']),type:z.string().parse(r.record['类型'] ?? r.record['登记类型']),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])}));
   const activeEvents:CalendarEvent[]=[...activeLeaves,...activeAttendance].map(r=>({id:r.id,userIds:userIds(r.record['申请人']),type:z.string().parse(r.record['类型'] ?? r.record['登记类型']),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])})).filter(e=>e.start<=now&&e.end>now);
   const holidayData:Holiday[]=holidays.map(r=>({date:dayText(z.number().parse(r.record['日期'])),name:textValue(r.record['节日名']),type:z.string().parse(r.record['类型'])}));
