@@ -81,10 +81,10 @@ export class CalendarService {
    this.records('duck-leave',{filter:this.overlap(start,end),fieldNames:['申请人','类型','开始时间','结束时间','状态']}),
    this.records('duck-attendance',{filter:this.overlap(start,end),fieldNames:['申请人','登记类型','开始时间','结束时间','状态']}),
    this.records('duck-holiday',{filter:{conjunction:'and',conditions:[{fieldName:'日期',operator:'isGreater',value:['ExactDate',String(start-1)]},{fieldName:'日期',operator:'isLess',value:['ExactDate',String(end)]}]},fieldNames:['日期','节日名','类型']}),
-   this.todayPeople('duck-leave',today,today+86400000),this.todayPeople('duck-attendance',today,today+86400000),this.records('duck-leave',{filter:this.overlap(now,now+1),fieldNames:['申请人','类型','开始时间','结束时间','状态']}),this.records('duck-attendance',{filter:this.overlap(now,now+1),fieldNames:['申请人','登记类型','开始时间','结束时间','状态']})
+   this.todayPeople('duck-leave',today,today+86400000),this.todayPeople('duck-attendance',today,today+86400000),this.records('duck-leave',{filter:this.overlap(today,today+86400000),fieldNames:['申请人','类型','开始时间','结束时间','状态']}),this.records('duck-attendance',{filter:this.overlap(today,today+86400000),fieldNames:['申请人','登记类型','开始时间','结束时间','状态']})
   ]);
   const events:CalendarEvent[]=[...leaves,...attendance].map(r=>({id:r.id,userIds:userIds(r.record['申请人']),type:z.string().parse(r.record['类型'] ?? r.record['登记类型']),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])}));
-  const activeEvents:CalendarEvent[]=[...activeLeaves,...activeAttendance].map(r=>({id:r.id,userIds:userIds(r.record['申请人']),type:z.string().parse(r.record['类型'] ?? r.record['登记类型']),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])}));
+  const activeEvents:CalendarEvent[]=[...activeLeaves,...activeAttendance].map(r=>({id:r.id,userIds:userIds(r.record['申请人']),type:z.string().parse(r.record['类型'] ?? r.record['登记类型']),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])})).filter(e=>e.start<=now&&e.end>now);
   const holidayData:Holiday[]=holidays.map(r=>({date:dayText(z.number().parse(r.record['日期'])),name:textValue(r.record['节日名']),type:z.string().parse(r.record['类型'])}));
   const ids=[...new Set([...events,...activeEvents].flatMap(e=>e.userIds).concat(a,b))];
   const people:CalendarData['people']=[];
