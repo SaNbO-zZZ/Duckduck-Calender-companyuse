@@ -111,7 +111,7 @@ export class CalendarService {
   const [profiles,employeeIds]=await Promise.all([this.authn.listUsersByIds([userId,mentorId,hrId]),this.authn.getBatchLarkUserIds([userId,mentorId,hrId])]);
   if(profiles.some(p=>!p)||employeeIds.some(id=>!id))throw new BadRequestException('申请人、Mentor 和人事均须为有效的公司内部员工。');
   const applicantNumber=bitablePerson(userId),mentorNumber=bitablePerson(mentorId),hrNumber=bitablePerson(hrId);
-  const [created]=await this.db.insert(calendarSubmission).values({requestKey:input.requestKey,applicant:userId,mentor:mentorId,hr:hrId,kind:input.kind,leaveType:input.leaveType,startMs:start,endMs:end,submittedMs:now,payloadHash:hash}).onConflictDoNothing({target:calendarSubmission.requestKey}).returning();
+  const [created]=await this.db.insert(calendarSubmission).values({requestKey:input.requestKey,applicant:userId,mentor:mentorId,hr:hrId,kind:input.kind,leaveType:input.leaveType,startMs:start,endMs:end,submittedMs:now,payloadHash:hash,createdBy:userId,updatedBy:userId}).onConflictDoNothing({target:calendarSubmission.requestKey}).returning();
   if(!created){const [row]=await this.db.select().from(calendarSubmission).where(eq(calendarSubmission.requestKey,input.requestKey)).limit(1);if(!row||row.applicant!==userId||row.payloadHash!==hash)throw new ConflictException('登记编号冲突。');return this.result(row);}
   const cap=input.kind==='leave'?'duck-leave-write':'duck-attendance';
   const fields={ '登记编号':input.requestKey,'申请人':applicantNumber,'Mentor':mentorNumber,'人事':hrNumber,'开始时间':start,'结束时间':end,'状态':'已登记','通知状态':'发送中',...(input.kind==='leave'?{'类型':input.leaveType}:{'登记类型':input.kind==='late'?'迟到':'早退','登记时间':now}) };
