@@ -1,0 +1,104 @@
+{
+  "id": "duck-attendance",
+  "name": "duck-attendance",
+  "description": "鸭鸭日历真实数据与仅通知流程",
+  "pluginKey": "@official-plugins/feishu-bitable",
+  "pluginVersion": "1.0.22",
+  "paramsSchema": {},
+  "formValue": {
+    "appToken": "Yh1HbkeRTaz0y1synAMc2GxWnWh",
+    "tableID": "tbl1LXmtRrR93JYe",
+    "fields": [
+      {
+        "id": "fldfcsAmTI",
+        "name": "状态",
+        "type": 3,
+        "bizType": "SingleSelect",
+        "readable": true,
+        "writeable": true,
+        "enumValues": [
+          "已登记",
+          "已撤销"
+        ]
+      },
+      {
+        "id": "fldv6kBo2l",
+        "name": "登记类型",
+        "type": 3,
+        "bizType": "SingleSelect",
+        "readable": true,
+        "writeable": true,
+        "enumValues": [
+          "迟到",
+          "早退"
+        ]
+      },
+      {
+        "id": "fld7p4HyOU",
+        "name": "登记编号",
+        "type": 1,
+        "bizType": "Text",
+        "readable": true,
+        "writeable": true
+      },
+      {
+        "id": "fldVeGE80D",
+        "name": "结束时间",
+        "type": 5,
+        "bizType": "DateTime",
+        "readable": true,
+        "writeable": true
+      },
+      {
+        "id": "fld9BhPo9s",
+        "name": "人事",
+        "type": 11,
+        "bizType": "User",
+        "readable": true,
+        "writeable": true
+      },
+      {
+        "id": "fld8whVYCA",
+        "name": "登记时间",
+        "type": 5,
+        "bizType": "DateTime",
+        "readable": true,
+        "writeable": true
+      },
+      {
+        "id": "fldNoARZZc",
+        "name": "开始时间",
+        "type": 5,
+        "bizType": "DateTime",
+        "readable": true,
+        "writeable": true
+      },
+      {
+        "id": "fldjjSj6Zh",
+        "name": "申请人",
+        "type": 11,
+        "bizType": "User",
+        "readable": true,
+        "writeable": true
+      },
+      {
+        "id": "fldNXxxMBL",
+        "name": "Mentor",
+        "type": 11,
+        "bizType": "User",
+        "readable": true,
+        "writeable": true
+      },
+      {
+        "id": "fldkS4HLKE",
+        "name": "通知状态",
+        "type": 1,
+        "bizType": "Text",
+        "readable": true,
+        "writeable": true
+      }
+    ]
+  },
+  "createdAt": 1791632719540,
+  "updatedAt": 1791632719540
+}

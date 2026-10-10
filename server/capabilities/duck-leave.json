@@ -1,0 +1,132 @@
+{
+  "id": "duck-leave",
+  "pluginKey": "@official-plugins/feishu-bitable",
+  "pluginVersion": "1.0.22",
+  "name": "鸭鸭日历 leave",
+  "description": "现有团队多维表格数据",
+  "paramsSchema": {},
+  "formValue": {
+    "appToken": "Yh1HbkeRTaz0y1synAMc2GxWnWh",
+    "tableID": "tbl8QsErHASp6bc8",
+    "fields": [
+      {
+        "id": "flduGcVtQ8",
+        "name": "类型",
+        "type": 3,
+        "bizType": "SingleSelect",
+        "readable": true,
+        "writeable": false,
+        "enumValues": [
+          "年假",
+          "调休",
+          "事假",
+          "病假",
+          "其他",
+          "今天不想上班"
+        ]
+      },
+      {
+        "id": "fldb6RKkcr",
+        "name": "登记人",
+        "type": 19,
+        "bizType": "CreatedUser",
+        "readable": true,
+        "writeable": false
+      },
+      {
+        "id": "fldDc4QYSu",
+        "name": "申请人",
+        "type": 11,
+        "bizType": "User",
+        "readable": true,
+        "writeable": false
+      },
+      {
+        "id": "fld7peMDyZ",
+        "name": "状态",
+        "type": 3,
+        "bizType": "SingleSelect",
+        "readable": true,
+        "writeable": false,
+        "enumValues": [
+          "已登记",
+          "已撤销"
+        ]
+      },
+      {
+        "id": "fldYrV5FBV",
+        "name": "事项",
+        "type": 1,
+        "bizType": "Text",
+        "readable": true,
+        "writeable": false
+      },
+      {
+        "id": "fldZvZeKlw",
+        "name": "Mentor",
+        "type": 11,
+        "bizType": "User",
+        "readable": true,
+        "writeable": false
+      },
+      {
+        "id": "fldx0kaBUy",
+        "name": "开始时间",
+        "type": 5,
+        "bizType": "DateTime",
+        "readable": true,
+        "writeable": false
+      },
+      {
+        "id": "fldWluCuvb",
+        "name": "结束时间",
+        "type": 5,
+        "bizType": "DateTime",
+        "readable": true,
+        "writeable": false
+      },
+      {
+        "id": "fldxezZeZV",
+        "name": "通知就绪",
+        "type": 20,
+        "bizType": "Formula",
+        "readable": true,
+        "writeable": false
+      },
+      {
+        "id": "fldJJlh7qa",
+        "name": "人事",
+        "type": 11,
+        "bizType": "User",
+        "readable": true,
+        "writeable": false
+      },
+      {
+        "id": "fldpN9E06z",
+        "name": "交接说明",
+        "type": 1,
+        "bizType": "Text",
+        "readable": true,
+        "writeable": false
+      },
+      {
+        "id": "fldSW68ivD",
+        "name": "通知状态",
+        "type": 1,
+        "bizType": "Text",
+        "readable": true,
+        "writeable": false
+      },
+      {
+        "id": "fldy8pUflm",
+        "name": "申请小时",
+        "type": 2,
+        "bizType": "Number",
+        "readable": true,
+        "writeable": false
+      }
+    ]
+  },
+  "createdAt": 1791631993024,
+  "updatedAt": 1791631993024
+}

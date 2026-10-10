@@ -1,0 +1,44 @@
+{
+  "id": "duck-holiday",
+  "pluginKey": "@official-plugins/feishu-bitable",
+  "pluginVersion": "1.0.22",
+  "name": "鸭鸭日历 holiday",
+  "description": "现有团队多维表格数据",
+  "paramsSchema": {},
+  "formValue": {
+    "appToken": "Yh1HbkeRTaz0y1synAMc2GxWnWh",
+    "tableID": "tblfqwLbqOGfVGrC",
+    "fields": [
+      {
+        "id": "fldJzF41uq",
+        "name": "日期",
+        "type": 5,
+        "bizType": "DateTime",
+        "readable": true,
+        "writeable": false
+      },
+      {
+        "id": "fldrwHXGHG",
+        "name": "节日名",
+        "type": 1,
+        "bizType": "Text",
+        "readable": true,
+        "writeable": false
+      },
+      {
+        "id": "fld2Y4OTPv",
+        "name": "类型",
+        "type": 3,
+        "bizType": "SingleSelect",
+        "readable": true,
+        "writeable": false,
+        "enumValues": [
+          "休",
+          "班"
+        ]
+      }
+    ]
+  },
+  "createdAt": 1791631993025,
+  "updatedAt": 1791631993025
+}

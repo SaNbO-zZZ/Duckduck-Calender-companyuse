@@ -1,0 +1,43 @@
+{
+  "id": "duck-notify",
+  "name": "duck-notify",
+  "description": "鸭鸭日历真实数据与仅通知流程",
+  "pluginKey": "@official-plugins/send-feishu-message",
+  "pluginVersion": "1.0.33",
+  "paramsSchema": {
+    "type": "object",
+    "properties": {
+      "recipients": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "title": {
+        "type": "string"
+      },
+      "content": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "recipients",
+      "title",
+      "content"
+    ]
+  },
+  "formValue": {
+    "sender": "bot",
+    "receiverUserList": [
+      "{{input.recipients}}"
+    ],
+    "receiverGroupList": [],
+    "title": {
+      "title": "{{input.title}}",
+      "titleColor": "wathet"
+    },
+    "content": "{{input.content}}"
+  },
+  "createdAt": 1791632719540,
+  "updatedAt": 1791632719540
+}

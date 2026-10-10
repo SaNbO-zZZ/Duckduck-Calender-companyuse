@@ -1,0 +1,55 @@
+window.__duckRuntime = true;
+window.duckWeatherUnavailable = true;
+(() => {
+ let data=null, currentMonth='', hasError=false;
+ const runtimeOrigin=parent.location.origin;
+ const day=ms=>new Date(ms+480*60000).toISOString().slice(0,10);
+ const send=payload=>parent.postMessage({duckCalendar:true,...payload},runtimeOrigin);
+ const colors={'年假':'#ff8a5c','调休':'#7c8cf0','事假':'#f2b84b','病假':'#4cb7a5','今天不想上班':'#ef6f9a','迟到':'#a399eb','早退':'#60b5cd'};
+ const txt=(tag,value,className)=>{const el=document.createElement(tag);el.textContent=value;if(className)el.className=className;return el;};
+ const person=(id,type)=>{const p=data?.people.find(p=>p.id===id),item=txt('div','','live-person');if(p?.avatar&&p.avatar.startsWith('https://')){const img=document.createElement('img');img.src=p.avatar;img.alt='';item.append(img);}else item.append(txt('span',(p?.name||'同事').slice(0,1),'initial'));item.append(txt('strong',p?.name||'帐号暂不可用'),txt('small',type));return item;};
+ window.duckRenderCalendar=(date,now)=>{
+  const month=currentMonth||`${date.y}-${String(date.m).padStart(2,'0')}`,[y,m]=month.split('-').map(Number),cal=document.getElementById('calendar');if(!cal)return;
+  cal.replaceChildren();document.getElementById('calendarMonth').textContent=`${y} 年 ${m} 月`;document.getElementById('calendarCaption').textContent='北京时间';
+  for(const w of ['一','二','三','四','五','六','日'])cal.append(txt('div',w,'weekday'));
+  const first=new Date(Date.UTC(y,m-1,1)),offset=(first.getUTCDay()+6)%7,count=Math.ceil((offset+new Date(Date.UTC(y,m,0)).getUTCDate())/7)*7;
+  const today=day(Date.now());
+  for(let i=0;i<count;i++){
+   const date=new Date(Date.UTC(y,m-1,1-offset+i)),key=date.toISOString().slice(0,10),cell=txt('div',String(date.getUTCDate()),'date');cell.dataset.date=key;
+   if(date.getUTCMonth()+1!==m)cell.classList.add('muted');if(key===today){cell.classList.add('today');cell.setAttribute('aria-current','date');}
+   const holiday=data?.holidays.find(h=>h.date===key);if(holiday){cell.classList.add(holiday.type==='休'?'holiday':'work');cell.append(txt('span',holiday.type,'mark'));cell.title=holiday.name;}
+   const start=Date.parse(key+'T00:00:00+08:00'),end=start+86400000,items=data?.events.filter(e=>e.start<end&&e.end>start)||[];
+   for(const e of items.slice(0,3)) {const names=e.userIds.map(id=>data.people.find(p=>p.id===id)?.name||'同事').join('、'),chip=txt('div',names+' · '+e.type,'live-event');chip.style.borderLeftColor=colors[e.type]||'#8993a5';chip.title=names+' · '+e.type;cell.append(chip);}
+   if(items.length>3)cell.append(txt('small',`另 ${items.length-3} 条`,'live-overflow'));
+   cal.append(cell);
+  }
+ };
+ const render=()=>{
+  const now=Date.now(),n=new Date(now+480*60000),date={y:n.getUTCFullYear(),m:n.getUTCMonth()+1,d:n.getUTCDate()};window.duckRenderCalendar(date,date);
+  const empty=document.querySelector('.empty');empty.replaceChildren();
+  document.querySelector('.number').textContent=data?String(data.todayUserIds.length):'—';
+  document.querySelector('.subtitle').textContent=data?(data.todayUserIds.length?'大家都很好，只是今天没在工位 ☕️':'今天大家都在岗 💪'):(hasError?'日历数据暂不可用，请稍后重试':'正在读取团队日历…');
+  const current=data?.activeEvents||[];const grouped=new Map();for(const e of current)for(const id of e.userIds){const list=grouped.get(id)||[];if(!list.includes(e.type))list.push(e.type);grouped.set(id,list);}
+  if(data&&grouped.size){empty.classList.add('live-people');for(const [id,types]of grouped)empty.append(person(id,types.join(' · ')));}
+  else {empty.classList.remove('live-people');empty.append(txt('span','☕️'),txt('div',data?'此刻大家都在岗':hasError?'数据暂不可用':'正在读取…'));}
+  if(!data&&hasError){const retry=txt('button','重试','runtime-retry');retry.onclick=()=>send({action:'refresh'});empty.append(retry);}
+ };
+ document.addEventListener('click',e=>{const id=e.target.closest('button')?.id;const kind={leaveAction:'leave',lateAction:'late',earlyAction:'early'}[id];if(kind){e.preventDefault();e.stopImmediatePropagation();send({action:'register',kind});}},true);
+ window.addEventListener('message',e=>{
+  if(e.source!==parent||e.origin!==runtimeOrigin||!e.data?.duckCalendar)return;
+  if(e.data.action==='calendar'){data=e.data.data;currentMonth=e.data.month;hasError=false;render();}
+  if(e.data.action==='loading'){data=null;currentMonth=e.data.month;hasError=false;render();}
+  if(e.data.action==='error'){data=null;hasError=true;render();}
+  if(e.data.action==='weather'){
+   const weather=e.data.data;window.duckWeatherUnavailable=!weather.available;
+   if(window.duckApplyForecast)window.duckApplyForecast(weather);
+   document.getElementById('weatherIcon').title=weather.available?`合肥市瑶海区 · ${weather.source}\n预报有效时刻 ${new Date(weather.validTime).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'})}\n阵风为视觉模拟，不是实时阵风实测。`:'天气读取失败，背景暂用中性静态画面。';
+   if(!weather.available)document.getElementById('weatherIcon').textContent='🌫️ 天气暂不可用';
+  }
+ });
+ document.addEventListener('DOMContentLoaded',()=>{
+  document.body.classList.add('clean');document.querySelector('.note').innerHTML='鸭鸭是天气装饰，不代表具体同事。天气参考 <a href="https://www.met.no/en" target="_blank" rel="noopener">MET Norway</a> 小时预报，画面为艺术化演绎（阵风为视觉模拟）；数据 <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>。';
+  const nav=txt('div','','runtime-month-nav');for(const [label,delta]of [['‹',-1],['今天',0],['›',1]]){const b=txt('button',label);b.type='button';b.setAttribute('aria-label',delta===-1?'上个月':delta===1?'下个月':'回到今天');b.onclick=()=>{const [y,m]=(currentMonth||day(Date.now()).slice(0,7)).split('-').map(Number),d=delta?new Date(Date.UTC(y,m-1+delta,1)):new Date(Date.now()+480*60000);send({action:'month',month:`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`});};nav.append(b);}document.querySelector('.month').append(nav);
+  render();setInterval(()=>{if(!document.hidden)render();},30000);send({action:'ready'});
+ });
+})();

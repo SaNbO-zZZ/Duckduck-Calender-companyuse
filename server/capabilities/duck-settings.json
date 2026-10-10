@@ -1,0 +1,40 @@
+{
+  "id": "duck-settings",
+  "pluginKey": "@official-plugins/feishu-bitable",
+  "pluginVersion": "1.0.22",
+  "name": "鸭鸭日历 settings",
+  "description": "现有团队多维表格数据",
+  "paramsSchema": {},
+  "formValue": {
+    "appToken": "Yh1HbkeRTaz0y1synAMc2GxWnWh",
+    "tableID": "tblBKqnFexIQ9E8p",
+    "fields": [
+      {
+        "id": "fldA3I5fCf",
+        "name": "备注",
+        "type": 1,
+        "bizType": "Text",
+        "readable": true,
+        "writeable": false
+      },
+      {
+        "id": "fldQrbMm5I",
+        "name": "设置项",
+        "type": 1,
+        "bizType": "Text",
+        "readable": true,
+        "writeable": false
+      },
+      {
+        "id": "fldpP0mfXj",
+        "name": "人事人员",
+        "type": 11,
+        "bizType": "User",
+        "readable": true,
+        "writeable": false
+      }
+    ]
+  },
+  "createdAt": 1791631993025,
+  "updatedAt": 1791631993025
+}
