@@ -10,7 +10,7 @@ import type { CalendarConfig, CalendarData, CalendarEvent, Holiday, Registration
 const recordSchema = z.object({ id: z.string(), record: z.record(z.string(), z.unknown()) });
 const searchSchema = z.object({ records: z.array(recordSchema), hasMore: z.boolean(), pageToken: z.string().optional() });
 const addSchema = z.object({ records: z.array(z.object({ id: z.string().min(1) })).length(1) });
-const inputSchema = z.object({ requestKey: z.uuid(), kind: z.enum(['leave','late','early']), mentorId: z.string().regex(/^\d{1,24}$/), leaveType: z.enum(['年假','调休','事假','病假','今天不想上班','']), start: z.string().max(40), end: z.string().max(40), arrivalTime: z.string().max(8) }).strict();
+const inputSchema = z.object({ requestKey: z.uuid(), kind: z.enum(['leave','late','early']), mentorId: z.string().regex(/^\d{1,24}$/), leaveType: z.enum(['年假','调休','事假','病假','今天不想上班','']), start: z.string().max(40), end: z.string().max(40), arrivalTime: z.string().max(8), arrivalDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }).strict();
 const textValue = (v: unknown) => z.object({text:z.string()}).safeParse(v).data?.text || '';
 function userIds(v: unknown): string[] {
  if (v == null) return [];
@@ -125,7 +125,7 @@ export class CalendarService {
   if(existing){if(existing.applicant!==userId)throw new ForbiddenException('不能读取其他员工的登记。');if(existing.payloadHash!==hash)throw new ConflictException('这次登记内容已更改，请关闭后重新打开表单。');return this.result(existing);}
   const now=Date.now(),day=dayText(now);let start:number,end:number;
   if(input.kind==='leave') {if(!input.leaveType)throw new BadRequestException('请选择请假类型。');start=stamp(input.start);end=stamp(input.end);if(end<=start)throw new BadRequestException('结束时间须晚于开始时间。');if(end-start>366*86400000)throw new BadRequestException('单次登记不能超过一年。');}
-  else if(input.kind==='late') {if(!/^\d{2}:\d{2}$/.test(input.arrivalTime))throw new BadRequestException('请选择预计到达时刻。');end=stamp(day+'T'+input.arrivalTime);start=stamp(day+'T10:00');if(end<=now||end<=stamp(day+'T10:00'))throw new BadRequestException('预计到达时间须晚于今天 10:00 和当前时间。');}
+  else if(input.kind==='late') {if(!/^\d{2}:\d{2}$/.test(input.arrivalTime))throw new BadRequestException('请选择预计到达时刻。');const arrivalDay=input.arrivalDate??day;end=stamp(arrivalDay+'T'+input.arrivalTime);start=stamp(arrivalDay+'T10:00');if(end<=now||end<=start)throw new BadRequestException('预计到达须晚于所选日期 10:00，且尚未到达该时刻。');}
   else {start=now;end=Date.parse(day+'T00:00:00+08:00')+86400000;}
   const config=await this.config();const hrId:string=config.hrUserId,mentorId:string=input.mentorId;
   const [profiles,employeeIds]=await Promise.all([this.authn.listUsersByIds([userId,mentorId,hrId]),this.authn.getBatchLarkUserIds([userId,mentorId,hrId])]);
