@@ -81,28 +81,24 @@ export class CalendarService {
   }
   throw new BadGatewayException('本月登记数量过多，请联系管理员缩小查询范围。');
  }
- private async todayPeople(id:string,start:number,end:number) {
-  const ids = new Set<string>(); let token: string|undefined;
-  const schema=z.object({result:z.array(z.object({'申请人':z.object({value:z.array(z.object({id:z.union([z.string(),z.number().int().safe()])}))})})),hasMore:z.boolean(),pageToken:z.string().optional()});
-  for(let page=0;page<20;page++) {
-   const data=schema.parse(await this.read(id,'aggregateQuery',{dimensions:['申请人'],measures:[{fieldName:'申请人',aggregation:'count_all',alias:'entries'}],filter:this.overlap(start,end),pageSize:500,...(token?{pageToken:token}:{})}));
-   data.result.forEach(r=>r['申请人'].value.forEach(p=>ids.add(String(p.id)))); if(!data.hasMore)return [...ids];
-   if(!data.pageToken||data.pageToken===token)throw new BadGatewayException('今日统计分页响应不完整。');token=data.pageToken;
-  }
-  throw new BadGatewayException('今日统计未读取完整。');
- }
  async month(month: string):Promise<CalendarData> {
   if (!/^20\d{2}-(0[1-9]|1[0-2])$/.test(month)) throw new BadRequestException('月份格式应为 YYYY-MM。');
   const start=Date.parse(month+'-01T00:00:00+08:00'),d=new Date(start+480*60000),end=Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1)-480*60000;
   const now=Date.now(),today=Date.parse(dayText(now)+'T00:00:00+08:00');
-  const [leaves,attendance,holidays,activeLeaves,activeAttendance]=await this.readBatch([
+  const [leaves,attendance,holidays]=await this.readBatch([
    ()=>this.records('duck-leave',{filter:this.overlap(start,end),fieldNames:['申请人','类型','开始时间','结束时间','状态']}),
    ()=>this.records('duck-attendance',{filter:this.overlap(start,end),fieldNames:['申请人','登记类型','开始时间','结束时间','状态']}),
-   ()=>this.records('duck-holiday',{filter:{conjunction:'and',conditions:[{fieldName:'日期',operator:'isGreater',value:['ExactDate',String(start-1)]},{fieldName:'日期',operator:'isLess',value:['ExactDate',String(end)]}]},fieldNames:['日期','节日名','类型']}),
+   ()=>this.records('duck-holiday',{filter:{conjunction:'and',conditions:[{fieldName:'日期',operator:'isGreater',value:['ExactDate',String(start-1)]},{fieldName:'日期',operator:'isLess',value:['ExactDate',String(end)]}]},fieldNames:['日期','节日名','类型']})
+  ]);
+  // The complete current-month records already contain today's records, including cross-month leave.
+  // Reuse them instead of two duplicate searches plus two aggregate queries after every submission.
+  const sameMonth=month===dayText(now).slice(0,7);
+  const inToday=(r:z.infer<typeof recordSchema>)=>z.number().parse(r.record['开始时间'])<today+86400000&&z.number().parse(r.record['结束时间'])>today;
+  const [activeLeaves,activeAttendance]=sameMonth?[leaves.filter(inToday),attendance.filter(inToday)]:await this.readBatch([
    ()=>this.records('duck-leave',{filter:this.overlap(today,today+86400000),fieldNames:['申请人','类型','开始时间','结束时间','状态']}),
    ()=>this.records('duck-attendance',{filter:this.overlap(today,today+86400000),fieldNames:['申请人','登记类型','开始时间','结束时间','状态']})
   ]);
-  const [a,b]=await this.readBatch([()=>this.todayPeople('duck-leave',today,today+86400000),()=>this.todayPeople('duck-attendance',today,today+86400000)]);
+  const a=activeLeaves.flatMap(r=>userIds(r.record['申请人'])),b=activeAttendance.flatMap(r=>userIds(r.record['申请人']));
   const events:CalendarEvent[]=[...leaves,...attendance].map(r=>({id:r.id,userIds:userIds(r.record['申请人']),type:workLabel(z.string().parse(r.record['类型'] ?? r.record['登记类型'])),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])}));
   const activeEvents:CalendarEvent[]=[...activeLeaves,...activeAttendance].map(r=>({id:r.id,userIds:userIds(r.record['申请人']),type:workLabel(z.string().parse(r.record['类型'] ?? r.record['登记类型'])),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])})).filter(e=>e.start<=now&&e.end>now);
   const holidayData:Holiday[]=holidays.map(r=>({date:dayText(z.number().parse(r.record['日期'])),name:textValue(r.record['节日名']),type:z.string().parse(r.record['类型'])}));
@@ -115,10 +111,23 @@ export class CalendarService {
   return {events,activeEvents,people,holidays:holidayData,todayUserIds:[...new Set([...a,...b])],serverTime:now};
  }
  private result(row:typeof calendarSubmission.$inferSelect):RegistrationResult {
-  const recorded=!!row.recordId&&row.recordState==='created',sent=row.mentorState==='sent'&&row.hrState==='sent';
-  return {recorded,recordId:row.recordId,notifications:sent?'sent':'pending_review',message:sent?'已登记，已向 Mentor 和人事发送通知。':recorded?'已登记。通知尚未全部确认，请联系人事核对，勿重复提交。':'登记结果尚未确认，请联系人事凭登记编号核对，勿重复提交。'};
+  const recorded=!!row.recordId&&row.recordState==='created';
+  const sent=recorded&&row.mentorState==='sent'&&row.hrState==='sent';
+  const live=Date.now()-row.submittedMs<120000;
+  const processing=live&&(row.recordState==='creating'||(recorded&&[row.mentorState,row.hrState].some(s=>s==='pending'||s==='sending')));
+  return {recorded,recordId:row.recordId,processing,notifications:sent?'sent':processing?'sending':'pending_review',
+   message:sent?'已登记，已向 Mentor 和人事发送通知。':processing?(recorded?'已登记，正在向 Mentor 和人事发送通知，可关闭此窗口。':'正在保存登记，请稍候…'):recorded?'已登记。通知尚未全部确认，请联系人事核对，勿重复提交。':'登记结果尚未确认，请联系人事凭登记编号核对，勿重复提交。'};
+ }
+ async status(requestKey:string,userId:string):Promise<RegistrationResult|null> {
+  if(!z.uuid().safeParse(requestKey).success)throw new BadRequestException('登记编号无效。');
+  const [row]=await this.db.select().from(calendarSubmission).where(and(eq(calendarSubmission.requestKey,requestKey),eq(calendarSubmission.applicant,userId))).limit(1);
+  if(!row)return null;
+  if(row.applicant!==userId)throw new ForbiddenException('不能读取其他员工的登记。');
+  return this.result(row);
  }
  async submit(raw:unknown,userId:string):Promise<RegistrationResult> {
+  const began=performance.now();
+  const mark=(stage:string)=>this.logger.log({event:'calendar_registration_timing',stage,durationMs:Math.round(performance.now()-began)});
   const parsed=inputSchema.safeParse(raw);if(!parsed.success)throw new BadRequestException('登记内容无效，请检查类型、日期和 Mentor。');const input=parsed.data;
   const hash=createHash('sha256').update(JSON.stringify(input)).digest('hex');
   const [existing]=await this.db.select().from(calendarSubmission).where(eq(calendarSubmission.requestKey,input.requestKey)).limit(1);
@@ -140,6 +149,7 @@ export class CalendarService {
   let recordId:string;
   try {recordId=addSchema.parse(await this.capability.load(cap).call('batchAddRecords',{records:[{record:fields}]})).records[0].id;await this.db.update(calendarSubmission).set({recordId,recordState:'created'}).where(eq(calendarSubmission.id,created.id));}
   catch {await this.db.update(calendarSubmission).set({recordState:'requires_review'}).where(eq(calendarSubmission.id,created.id));this.logger.warn('Calendar record creation requires reconciliation');return this.result({...created,recordState:'requires_review'});}
+  mark('recorded');
   const title={leave:'请假登记',late:'晚到知会',early:'提前离开知会'}[input.kind];
   // Names are bound by Miaoda ID, not the order of remote tag conversion. A single
   // unordered mention list contains only the two notified roles, never the applicant.
@@ -150,9 +160,19 @@ export class CalendarService {
    try{const out=z.object({success:z.boolean()}).parse(await this.capability.load('duck-notify').call('send_feishu_message',{recipients:[recipient],title:'鸭鸭日历 · '+title,content}));await this.db.update(calendarSubmission).set({[field]:out.success?'sent':'pending_review'}).where(eq(calendarSubmission.id,created.id));return out.success;}
    catch{await this.db.update(calendarSubmission).set({[field]:'pending_review'}).where(eq(calendarSubmission.id,created.id));this.logger.warn('Calendar notification requires reconciliation');return false;}
   };
-  if(await send(mentorId,'mentorState'))mentorState='sent';
-  if(hrId===mentorId){hrState=mentorState;await this.db.update(calendarSubmission).set({hrState}).where(eq(calendarSubmission.id,created.id));}else if(await send(hrId,'hrState'))hrState='sent';
+  if(hrId===mentorId){
+   if(await send(mentorId,'mentorState'))mentorState='sent';
+   hrState=mentorState;await this.db.update(calendarSubmission).set({hrState}).where(eq(calendarSubmission.id,created.id));
+  }else{
+   // Both sends remain awaited and independently claimed/persisted; no detached background task.
+   const outcomes=await Promise.allSettled([send(mentorId,'mentorState'),send(hrId,'hrState')]);
+   if(outcomes[0].status==='fulfilled'&&outcomes[0].value)mentorState='sent';
+   if(outcomes[1].status==='fulfilled'&&outcomes[1].value)hrState='sent';
+   if(outcomes.some(outcome=>outcome.status==='rejected'))this.logger.warn('Calendar notification status persistence requires reconciliation');
+  }
+  mark('notification-attempts-finished');
   try{await this.capability.load(cap).call('batchUpdateRecords',{records:[{id:recordId,record:{'通知状态':mentorState==='sent'&&hrState==='sent'?'已发送':'待核对'}}]});}catch{this.logger.warn('Calendar Base notification-state mirror requires reconciliation');}
+  mark('mirror-finished');
   return this.result({...created,recordId,recordState:'created',mentorState,hrState});
  }
  async weather():Promise<WeatherData> {

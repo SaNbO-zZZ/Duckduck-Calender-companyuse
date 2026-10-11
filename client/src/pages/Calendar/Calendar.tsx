@@ -14,7 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/pop
 import { Calendar as DatePicker } from '../../components/ui/calendar';
 import { zhCN } from 'date-fns/locale';
 import { calendarDocument } from './calendar-document';
-import type { CalendarConfig, CalendarData, RegistrationKind, RegistrationRequest, RegistrationResult, WeatherData } from '../../../../shared/api.interface';
+import { trackRegistration } from '../../../../shared/registration-progress';
+import type { CalendarConfig, CalendarData, RegistrationKind, RegistrationRequest, RegistrationResult, RegistrationStatus, WeatherData } from '../../../../shared/api.interface';
 const today = (ms=Date.now()) => new Date(ms+480*60000).toISOString().slice(0,10);
 const dateLabel = (d:Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const timeText = (ms:number) => new Date(ms+480*60000).toISOString().slice(0,16).replace('T',' ')+'（北京时间）';
@@ -24,11 +25,13 @@ type Values=z.infer<typeof schema>;
 const title={leave:'申请请假',late:'天才总是晚到',early:'我先去拯救世界了'};
 function RegisterForm({kind,config,onDone,onClose,onBusy}:{kind:RegistrationKind;config:CalendarConfig;onDone:()=>void;onClose:()=>void;onBusy:(value:boolean)=>void}){
  const offset=useRef(config.serverTime-Date.now()),[now,setNow]=useState(Date.now()+offset.current),[busy,setBusy]=useState(false),[result,setResult]=useState<RegistrationResult|null>(null),[error,setError]=useState(''),key=useRef(crypto.randomUUID()),snapshot=useRef<RegistrationRequest|null>(null);
+ const progressAbort=useRef<AbortController|null>(null),observedRecord=useRef(false),mounted=useRef(true);
+ useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;progressAbort.current?.abort();};},[]);
  const defaultDay=today(now),defaultDate=new Date(defaultDay+'T12:00:00'),arrival=new Date(Math.min(Date.parse(defaultDay+'T23:59:00+08:00'),Math.max(now+30*60000,Date.parse(defaultDay+'T10:01:00+08:00')))+480*60000).toISOString().slice(11,16);
  const form=useForm<Values>({resolver:zodResolver(schema),defaultValues:{mentorId:'',leaveType:'年假',startDate:defaultDate,startTime:'10:00',endDate:defaultDate,endTime:'18:00',arrivalDate:defaultDate,arrivalTime:arrival}});
  useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()+offset.current),1000);return()=>clearInterval(timer);},[]);
  const submit=async(data:Values)=>{
-  if(busy||result)return;
+  if(busy||(result&&!result.processing))return;
   if(!snapshot.current){
    const request:RegistrationRequest={requestKey:key.current,kind,mentorId:data.mentorId,leaveType:kind==='leave'?data.leaveType:'',start:kind==='leave'?dateLabel(data.startDate)+'T'+data.startTime:'',end:kind==='leave'?dateLabel(data.endDate)+'T'+data.endTime:'',arrivalTime:kind==='late'?data.arrivalTime:'',...(kind==='late'?{arrivalDate:dateLabel(data.arrivalDate)}:{})};
    if(kind==='leave'&&request.end<=request.start){form.setError('endTime',{message:'结束时间须晚于开始时间。'});return;}
@@ -36,9 +39,18 @@ function RegisterForm({kind,config,onDone,onClose,onBusy}:{kind:RegistrationKind
    snapshot.current=request;
   }
   setBusy(true);onBusy(true);setError('');
-  try {const r=await axiosForBackend<RegistrationResult>({url:'/api/calendar/register',method:'POST',data:snapshot.current,timeout:120000});setResult(r.data);if(r.data.recorded)onDone();}
-  catch(e){setError(apiMessage(e));if(isAxiosError(e)&&e.response&&e.response.status<500)snapshot.current=null;}
-  finally{setBusy(false);onBusy(false);}
+  const controller=new AbortController();progressAbort.current=controller;
+  const showProgress=(r:RegistrationResult)=>{
+   if(!mounted.current)return;setResult(r);
+   if(r.recorded){onBusy(false);if(!observedRecord.current){observedRecord.current=true;onDone();}}
+  };
+  try {await trackRegistration({
+   submit:()=>axiosForBackend<RegistrationResult>({url:'/api/calendar/register',method:'POST',data:snapshot.current,timeout:120000}).then(r=>r.data),
+   read:()=>axiosForBackend<RegistrationStatus>({url:'/api/calendar/registration-status',method:'GET',params:{requestKey:key.current},timeout:5000,signal:controller.signal}).then(r=>r.data.result),
+   onProgress:showProgress,signal:controller.signal
+  });}
+  catch(e){if(mounted.current){setError(apiMessage(e));if(isAxiosError(e)&&e.response&&e.response.status<500){snapshot.current=null;setResult(null);}}}
+  finally{if(mounted.current){setBusy(false);onBusy(false);}}
  };
  const dateField=(name:'startDate'|'endDate'|'arrivalDate',label:string)=><FormField control={form.control} name={name} render={({field})=><FormItem className="flex-1 min-w-0"><FormLabel>{label}日期</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button type="button" variant="outline" className="w-full justify-start rounded-2xl">{dateLabel(field.value)}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><DatePicker mode="single" locale={zhCN} defaultMonth={field.value} selected={field.value} onSelect={d=>d&&field.onChange(d)} /></PopoverContent></Popover><FormMessage /></FormItem>} />;
  const timeField=(name:'startTime'|'endTime'|'arrivalTime',label:string)=><FormField control={form.control} name={name} render={({field})=><FormItem className="flex-1 min-w-0"><FormLabel>{label}</FormLabel><FormControl><Input type="time" className="rounded-2xl" {...field}/></FormControl><FormMessage/></FormItem>}/>;
@@ -50,19 +62,19 @@ function RegisterForm({kind,config,onDone,onClose,onBusy}:{kind:RegistrationKind
   </fieldset>
   {error&&<p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
   {result&&<p role="status" className="rounded-2xl bg-[#f4f4ed] p-3 text-sm">{result.message}<br/><span className="break-all text-xs text-[#8d8074]">登记编号：{key.current}</span></p>}
-  <div className="flex justify-end gap-3"><Button type="button" variant="outline" onClick={onClose} disabled={busy} className="rounded-full">{result?'完成':'取消'}</Button>{!result&&<Button type="submit" disabled={busy} className="rounded-full bg-gradient-to-r from-[#ff7952] to-[#ff5186] text-white">{busy?'正在登记与通知…':snapshot.current?'核对本次登记结果':'登记并通知'}</Button>}</div>
+  <div className="flex justify-end gap-3"><Button type="button" variant="outline" onClick={onClose} disabled={busy&&!result?.recorded} className="rounded-full">{result?.recorded?(result.processing?'关闭':'完成'):'取消'}</Button>{(!result||result.processing)&&<Button type="submit" disabled={busy} className="rounded-full bg-gradient-to-r from-[#ff7952] to-[#ff5186] text-white">{busy?(result?.recorded?'正在发送通知…':'正在保存登记…'):snapshot.current?'核对本次登记结果':'登记并通知'}</Button>}</div>
  </form></Form>;
 }
 export default function Calendar(){
- const frame=useRef<HTMLIFrameElement>(null),[documentText,setDocumentText]=useState(''),[frameReady,setFrameReady]=useState(false),[config,setConfig]=useState<CalendarConfig|null>(null),[configError,setConfigError]=useState(''),[kind,setKind]=useState<RegistrationKind|null>(null),[month,setMonth]=useState(today().slice(0,7)),[data,setData]=useState<CalendarData|null>(null),[dataError,setDataError]=useState(false),[weather,setWeather]=useState<WeatherData|null>(null),[revision,setRevision]=useState(0),[assetError,setAssetError]=useState(false),[formBusy,setFormBusy]=useState(false);
+ const frame=useRef<HTMLIFrameElement>(null),[documentText,setDocumentText]=useState(''),[frameReady,setFrameReady]=useState(false),[config,setConfig]=useState<CalendarConfig|null>(null),[configError,setConfigError]=useState(''),[kind,setKind]=useState<RegistrationKind|null>(null),[month,setMonth]=useState(today().slice(0,7)),[data,setData]=useState<CalendarData|null>(null),dataMonth=useRef(''),[dataError,setDataError]=useState(false),[weather,setWeather]=useState<WeatherData|null>(null),[revision,setRevision]=useState(0),[assetError,setAssetError]=useState(false),[formBusy,setFormBusy]=useState(false);
  const post=useCallback((message:Record<string,unknown>)=>frame.current?.contentWindow?.postMessage({duckCalendar:true,...message},location.origin),[]);
  useEffect(()=>{let active=true;axiosForBackend<unknown>({url:'/api/calendar/sprites',method:'GET'}).then(r=>r.data).then(sprite=>{if(active)setDocumentText(calendarDocument.replace('/*__DUCK_SPRITE_DATA__*/',JSON.stringify(sprite).replace(/</g,'\\u003c')));}).catch(()=>{if(active)setAssetError(true);});return()=>{active=false;};},[]);
  useEffect(()=>{let active=true;axiosForBackend<CalendarConfig>({url:'/api/calendar/config',method:'GET'}).then(r=>{if(active){setConfig(r.data);setConfigError('');}}).catch(()=>{if(active)setConfigError('固定人事配置读取失败，请稍后重试。');});return()=>{active=false;};},[revision]);
- useEffect(()=>{let active=true;setData(null);setDataError(false);axiosForBackend<CalendarData>({url:'/api/calendar/month',method:'GET',params:{month},timeout:120000}).then(r=>{if(active)setData(r.data);}).catch(()=>{if(active)setDataError(true);});return()=>{active=false;};},[month,revision]);
+ useEffect(()=>{let active=true;setDataError(false);axiosForBackend<CalendarData>({url:'/api/calendar/month',method:'GET',params:{month},timeout:120000}).then(r=>{if(active){dataMonth.current=month;setData(r.data);}}).catch(()=>{if(active)setDataError(true);});return()=>{active=false;};},[month,revision]);
  useEffect(()=>{let active=true;const load=()=>{if(document.hidden)return;axiosForBackend<WeatherData>({url:'/api/calendar/weather',method:'GET',timeout:15000}).then(r=>{if(active)setWeather(r.data);}).catch(()=>{if(active)setWeather({available:false,scene:'overcast',windSpeed:0,windFrom:0,cloud:.9,validTime:'',updatedAt:'',source:'天气暂不可用'});});};load();const timer=setInterval(load,30*60000+Math.random()*60000);return()=>{active=false;clearInterval(timer);};},[]);
  useEffect(()=>{const refresh=()=>{if(!document.hidden)setRevision(r=>r+1);};const timer=setInterval(refresh,120000);document.addEventListener('visibilitychange',refresh);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',refresh);};},[]);
  useEffect(()=>{const listener=(e:MessageEvent<unknown>)=>{if(e.source!==frame.current?.contentWindow||e.origin!==location.origin)return;const parsed=z.object({duckCalendar:z.literal(true),action:z.string(),kind:z.enum(['leave','late','early']).optional(),month:z.string().optional()}).safeParse(e.data);if(!parsed.success)return;const m=parsed.data;if(m.action==='ready')setFrameReady(true);if(m.action==='register'&&m.kind)setKind(m.kind);if(m.action==='refresh')setRevision(r=>r+1);if(m.action==='month'&&m.month&&/^20\d{2}-(0[1-9]|1[0-2])$/.test(m.month))setMonth(m.month);};window.addEventListener('message',listener);return()=>window.removeEventListener('message',listener);},[]);
- useEffect(()=>{if(!frameReady)return;post(data?{action:'calendar',data,month}:dataError?{action:'error'}:{action:'loading',month});},[data,dataError,month,frameReady,post]);
+ useEffect(()=>{if(!frameReady)return;post(dataError?{action:'error'}:data&&dataMonth.current===month?{action:'calendar',data,month}:{action:'loading',month});},[data,dataError,month,frameReady,post]);
  useEffect(()=>{if(frameReady&&weather)post({action:'weather',data:weather});},[frameReady,weather,post]);
  const description=useMemo(()=>kind==='leave'?'给自己一点休息时间':kind==='late'?'10 点以后到达公司，可提前选择日期':'今天提前离开，向同事知会一声',[kind]);
  return <><div style={{height:'100dvh',width:'100%',background:'#e7edf4'}}>{documentText?<iframe ref={frame} title="鸭鸭日历" srcDoc={documentText} sandbox="allow-scripts allow-same-origin allow-popups" style={{border:0,width:'100%',height:'100%',display:'block'}}/>:<div className="flex h-full flex-col items-center justify-center gap-4"><h1 className="text-2xl font-bold">鸭鸭日历</h1><p>{assetError?'天气插画资源暂不可用，请重新加载。':'正在加载天气与鸭鸭…'}</p>{assetError&&<Button onClick={()=>location.reload()}>重新加载</Button>}</div>}</div>
