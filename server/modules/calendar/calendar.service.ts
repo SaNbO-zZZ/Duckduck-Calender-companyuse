@@ -10,7 +10,7 @@ import type { CalendarConfig, CalendarData, CalendarEvent, Holiday, Registration
 const recordSchema = z.object({ id: z.string(), record: z.record(z.string(), z.unknown()) });
 const searchSchema = z.object({ records: z.array(recordSchema), hasMore: z.boolean(), pageToken: z.string().optional() });
 const addSchema = z.object({ records: z.array(z.object({ id: z.string().min(1) })).length(1) });
-const inputSchema = z.object({ requestKey: z.uuid(), kind: z.enum(['leave','late','early']), mentorId: z.string().regex(/^\d{1,24}$/), leaveType: z.enum(['年假','调休','事假','病假','今天不想上班','']), start: z.string().max(40), end: z.string().max(40), arrivalTime: z.string().max(8), arrivalDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }).strict();
+const inputSchema = z.object({ requestKey: z.uuid(), kind: z.enum(['leave','late','early']), mentorId: z.string().regex(/^\d{1,24}$/), leaveType: z.enum(['年假','调休','出差','事假','病假','今天不想上班','']), start: z.string().max(40), end: z.string().max(40), arrivalTime: z.string().max(8), arrivalDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }).strict();
 const textValue = (v: unknown) => z.object({text:z.string()}).safeParse(v).data?.text || '';
 function userIds(v: unknown): string[] {
  if (v == null) return [];
@@ -133,7 +133,7 @@ export class CalendarService {
   const [existing]=await this.db.select().from(calendarSubmission).where(eq(calendarSubmission.requestKey,input.requestKey)).limit(1);
   if(existing){if(existing.applicant!==userId)throw new ForbiddenException('不能读取其他员工的登记。');if(existing.payloadHash!==hash)throw new ConflictException('这次登记内容已更改，请关闭后重新打开表单。');return this.result(existing);}
   const now=Date.now(),day=dayText(now);let start:number,end:number;
-  if(input.kind==='leave') {if(!input.leaveType)throw new BadRequestException('请选择请假类型。');start=stamp(input.start);end=stamp(input.end);if(end<=start)throw new BadRequestException('结束时间须晚于开始时间。');if(end-start>366*86400000)throw new BadRequestException('单次登记不能超过一年。');}
+  if(input.kind==='leave') {if(!input.leaveType)throw new BadRequestException('请选择不在岗类型。');start=stamp(input.start);end=stamp(input.end);if(end<=start)throw new BadRequestException('结束时间须晚于开始时间。');if(end-start>366*86400000)throw new BadRequestException('单次登记不能超过一年。');}
   else if(input.kind==='late') {if(!/^\d{2}:\d{2}$/.test(input.arrivalTime))throw new BadRequestException('请选择预计到达时刻。');const arrivalDay=input.arrivalDate??day;end=stamp(arrivalDay+'T'+input.arrivalTime);start=stamp(arrivalDay+'T10:00');if(end<=now||end<=start)throw new BadRequestException('预计到达须晚于所选日期 10:00，且尚未到达该时刻。');}
   else {start=now;end=Date.parse(day+'T00:00:00+08:00')+86400000;}
   const config=await this.config();const hrId:string=config.hrUserId,mentorId:string=input.mentorId;
@@ -150,7 +150,7 @@ export class CalendarService {
   try {recordId=addSchema.parse(await this.capability.load(cap).call('batchAddRecords',{records:[{record:fields}]})).records[0].id;await this.db.update(calendarSubmission).set({recordId,recordState:'created'}).where(eq(calendarSubmission.id,created.id));}
   catch {await this.db.update(calendarSubmission).set({recordState:'requires_review'}).where(eq(calendarSubmission.id,created.id));this.logger.warn('Calendar record creation requires reconciliation');return this.result({...created,recordState:'requires_review'});}
   mark('recorded');
-  const title={leave:'请假登记',late:'晚到知会',early:'提前离开知会'}[input.kind];
+  const title=input.kind==='leave'?(input.leaveType==='出差'?'出差知会':'请假知会'):{late:'晚到知会',early:'提前离开知会'}[input.kind];
   // Names are bound by Miaoda ID, not the order of remote tag conversion. A single
   // unordered mention list contains only the two notified roles, never the applicant.
   const content=notificationContent(input,actorName,mentorName,hrName,mentorId,hrId,start,end,now);
