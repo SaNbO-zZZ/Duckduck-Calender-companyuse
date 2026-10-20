@@ -43,12 +43,12 @@ window.duckWeatherUnavailable = true;
   if(e.data.action==='weather'){
    const weather=e.data.data;window.duckWeatherUnavailable=!weather.available;
    if(window.duckApplyForecast)window.duckApplyForecast(weather);
-   document.getElementById('weatherIcon').title=weather.available?`合肥市瑶海区 · ${weather.source}\n预报有效时刻 ${new Date(weather.validTime).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'})}\n阵风为视觉模拟，不是实时阵风实测。`:'天气读取失败，背景暂用中性静态画面。';
+   document.getElementById('weatherIcon').title=weather.available?`${weather.source}\n数据更新时间 ${new Date(weather.validTime).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'})}\n阵风为视觉模拟。`:'天气读取失败，背景暂用中性静态画面。';
    if(!weather.available)document.getElementById('weatherIcon').textContent='🌫️ 天气暂不可用';
   }
  });
  document.addEventListener('DOMContentLoaded',()=>{
-  document.body.classList.add('clean');document.querySelector('.note').innerHTML='鸭鸭是天气装饰，不代表具体同事。天气参考 <a href="https://www.met.no/en" target="_blank" rel="noopener">MET Norway</a> 小时预报，画面为艺术化演绎（阵风为视觉模拟）；数据 <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>。';
+  document.body.classList.add('clean');document.querySelector('.note').innerHTML='鸭鸭是天气装饰，不代表具体同事。合肥天气数据来源：<a href="https://www.nmc.cn/publish/forecast/AAH/hefei.html" target="_blank" rel="noopener">中央气象台</a>；画面为艺术化演绎，阵风为视觉模拟。';
   const nav=txt('div','','runtime-month-nav');for(const [label,delta]of [['‹',-1],['今天',0],['›',1]]){const b=txt('button',label);b.type='button';b.setAttribute('aria-label',delta===-1?'上个月':delta===1?'下个月':'回到今天');b.onclick=()=>{const [y,m]=(currentMonth||day(Date.now()).slice(0,7)).split('-').map(Number),d=delta?new Date(Date.UTC(y,m-1+delta,1)):new Date(Date.now()+480*60000);send({action:'month',month:`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`});};nav.append(b);}document.querySelector('.month').append(nav);
   render();setInterval(()=>{if(!document.hidden)render();},30000);send({action:'ready'});
  });

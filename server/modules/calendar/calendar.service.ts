@@ -176,15 +176,26 @@ export class CalendarService {
   return this.result({...created,recordId,recordState:'created',mentorState,hrState});
  }
  async weather():Promise<WeatherData> {
-  try{return await this.cache.wrap('duck-calendar:weather:yaohai:'+Math.floor(Date.now()/3600000),async()=>{
-   const response=await fetch('https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=31.8696&lon=117.3154',{headers:{'User-Agent':'DuckCalendar/3.0 https://alphapulsex.online'},signal:AbortSignal.timeout(10000)});if(!response.ok)throw new Error('weather-source-unavailable');
-   const point=z.object({time:z.string(),data:z.object({instant:z.object({details:z.object({cloud_area_fraction:z.number(),wind_speed:z.number(),wind_from_direction:z.number()})}),next_1_hours:z.object({summary:z.object({symbol_code:z.string()}),details:z.object({precipitation_amount:z.number()})}).optional()})});
-   const data=z.object({properties:z.object({meta:z.object({updated_at:z.string()}),timeseries:z.array(point)})}).parse(await response.json());
-   const now=Date.now(),current=data.properties.timeseries.filter(p=>Date.parse(p.time)<=now).at(-1);
-   if(!current||now-Date.parse(current.time)>7200000||now-Date.parse(data.properties.meta.updated_at)>86400000)throw new Error('weather-stale');
-   const detail=current.data.instant.details,symbol=current.data.next_1_hours?.summary.symbol_code||'',amount=current.data.next_1_hours?.details.precipitation_amount||0;
-   const scene=symbol.includes('snow')?(symbol.includes('heavy')?'heavySnow':symbol.includes('light')?'lightSnow':'snow'):symbol.includes('rain')||symbol.includes('sleet')?(symbol.includes('heavy')||amount>=8?'storm':symbol.includes('light')||amount<2.5?'lightRain':'heavyRain'):detail.cloud_area_fraction<20?'clear':detail.cloud_area_fraction<80?'partly':'overcast';
-   return {available:true,scene,windSpeed:detail.wind_speed*3.6,windFrom:detail.wind_from_direction,cloud:detail.cloud_area_fraction/100,validTime:current.time,updatedAt:data.properties.meta.updated_at,source:'MET Norway · 小时预报'};
-  },30*60000);}catch{return {available:false,scene:'overcast',windSpeed:0,windFrom:0,cloud:0.9,validTime:'',updatedAt:'',source:'天气暂不可用'};}
+  try{return await this.cache.wrap('duck-calendar:weather:nmc-hefei:v1:'+Math.floor(Date.now()/300000),async()=>{
+   const response=await fetch('https://www.nmc.cn/rest/weather?stationid=xqcji',{headers:{'User-Agent':'Mozilla/5.0 (compatible; DuckCalendar/3.0)','Referer':'https://www.nmc.cn/publish/forecast.html'},signal:AbortSignal.timeout(10000)});
+   if(!response.ok)throw new Error('weather-source-unavailable');
+   const data=z.object({code:z.literal(0),data:z.object({real:z.object({publish_time:z.string(),station:z.object({city:z.literal('合肥')}),weather:z.object({info:z.string(),rain:z.coerce.number()}),wind:z.object({speed:z.coerce.number(),degree:z.coerce.number()})})})}).parse(await response.json());
+   const real=data.data.real,published=Date.parse(real.publish_time.replace(' ','T')+':00+08:00'),now=Date.now();
+   if(!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(real.publish_time)||!Number.isFinite(published)||now-published>90*60000||published-now>5*60000)throw new Error('weather-stale');
+   const info=real.weather.info.trim(),rain=real.weather.rain;
+   let scene:string;
+   if(/雪/.test(info))scene=/暴雪|大雪/.test(info)?'heavySnow':/小雪/.test(info)?'lightSnow':'snow';
+   else if(/特大暴雨|大暴雨|暴雨/.test(info))scene='storm';
+   else if(/大雨|中雨|雷阵雨/.test(info))scene='heavyRain';
+   else if(/雨/.test(info))scene='lightRain';
+   else if(rain>0&&rain<1000&&!/晴/.test(info))scene='lightRain';
+   else if(/多云|少云/.test(info))scene='partly';
+   else if(/阴|雾|霾|沙尘/.test(info))scene='overcast';
+   else if(/晴/.test(info))scene='clear';
+   else throw new Error('weather-condition-unknown');
+   const cloud={clear:0.12,partly:0.5,overcast:0.9,lightRain:0.9,heavyRain:0.97,storm:1,lightSnow:0.82,snow:0.9,heavySnow:0.98}[scene];
+   const speed=real.wind.speed,degree=real.wind.degree;
+   return {available:true,scene,windSpeed:Number.isFinite(speed)&&speed>=0&&speed<100?speed*3.6:0,windFrom:Number.isFinite(degree)&&degree>=0&&degree<360?degree:0,cloud,validTime:new Date(published).toISOString(),updatedAt:new Date(published).toISOString(),source:'合肥天气'};
+  },5*60000);}catch{return {available:false,scene:'overcast',windSpeed:0,windFrom:0,cloud:0.9,validTime:'',updatedAt:'',source:'天气暂不可用'};}
  }
 }

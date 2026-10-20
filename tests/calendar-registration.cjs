@@ -26,6 +26,23 @@ test('a transient read can recover and batch concurrency never exceeds two',asyn
 
 test('leave, later arrival and earlier departure preserve role names and exact notification recipients',async(ctx)=>{ctx.mock.method(Date,'now',()=>Date.parse('2026-10-10T11:00:00+08:00'));for(const kind of ['leave','late','early']){const f=fixture();await f.service.submit({...payload(),kind,...(kind==='leave'?{}:{leaveType:'',start:'',end:'',arrivalTime:kind==='late'?'11:30':''})},ids.actor);const sent=f.calls.filter(c=>c.action==='send_feishu_message');assert.deepEqual(sent.map(c=>c.input.recipients),[[ids.mentor],[ids.hr]]);assert.equal(sent[0].input.content,sent[1].input.content);for(const call of sent){assert.match(call.input.content,/Mentor：自选 Mentor\n人事：Mia/);assert.ok(call.input.content.includes(`<at ids="${ids.mentor},${ids.hr}">`));assert.doesNotMatch(call.input.content,/<person|<at id=/);assert.match(call.input.content,/仅通知，无审批/);assert.doesNotMatch(call.input.title,/迟到|早退/);}assert.equal(sent[0].input.title,'鸭鸭日历 · '+{leave:'请假知会',late:'晚到知会',early:'提前离开知会'}[kind]);const record=f.calls.find(c=>c.action==='batchAddRecords').input.records[0].record;assert.deepEqual(record.Mentor,[Number(ids.mentor)]);assert.deepEqual(record.人事,[Number(ids.hr)]);if(kind==='late'){assert.equal(record.登记类型,'晚到');assert.equal(record.开始时间,Date.parse('2026-10-10T10:00:00+08:00'));}if(kind==='early')assert.equal(record.登记类型,'提前离开');}});
 test('business trip writes the new Base option and sends a trip notice',async()=>{const f=fixture(),p={...payload(),leaveType:'出差'};const r=await f.service.submit(p,ids.actor);assert.equal(r.recorded,true);const record=f.calls.find(c=>c.action==='batchAddRecords').input.records[0].record;assert.equal(record.类型,'出差');const sent=f.calls.filter(c=>c.action==='send_feishu_message');assert.equal(sent.length,2);assert.deepEqual(sent.map(c=>c.input.recipients),[[ids.mentor],[ids.hr]]);for(const call of sent){assert.equal(call.input.title,'鸭鸭日历 · 出差知会');assert.match(call.input.content,/类型：出差/);}});
+test('Hefei observation drives rain and wind independently',async(ctx)=>{
+ ctx.mock.method(Date,'now',()=>Date.parse('2026-10-20T20:15:00+08:00'));
+ let info='小雨',rain=.3,speed=2.8,degree=290;
+ const calls=[];ctx.mock.method(globalThis,'fetch',async(url,options)=>{calls.push({url,options});return{ok:true,json:async()=>({code:0,data:{real:{publish_time:'2026-10-20 20:10',station:{city:'合肥'},weather:{info,rain},wind:{speed,degree}}}})};});
+ const service=new CalendarService({}, {}, {}, {wrap:async(_key,load)=>load()}, {});
+ const wet=await service.weather();assert.equal(wet.available,true);assert.equal(wet.scene,'lightRain');assert.equal(wet.source,'合肥天气');assert.equal(wet.windFrom,290);assert.ok(Math.abs(wet.windSpeed-10.08)<0.001);
+ info='晴';rain=0;speed=11.2;degree=95;
+ const windy=await service.weather();assert.equal(windy.scene,'clear');assert.ok(windy.windSpeed>40);assert.equal(windy.windFrom,95);
+ assert.equal(calls.length,2);assert.ok(calls.every(call=>String(call.url).includes('stationid=xqcji')));
+});
+test('stale or failed Hefei observation becomes unavailable',async(ctx)=>{
+ ctx.mock.method(Date,'now',()=>Date.parse('2026-10-20T20:15:00+08:00'));
+ let fail=false;ctx.mock.method(globalThis,'fetch',async()=>{if(fail)throw Error('network unavailable');return{ok:true,json:async()=>({code:0,data:{real:{publish_time:'2026-10-20 18:00',station:{city:'合肥'},weather:{info:'小雨',rain:.3},wind:{speed:2,degree:180}}}})};});
+ const service=new CalendarService({}, {}, {}, {wrap:async(_key,load)=>load()}, {});
+ const stale=await service.weather();assert.equal(stale.available,false);assert.equal(stale.source,'天气暂不可用');
+ fail=true;const failed=await service.weather();assert.equal(failed.available,false);assert.equal(failed.source,'天气暂不可用');
+});
 test('profile ID mismatch prevents any record or notification',async()=>{const f=fixture();f.service.authn.listUsersByIds=async()=>[{miaodaUserID:'wrong',name:{zh_cn:'错误人员'}}];await assert.rejects(f.service.submit(payload(),ids.actor));assert.equal(f.calls.filter(c=>c.action==='batchAddRecords'||c.action==='send_feishu_message').length,0);});
 
 
