@@ -545,8 +545,8 @@
   <main>
     <section class="hero">
       <p class="greeting" id="greeting">正在读取北京时间…</p>
-      <h1>此刻没有进行中的知会</h1>
-      <p class="subtitle">登记只是知会，不作考勤判断 🦆</p>
+      <h1>Alpha Pulse 一定会更大更强</h1>
+      <p class="subtitle">一切安好～</p>
       <div class="pills">
         <span class="pill" id="weatherIcon">☀️ 晴<small>演示</small></span
         ><span class="pill">🇨🇳 节假日与调休标记</span
@@ -561,7 +561,7 @@
     <div class="cards">
       <section class="card">
         <h2>此刻的知会</h2>
-        <div class="empty"><span>☕️</span>此刻没有进行中的知会</div>
+        <div class="empty"><span>☕️</span>Alpha Pulse 一定会更大更强</div>
       </section>
       <section class="card">
         <div class="month">
@@ -5433,26 +5433,31 @@ export class CalendarService {
 </script>
 <script type="text/plain" data-runtime-source="server/modules/calendar/calendar.controller.ts">
 import { Controller, Get, Post, Query, Body, Req, Header, UnauthorizedException } from '@nestjs/common';
-import { NeedLogin } from '@lark-apaas/fullstack-nestjs-core';
+import { CanRole, NeedLogin } from '@lark-apaas/fullstack-nestjs-core';
 import type { Request } from 'express';
 import { CalendarService } from './calendar.service';
+import { ReleaseAnnouncementService } from './release-announcement.service';
 @Controller('api/calendar')
 @NeedLogin()
 export class CalendarController {
- constructor(private readonly calendar: CalendarService) {}
+ constructor(private readonly calendar: CalendarService, private readonly announcements: ReleaseAnnouncementService) {}
  @Get('sprites') sprites() {return this.calendar.sprites();}
  @Get('config') config() {return this.calendar.config();}
  @Get('month') month(@Query('month') month:string) {return this.calendar.month(month);}
  @Get('weather') weather() {return this.calendar.weather();}
  @Get('registration-status') @Header('Cache-Control','no-store') async status(@Query('requestKey') requestKey:string,@Req() req:Request) {const userId=req.userContext?.userId;if(!userId)throw new UnauthorizedException('请使用公司飞书帐号登录。');return {result:await this.calendar.status(requestKey,userId)};}
  @Post('register') register(@Body() body:unknown,@Req() req:Request) {const userId=req.userContext?.userId;if(!userId)throw new UnauthorizedException('请使用公司飞书帐号登录。');return this.calendar.submit(body,userId);}
+ @Get('release-announcement/preview') @CanRole(['release_announcer']) previewAnnouncement() {return this.announcements.preview();}
+ @Get('release-announcement/status') @CanRole(['release_announcer']) announcementStatus(@Query('version') version:string) {return this.announcements.summary(version);}
+ @Post('release-announcement/publish') @CanRole(['release_announcer']) publishAnnouncement(@Body() body:unknown,@Req() req:Request) {const userId=req.userContext?.userId;if(!userId)throw new UnauthorizedException('请使用公司飞书帐号登录。');return this.announcements.publish(body,userId);}
 }
 </script>
 <script type="text/plain" data-runtime-source="server/modules/calendar/calendar.module.ts">
 import { Module } from '@nestjs/common';
 import { CalendarController } from './calendar.controller';
 import { CalendarService } from './calendar.service';
-@Module({ controllers: [CalendarController], providers: [CalendarService] })
+import { ReleaseAnnouncementService } from './release-announcement.service';
+@Module({ controllers: [CalendarController], providers: [CalendarService, ReleaseAnnouncementService] })
 export class CalendarModule {}
 </script>
 <script type="text/plain" data-runtime-source="client/src/pages/Calendar/Calendar.tsx">
@@ -5576,7 +5581,8 @@ export class AppModule {}
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import Calendar from './pages/Calendar/Calendar';
-export default function RoutesComponent() { return &lt;Routes&gt;&lt;Route index element={&lt;Calendar /&gt;} /&gt;&lt;/Routes&gt;; }
+import ReleaseAnnouncement from './pages/Calendar/ReleaseAnnouncement';
+export default function RoutesComponent() { return <Routes><Route index element={<Calendar />} /><Route path="release-announcement" element={<ReleaseAnnouncement />} /></Routes>; }
 </script>
 <script type="text/plain" data-runtime-source="server/capabilities/duck-leave-write.json">
 {
@@ -5928,13 +5934,13 @@ window.duckWeatherUnavailable = true;
   if(Number.isFinite(nextTransition))transitionTimer=setTimeout(render,Math.max(0,nextTransition-now)+50);
   const headline=document.querySelector('.hero h1'),number=txt('span',data?String(total):'—','number');
   if(!data)headline.replaceChildren(txt('span',hasError?'日历暂不可用':'正在读取团队日历…'));
-  else if(!total)headline.replaceChildren(txt('span','此刻没有进行中的知会'));
+  else if(!total)headline.replaceChildren(txt('span','Alpha Pulse 一定会更大更强'));
   else headline.replaceChildren(document.createTextNode('此刻 '),number,document.createTextNode(counts.onWay===total?' 位同事正在路上':counts.away===total?' 位同事不在工位':counts.early===total?' 位同事先走一步':' 位同事有新动态'));
-  document.querySelector('.subtitle').textContent=data?(total?summary(counts):'登记只是知会，不作考勤判断 🦆'):(hasError?'日历数据暂不可用，请稍后重试':'正在读取团队日历…');
+  document.querySelector('.subtitle').textContent=data?(total?summary(counts):'一切安好～'):(hasError?'日历数据暂不可用，请稍后重试':'正在读取团队日历…');
   const empty=document.querySelector('.empty');empty.replaceChildren();
   document.querySelector('.card h2').textContent='此刻的知会';
   if(data&amp;&amp;total){empty.classList.add('live-people');for(const p of people){const label=p.kind==='onWay'?`正在赶来 · 预计 ${hhmm(p.event.end)}`:p.kind==='early'?'先去拯救世界了':`${p.event.type} · 暂不在工位`;empty.append(person(p.id,label));}}
-  else {empty.classList.remove('live-people');empty.append(txt('span','☕️'),txt('div',data?'此刻没有进行中的知会':hasError?'数据暂不可用':'正在读取…'));}
+  else {empty.classList.remove('live-people');empty.append(txt('span','☕️'),txt('div',data?'Alpha Pulse 一定会更大更强':hasError?'数据暂不可用':'正在读取…'));}
   if(!data&amp;&amp;hasError){const retry=txt('button','重试','runtime-retry');retry.onclick=()=&gt;send({action:'refresh'});empty.append(retry);}
  };
  document.addEventListener('click',e=&gt;{const id=e.target.closest('button')?.id;const kind={leaveAction:'leave',lateAction:'late',earlyAction:'early'}[id];if(kind){e.preventDefault();e.stopImmediatePropagation();send({action:'register',kind});}},true);
@@ -6186,6 +6192,298 @@ window.duckWeatherUnavailable = true;
 }
 </script>
 
+<script type="text/plain" data-runtime-source="server/modules/calendar/release-announcement.service.ts">
+import { BadGatewayException, BadRequestException, ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
+import { AuthorizationSDK, CapabilityService, DRIZZLE_DATABASE, type PostgresJsDatabase } from '@lark-apaas/fullstack-nestjs-core';
+import { and, eq, inArray } from 'drizzle-orm';
+import { integer, pgTable, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { createHash } from 'node:crypto';
+import { z } from 'zod';
+import { userProfile } from '../../database/schema';
+
+const WIKI_URL = 'https://ycn3zdw6f1p7.feishu.cn/wiki/I6uzwNwd7izfPCkQHJDcoxdRnRb';
+const title = '鸭鸭日历发布新版本-更新说明';
+const payloadSchema = z.object({
+  version: z.string().regex(/^v\d+\.\d+\.\d+$/),
+  highlights: z.array(z.string().trim().min(2).max(90)).min(1).max(5),
+}).strict();
+type AnnouncementPayload = z.infer<typeof payloadSchema>;
+
+const announcement = pgTable('calendar_release_announcement', {
+  version: varchar('version', { length: 32 }).primaryKey(),
+  payloadHash: varchar('payload_hash', { length: 64 }).notNull(),
+  expectedCount: integer('expected_count').notNull(),
+  status: varchar('status', { length: 24 }).notNull().default('sending'),
+  createdBy: userProfile('_created_by'),
+});
+const delivery = pgTable('calendar_release_delivery', {
+  version: varchar('version', { length: 32 }).notNull(),
+  recipient: varchar('recipient', { length: 32 }).notNull(),
+  state: varchar('state', { length: 24 }).notNull().default('pending'),
+  createdBy: userProfile('_created_by'),
+}, table => [uniqueIndex('calendar_release_delivery_version_recipient_key').on(table.version, table.recipient)]);
+
+function content(input: AnnouncementPayload): string {
+  return `**${input.version} 更新上线啦**\n${input.highlights.map(item => `- ${item}`).join('\n')}\n\n[查看完整更新说明](${WIKI_URL})`;
+}
+
+@Injectable()
+export class ReleaseAnnouncementService {
+  private readonly logger = new Logger(ReleaseAnnouncementService.name);
+  constructor(
+    private readonly authz: AuthorizationSDK,
+    @Inject(CapabilityService) private readonly capability: CapabilityService,
+    @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
+  ) {}
+
+  private async recipients(): Promise<string[]> {
+    const ids = new Set<string>();
+    let total: number | undefined;
+    for (let page = 1; page <= 100; page++) {
+      const response = await this.authz.search.search({
+        query: '', pageSize: 100, page,
+        includeExternalUser: false, includeExternalGroup: false,
+      });
+      const resultSchema = z.object({result: z.object({userResult: z.object({
+        total: z.number().int().nonnegative(),
+        items: z.array(z.object({userID: z.string().regex(/^\d+$/)}).passthrough()),
+      })})});
+      const result = z.union([resultSchema, z.object({data: resultSchema})]).parse(response as unknown);
+      const batch = 'data' in result ? result.data.result.userResult : result.result.userResult;
+      if (total !== undefined && batch.total !== total) throw new BadGatewayException('通讯录人数在读取期间变化，请重新预览。');
+      total = batch.total;
+      for (const item of batch.items) ids.add(item.userID);
+      if (ids.size >= total) break;
+      if (batch.items.length === 0) throw new BadGatewayException('通讯录分页不完整，已停止群发。');
+    }
+    if (!total || ids.size !== total) throw new BadGatewayException('无法核实完整的企业内部员工名单，已停止群发。');
+    return [...ids].sort();
+  }
+
+  async preview() {
+    const ids = await this.recipients();
+    return {recipientCount: ids.length, wikiUrl: WIKI_URL};
+  }
+
+  async publish(raw: unknown, actorId: string) {
+    const parsed = payloadSchema.safeParse(raw);
+    if (!parsed.success) throw new BadRequestException('请填写有效版本号和 1 至 5 条简短更新内容。');
+    const input = parsed.data;
+    const hash = createHash('sha256').update(JSON.stringify(input)).digest('hex');
+    const [existing] = await this.db.select().from(announcement).where(eq(announcement.version, input.version)).limit(1);
+    if (existing) {
+      if (existing.payloadHash !== hash) throw new ConflictException('该版本已创建通知，请勿改写同一版本的通知内容。');
+      return this.summary(input.version);
+    }
+    const ids = await this.recipients();
+    const created = await this.db.transaction(async tx => {
+      const [row] = await tx.insert(announcement).values({
+        version: input.version, payloadHash: hash, expectedCount: ids.length, status: 'sending', createdBy: actorId,
+      }).onConflictDoNothing({target: announcement.version}).returning();
+      if (!row) return false;
+      await tx.insert(delivery).values(ids.map(recipient => ({version: input.version, recipient, state: 'pending', createdBy: actorId})));
+      return true;
+    });
+    if (!created) return this.summary(input.version);
+
+    // Batches stay well under the plugin's 200-user limit. A failed or uncertain
+    // batch is never retried automatically: the platform may have accepted it.
+    for (let offset = 0; offset < ids.length; offset += 50) {
+      const candidateIds = ids.slice(offset, offset + 50);
+      const claimed = await this.db.update(delivery).set({state: 'sending'}).where(and(
+        eq(delivery.version, input.version), inArray(delivery.recipient, candidateIds), eq(delivery.state, 'pending'),
+      )).returning();
+      const recipientIds = claimed.map(item => item.recipient);
+      if (recipientIds.length === 0) continue;
+      try {
+        const result = z.object({success: z.boolean()}).parse(await this.capability.load('duck-notify').call('send_feishu_message', {
+          recipients: recipientIds, title, content: content(input),
+        }));
+        await this.db.update(delivery).set({state: result.success ? 'accepted' : 'needs_review'}).where(and(
+          eq(delivery.version, input.version), inArray(delivery.recipient, recipientIds),
+        ));
+      } catch (error) {
+        await this.db.update(delivery).set({state: 'needs_review'}).where(and(
+          eq(delivery.version, input.version), inArray(delivery.recipient, recipientIds),
+        ));
+        this.logger.warn({event: 'release_notice_requires_review', version: input.version, batchSize: recipientIds.length, error: error instanceof Error ? error.message : 'unknown'});
+      }
+    }
+    const result = await this.summary(input.version);
+    await this.db.update(announcement).set({status: result.needsReview === 0 ? 'accepted' : 'needs_review'}).where(eq(announcement.version, input.version));
+    return result;
+  }
+
+  async summary(version: string) {
+    if (!/^v\d+\.\d+\.\d+$/.test(version)) throw new BadRequestException('版本号无效。');
+    const [row] = await this.db.select().from(announcement).where(eq(announcement.version, version)).limit(1);
+    if (!row) throw new BadRequestException('该版本尚未创建通知。');
+    const rows = await this.db.select().from(delivery).where(eq(delivery.version, version));
+    const accepted = rows.filter(item => item.state === 'accepted').length;
+    return {version, expected: row.expectedCount, accepted, needsReview: row.expectedCount - accepted,
+      message: rows.length === row.expectedCount && accepted === row.expectedCount ? '全部通知请求已被平台受理。' : '部分通知需人工核对，请勿重复发送。',
+      wikiUrl: WIKI_URL};
+  }
+}
+</script>
+<script type="text/plain" data-runtime-source="client/src/pages/Calendar/ReleaseAnnouncement.tsx">
+import React, { useState } from 'react';
+import { NavLink } from 'react-router-dom';
+import { axiosForBackend } from '@lark-apaas/client-toolkit/utils/getAxiosForBackend';
+import { isAxiosError } from 'axios';
+
+type Preview = {recipientCount: number; wikiUrl: string};
+type Result = {version: string; expected: number; accepted: number; needsReview: number; message: string; wikiUrl: string};
+const wikiUrl = 'https://ycn3zdw6f1p7.feishu.cn/wiki/I6uzwNwd7izfPCkQHJDcoxdRnRb';
+const explain = (error: unknown) => isAxiosError(error)
+  ? String(error.response?.data?.message || error.message)
+  : '请求未确认，请先核对该版本的发送状态，不要重复提交。';
+
+export default function ReleaseAnnouncement() {
+  const [version, setVersion] = useState('v3.2.1');
+  const [lines, setLines] = useState('首页空状态换上团队新文案：Alpha Pulse 一定会更大更强、一切安好～\n新增版本更新私聊知会，更新摘要和完整日志一键可达');
+  const [preview, setPreview] = useState<Preview | null>(null);
+  const [result, setResult] = useState<Result | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const highlights = lines.split('\n').map(line => line.trim()).filter(Boolean);
+  const canSend = !!preview && !busy && /^v\d+\.\d+\.\d+$/.test(version) && highlights.length >= 1 && highlights.length <= 5;
+
+  const loadPreview = async () => {
+    setBusy(true); setError(''); setPreview(null); setResult(null);
+    try {
+      const response = await axiosForBackend<Preview>({url: '/api/calendar/release-announcement/preview', method: 'GET', timeout: 30000});
+      setPreview(response.data);
+    } catch (reason) { setError(explain(reason)); }
+    finally { setBusy(false); }
+  };
+  const publish = async () => {
+    if (!canSend) return;
+    setBusy(true); setError('');
+    try {
+      const response = await axiosForBackend<Result>({url: '/api/calendar/release-announcement/publish', method: 'POST',
+        data: {version, highlights}, timeout: 120000});
+      setResult(response.data);
+    } catch (reason) { setError(explain(reason)); }
+    finally { setBusy(false); }
+  };
+  const checkStatus = async () => {
+    if (!/^v\d+\.\d+\.\d+$/.test(version)) return;
+    setBusy(true); setError('');
+    try {
+      const response = await axiosForBackend<Result>({url: '/api/calendar/release-announcement/status', method: 'GET', params: {version}});
+      setResult(response.data);
+    } catch (reason) { setError(explain(reason)); }
+    finally { setBusy(false); }
+  };
+
+  return <main className="min-h-dvh bg-[#f4f6fa] px-4 py-8 text-[#27303d]">
+    <section className="mx-auto max-w-2xl rounded-3xl border border-white bg-white p-6 shadow-xl shadow-slate-200/60 sm:p-9">
+      <NavLink className="text-sm text-blue-600 hover:underline" to="/">← 返回鸭鸭日历</NavLink>
+      <h1 className="mt-6 text-3xl font-bold">版本更新知会</h1>
+      <p className="mt-2 text-sm leading-6 text-slate-500">仅版本通知管理员可发送。请先发布应用并写好更新日志，再向公司内部员工私聊发送一次。</p>
+      <label className="mt-8 block text-sm font-semibold" htmlFor="release-version">版本号</label>
+      <input id="release-version" value={version} onChange={event => {setVersion(event.target.value); setPreview(null); setResult(null);}} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-400" placeholder="v3.2.1" />
+      <label className="mt-6 block text-sm font-semibold" htmlFor="release-notes">本次更新亮点（每行一条，最多五条）</label>
+      <textarea id="release-notes" value={lines} onChange={event => {setLines(event.target.value); setPreview(null); setResult(null);}} rows={5} className="mt-2 w-full resize-y rounded-xl border border-slate-200 px-4 py-3 leading-7 outline-none focus:border-blue-400" />
+      <div className="mt-5 rounded-2xl bg-blue-50 p-4 text-sm text-blue-900">
+        <p className="font-semibold">消息预览｜鸭鸭日历发布新版本-更新说明</p>
+        <p className="mt-2">{version} 更新上线啦</p>
+        <ul className="mt-2 list-disc pl-5">{highlights.map((line, index) => <li key={index}>{line}</li>)}</ul>
+        <a className="mt-2 inline-block text-blue-600 underline" href={wikiUrl} target="_blank" rel="noreferrer">查看完整更新说明</a>
+      </div>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <button type="button" disabled={busy} onClick={loadPreview} className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold disabled:opacity-50">核对全员名单</button>
+        <button type="button" disabled={busy} onClick={checkStatus} className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold disabled:opacity-50">核对发送结果</button>
+      </div>
+      {preview && <p className="mt-5 text-sm">已核对 <strong>{preview.recipientCount}</strong> 位公司内部员工。文档链接：<a className="text-blue-600 underline" href={preview.wikiUrl}>更新日志</a></p>}
+      {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+      {result && <p role="status" className="mt-5 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{result.message} {result.accepted}/{result.expected} 个请求获平台受理；{result.needsReview} 个需核对。</p>}
+      <button type="button" disabled={!canSend} onClick={publish} className="mt-8 w-full rounded-full bg-gradient-to-r from-[#ff7a56] to-[#fb4f7d] px-5 py-3 font-bold text-white shadow-lg shadow-rose-200 disabled:cursor-not-allowed disabled:opacity-40">{busy ? '处理中…' : '发布版本更新知会'}</button>
+      <p className="mt-3 text-xs leading-5 text-slate-400">同一版本只建一次批次；平台受理不等于员工已读。请求状态不明时先核对，避免重复通知。</p>
+    </section>
+  </main>;
+}
+</script>
+<script type="text/plain" data-runtime-source="database/002_release_announcement.sql">
+BEGIN;
+CREATE TABLE calendar_release_announcement (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  version varchar(32) NOT NULL UNIQUE,
+  payload_hash varchar(64) NOT NULL,
+  expected_count integer NOT NULL,
+  status varchar(24) NOT NULL DEFAULT 'sending',
+  _created_at TIMESTAMP(3) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  _created_by user_profile,
+  _updated_at TIMESTAMP(3) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  _updated_by user_profile
+);
+CREATE TABLE calendar_release_delivery (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  version varchar(32) NOT NULL REFERENCES calendar_release_announcement(version),
+  recipient varchar(32) NOT NULL,
+  state varchar(24) NOT NULL DEFAULT 'pending',
+  _created_at TIMESTAMP(3) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  _created_by user_profile,
+  _updated_at TIMESTAMP(3) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  _updated_by user_profile,
+  CONSTRAINT calendar_release_delivery_version_recipient_key UNIQUE (version, recipient)
+);
+ALTER TABLE calendar_release_announcement ENABLE ROW LEVEL SECURITY;
+ALTER TABLE calendar_release_delivery ENABLE ROW LEVEL SECURITY;
+CREATE POLICY service_role_bypass_policy ON calendar_release_announcement TO service_role USING (true);
+CREATE POLICY service_role_bypass_policy ON calendar_release_delivery TO service_role USING (true);
+CREATE POLICY "修改全部数据" ON calendar_release_announcement AS PERMISSIVE FOR ALL TO authenticated USING (false);
+CREATE POLICY "查看全部数据" ON calendar_release_announcement AS PERMISSIVE FOR SELECT TO authenticated, anon USING (current_setting('app.user_id', TRUE) = ((_created_by).user_id)::text);
+CREATE POLICY "修改本人数据" ON calendar_release_announcement AS PERMISSIVE FOR ALL TO authenticated USING (current_setting('app.user_id', TRUE) = ((_created_by).user_id)::text) WITH CHECK (current_setting('app.user_id', TRUE) = ((_created_by).user_id)::text);
+CREATE POLICY "修改全部数据" ON calendar_release_delivery AS PERMISSIVE FOR ALL TO authenticated USING (false);
+CREATE POLICY "查看全部数据" ON calendar_release_delivery AS PERMISSIVE FOR SELECT TO authenticated, anon USING (current_setting('app.user_id', TRUE) = ((_created_by).user_id)::text);
+CREATE POLICY "修改本人数据" ON calendar_release_delivery AS PERMISSIVE FOR ALL TO authenticated USING (current_setting('app.user_id', TRUE) = ((_created_by).user_id)::text) WITH CHECK (current_setting('app.user_id', TRUE) = ((_created_by).user_id)::text);
+COMMENT ON TABLE calendar_release_announcement IS '鸭鸭日历版本更新通知：每个版本只创建一次收件批次。';
+COMMENT ON TABLE calendar_release_delivery IS '逐位员工记录消息请求是否被平台受理；不等同于已读。';
+COMMIT;
+</script>
+<script type="text/plain" data-runtime-source="tests/release-announcement.cjs">
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { ReleaseAnnouncementService } = require('../dist/server/modules/calendar/release-announcement.service');
+
+function fixture(pages) {
+  const calls = [];
+  const authz = {search: {search: async input => {
+    calls.push(input);
+    return pages[input.page - 1];
+  }}};
+  return {service: new ReleaseAnnouncementService(authz, {}, {}), calls};
+}
+const result = (total, ids) => ({data: {result: {userResult: {total, items: ids.map(userID => ({userID}))}}}});
+
+test('preflight pages through all internal employees and excludes external contacts', async () => {
+  const f = fixture([result(3, ['3', '1']), result(3, ['2'])]);
+  const preview = await f.service.preview();
+  assert.equal(preview.recipientCount, 3);
+  assert.match(preview.wikiUrl, /I6uzwNwd7izfPCkQHJDcoxdRnRb/);
+  assert.deepEqual(f.calls.map(call => call.page), [1, 2]);
+  assert(f.calls.every(call => call.includeExternalUser === false && call.query === ''));
+});
+
+test('preflight refuses partial, inconsistent or malformed directory data', async () => {
+  for (const pages of [
+    [result(3, ['1']), result(3, [])],
+    [result(3, ['1']), result(4, ['2'])],
+    [result(1, ['ou_external'])],
+    [result(0, [])],
+  ]) {
+    await assert.rejects(fixture(pages).service.preview());
+  }
+});
+
+test('invalid release details are rejected before any directory lookup or notification', async () => {
+  const f = fixture([]);
+  await assert.rejects(f.service.publish({version: 'v3.2.1', highlights: []}, '123'), /请填写有效版本号/);
+  assert.equal(f.calls.length, 0);
+});
+</script>
 <script type="text/plain" data-runtime-source="package.json">
 {
   "actionPlugins": {
