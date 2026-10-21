@@ -1,7 +1,7 @@
 import { BadGatewayException, BadRequestException, ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
-import { AuthorizationSDK, CapabilityService, DRIZZLE_DATABASE, type PostgresJsDatabase } from '@lark-apaas/fullstack-nestjs-core';
+import { CapabilityService, DRIZZLE_DATABASE, type PostgresJsDatabase } from '@lark-apaas/fullstack-nestjs-core';
 import { and, eq, inArray } from 'drizzle-orm';
-import { integer, pgTable, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { integer, jsonb, pgTable, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { userProfile } from '../../database/schema';
@@ -27,6 +27,13 @@ const delivery = pgTable('calendar_release_delivery', {
   state: varchar('state', { length: 24 }).notNull().default('pending'),
   createdBy: userProfile('_created_by'),
 }, table => [uniqueIndex('calendar_release_delivery_version_recipient_key').on(table.version, table.recipient)]);
+const roster = pgTable('calendar_release_roster', {
+  version: varchar('version', { length: 32 }).primaryKey(),
+  recipientIds: jsonb('recipient_ids').$type<string[]>().notNull(),
+  recipientCount: integer('recipient_count').notNull(),
+  verifiedAt: timestamp('verified_at', { withTimezone: true }).notNull(),
+  source: varchar('source', { length: 80 }).notNull(),
+});
 
 function content(input: AnnouncementPayload): string {
   return `**${input.version} 更新上线啦**\n${input.highlights.map(item => `- ${item}`).join('\n')}\n\n[查看完整更新说明](${WIKI_URL})`;
@@ -36,37 +43,29 @@ function content(input: AnnouncementPayload): string {
 export class ReleaseAnnouncementService {
   private readonly logger = new Logger(ReleaseAnnouncementService.name);
   constructor(
-    private readonly authz: AuthorizationSDK,
     @Inject(CapabilityService) private readonly capability: CapabilityService,
     @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
   ) {}
 
-  private async recipients(): Promise<string[]> {
-    const ids = new Set<string>();
-    let total: number | undefined;
-    for (let page = 1; page <= 100; page++) {
-      const response = await this.authz.search.search({
-        query: '', pageSize: 100, page,
-        includeExternalUser: false, includeExternalGroup: false,
-      });
-      const resultSchema = z.object({result: z.object({userResult: z.object({
-        total: z.number().int().nonnegative(),
-        items: z.array(z.object({userID: z.string().regex(/^\d+$/)}).passthrough()),
-      })})});
-      const result = z.union([resultSchema, z.object({data: resultSchema})]).parse(response as unknown);
-      const batch = 'data' in result ? result.data.result.userResult : result.result.userResult;
-      if (total !== undefined && batch.total !== total) throw new BadGatewayException('通讯录人数在读取期间变化，请重新预览。');
-      total = batch.total;
-      for (const item of batch.items) ids.add(item.userID);
-      if (ids.size >= total) break;
-      if (batch.items.length === 0) throw new BadGatewayException('通讯录分页不完整，已停止群发。');
+  private async recipients(version: string): Promise<string[]> {
+    if (!/^v\d+\.\d+\.\d+$/.test(version)) throw new BadRequestException('版本号无效。');
+    const [snapshot] = await this.db.select().from(roster).where(eq(roster.version, version)).limit(1);
+    if (!snapshot) throw new BadGatewayException('尚未核对该版本的企业员工名单，已停止发送。');
+    const parsed = z.array(z.string().regex(/^\d+$/)).min(1).safeParse(snapshot.recipientIds);
+    if (!parsed.success) throw new BadGatewayException('员工名单格式异常，已停止发送。');
+    const ids = [...new Set(parsed.data)].sort();
+    if (ids.length !== snapshot.recipientCount || ids.length !== parsed.data.length) {
+      throw new BadGatewayException('员工名单人数不一致，已停止发送。');
     }
-    if (!total || ids.size !== total) throw new BadGatewayException('无法核实完整的企业内部员工名单，已停止群发。');
-    return [...ids].sort();
+    const ageMs = Date.now() - snapshot.verifiedAt.getTime();
+    if (ageMs < 0 || ageMs > 24 * 60 * 60 * 1000 || snapshot.source !== 'feishu-contact-v3') {
+      throw new BadGatewayException('员工名单已过期或来源不明，请重新核对。');
+    }
+    return ids;
   }
 
-  async preview() {
-    const ids = await this.recipients();
+  async preview(version: string) {
+    const ids = await this.recipients(version);
     return {recipientCount: ids.length, wikiUrl: WIKI_URL};
   }
 
@@ -80,7 +79,7 @@ export class ReleaseAnnouncementService {
       if (existing.payloadHash !== hash) throw new ConflictException('该版本已创建通知，请勿改写同一版本的通知内容。');
       return this.summary(input.version);
     }
-    const ids = await this.recipients();
+    const ids = await this.recipients(input.version);
     const created = await this.db.transaction(async tx => {
       const [row] = await tx.insert(announcement).values({
         version: input.version, payloadHash: hash, expectedCount: ids.length, status: 'sending', createdBy: actorId,

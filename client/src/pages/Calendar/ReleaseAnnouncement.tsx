@@ -23,7 +23,7 @@ export default function ReleaseAnnouncement() {
   const loadPreview = async () => {
     setBusy(true); setError(''); setPreview(null); setResult(null);
     try {
-      const response = await axiosForBackend<Preview>({url: '/api/calendar/release-announcement/preview', method: 'GET', timeout: 30000});
+      const response = await axiosForBackend<Preview>({url: '/api/calendar/release-announcement/preview', method: 'GET', params: {version}, timeout: 30000});
       setPreview(response.data);
     } catch (reason) { setError(explain(reason)); }
     finally { setBusy(false); }
