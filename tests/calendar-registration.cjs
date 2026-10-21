@@ -19,7 +19,7 @@ test('same mentor and HR receive only one notification',async()=>{const f=fixtur
 
 test('audit ownership comes from the authenticated actor and is included in Drizzle SQL',async()=>{const f=fixture();await f.service.submit(payload(),ids.actor);assert.equal(f.getRow().createdBy,ids.actor);assert.equal(f.getRow().updatedBy,ids.actor);const {drizzle}=require('drizzle-orm/postgres-js');const {calendarSubmission}=require('../dist/server/database/schema');const query=drizzle({}).insert(calendarSubmission).values({...f.getRow(),id:undefined}).toSQL();assert.match(query.sql,/\"_created_by\"/);assert.match(query.sql,/\"_updated_by\"/);assert.equal(query.params.filter(v=>v===ids.actor).length,3);});
 
-test('current absence uses exact instants within the day, including an arrival boundary',async(ctx)=>{const now=Date.parse('2026-10-10T13:00:00+08:00');let testNow=now;ctx.mock.method(Date,'now',()=>testNow);const cap={load:id=>({call:async(action)=>{if(action==='aggregateQuery')return {result:[],hasMore:false};if(id==='duck-holiday')return {records:[],hasMore:false};if(id==='duck-leave')return {records:[],hasMore:false};return {records:[['ended',now-3600000,now],['ongoing',now-3600000,now+3600000],['future',now+3600000,now+7200000]].map(([id,start,end])=>({id,record:{申请人:[1874391929959513],登记类型:'迟到',开始时间:start,结束时间:end}})),hasMore:false};}})};const auth={listUsersByIds:async users=>users.map(()=>({name:{zh_cn:'员工'}}))};const service=new CalendarService(cap,auth,{}, {},{});const data=await service.month('2026-10');assert.deepEqual(data.activeEvents.map(e=>e.id),['ongoing']);testNow=now+3600000;assert.deepEqual((await service.month('2026-10')).activeEvents.map(e=>e.id),['future']);});
+test('current absence uses exact instants within the day, including an arrival boundary',async(ctx)=>{const now=Date.parse('2026-10-10T13:00:00+08:00');let testNow=now;ctx.mock.method(Date,'now',()=>testNow);const cap={load:id=>({call:async(action)=>{if(action==='aggregateQuery')return {result:[],hasMore:false};if(id==='duck-holiday')return {records:[],hasMore:false};if(id==='duck-leave')return {records:[],hasMore:false};return {records:[['ended',now-3600000,now],['ongoing',now-3600000,now+3600000],['future',now+3600000,now+7200000]].map(([id,start,end])=>({id,record:{申请人:[1874391929959513],登记类型:'迟到',开始时间:start,结束时间:end}})),hasMore:false};}})};const auth={listUsersByIds:async users=>users.map(()=>({name:{zh_cn:'员工'}}))};const service=new CalendarService(cap,auth,{}, {},{});const data=await service.month('2026-10');assert.deepEqual(data.todayEvents.map(e=>e.id),['ended','ongoing','future']);assert.deepEqual(data.activeEvents.map(e=>e.id),['ongoing']);testNow=now+3600000;assert.deepEqual((await service.month('2026-10')).activeEvents.map(e=>e.id),['future']);});
 
 test('transport read failures retry within a bound; other failures do not retry',async()=>{for(const [message,expected] of [['fetch failed',3],['permission denied',1]]){let calls=0;const cap={load:()=>({call:async()=>{calls++;throw Error(message);}})};const service=new CalendarService(cap,{}, {},{},{});await assert.rejects(service.config(),/暂时不可用/);assert.equal(calls,expected);}});
 test('a transient read can recover and batch concurrency never exceeds two',async()=>{let calls=0;const cap={load:()=>({call:async()=>{if(++calls===1)throw Error('fetch failed');return{id:'settings',record:{人事人员:[1859345056942250]}};}})};const service=new CalendarService(cap,{}, {},{},{});assert.equal((await service.config()).hrUserId,ids.hr);let active=0,peak=0;const tasks=Array.from({length:7},(_,i)=>async()=>{active++;peak=Math.max(peak,active);await new Promise(resolve=>setTimeout(resolve,2));active--;return i;});assert.deepEqual(await service.readBatch(tasks),[0,1,2,3,4,5,6]);assert.equal(peak,2);});
@@ -99,7 +99,25 @@ test('current-month refresh uses only three searches while preserving today and 
  const auth={listUsersByIds:async ids=>ids.map(id=>({miaodaUserID:id,name:{zh_cn:'员工'}}))};
  const service=new CalendarService(cap,auth,{},{},{});const data=await service.month('2026-10');
  assert.equal(calls,3);assert.deepEqual(data.todayUserIds,['1','3','4']);assert.deepEqual(data.activeEvents.map(e=>e.id),['cross-month']);assert.equal(data.events.length,4);
+ assert.deepEqual(data.todayEvents.map(e=>e.id),['cross-month','ended','future']);
  calls=0;await service.month('2026-09');assert.equal(calls,5);
+});
+
+test('notice presence distinguishes later arrival, leave and earlier departure at exact boundaries',()=>{
+ const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+ const window={addEventListener:()=>{}},document={addEventListener:()=>{}},parent={location:{origin:'https://example.test'}};
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../client/src/pages/Calendar/frame-runtime.js'),'utf8'),{window,document,parent});
+ const classify=window.duckClassifyPresence,at=(time)=>Date.parse('2026-10-21T'+time+':00+08:00');
+ const events=[
+  {id:'late',userIds:['a'],type:'晚到',start:at('10:00'),end:at('13:00')},
+  {id:'leave',userIds:['b'],type:'年假',start:at('09:00'),end:at('18:00')},
+  {id:'early',userIds:['c'],type:'提前离开',start:at('15:00'),end:at('23:59')},
+ ];
+ const before=classify(events,at('12:59'));assert.equal(before.counts.onWay,1);assert.equal(before.counts.away,1);assert.equal(before.counts.early,0);assert.equal(before.nextTransition,at('13:00'));
+ const arrived=classify(events,at('13:00'));assert.equal(arrived.counts.onWay,0);assert.equal(arrived.counts.away,1);assert.deepEqual(Array.from(arrived.people,p=>p.id),['b']);
+ const departed=classify(events,at('15:00'));assert.equal(departed.counts.early,1);assert.equal(departed.people.length,2);
+ const overlap=classify([...events,{id:'same-leave',userIds:['a'],type:'病假',start:at('12:00'),end:at('14:00')}],at('12:59'));
+ assert.equal(overlap.people.length,2);assert.equal(overlap.counts.onWay,0);assert.equal(overlap.counts.away,2);
 });
 
 const {trackRegistration}=require('../dist/shared/registration-progress');
