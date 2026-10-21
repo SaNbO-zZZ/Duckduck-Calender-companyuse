@@ -13,6 +13,7 @@
 | `assets/duck-original-24/` | 公司原创 24 款鸭鸭表情包的解压源素材与清单。 |
 | `archive/visual-review/` | 天气、九只鸭鸭、窄屏和性能的截图与视频证据。 |
 | `docs/engineering/` | 各次排障、发布和性能优化的工程记录。 |
+| `scripts/refresh_release_roster.py` | 发版前从飞书正式通讯录核对全员，并向妙搭写入该版私聊名单；不保存名单到 Git。 |
 
 原始 60 MiB ZIP 与解压素材重复，因此未提交 ZIP；`node_modules/`、构建产物、日志、环境变量和本机授权文件也不进入仓库。首次运行请参考 `.env.example`，真实配置只放本机或飞书平台的安全配置中。
 

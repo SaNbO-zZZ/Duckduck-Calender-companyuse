@@ -5447,7 +5447,7 @@ export class CalendarController {
  @Get('weather') weather() {return this.calendar.weather();}
  @Get('registration-status') @Header('Cache-Control','no-store') async status(@Query('requestKey') requestKey:string,@Req() req:Request) {const userId=req.userContext?.userId;if(!userId)throw new UnauthorizedException('请使用公司飞书帐号登录。');return {result:await this.calendar.status(requestKey,userId)};}
  @Post('register') register(@Body() body:unknown,@Req() req:Request) {const userId=req.userContext?.userId;if(!userId)throw new UnauthorizedException('请使用公司飞书帐号登录。');return this.calendar.submit(body,userId);}
- @Get('release-announcement/preview') @CanRole(['release_announcer']) previewAnnouncement() {return this.announcements.preview();}
+ @Get('release-announcement/preview') @CanRole(['release_announcer']) previewAnnouncement(@Query('version') version:string) {return this.announcements.preview(version);}
  @Get('release-announcement/status') @CanRole(['release_announcer']) announcementStatus(@Query('version') version:string) {return this.announcements.summary(version);}
  @Post('release-announcement/publish') @CanRole(['release_announcer']) publishAnnouncement(@Body() body:unknown,@Req() req:Request) {const userId=req.userContext?.userId;if(!userId)throw new UnauthorizedException('请使用公司飞书帐号登录。');return this.announcements.publish(body,userId);}
 }
@@ -6194,9 +6194,9 @@ window.duckWeatherUnavailable = true;
 
 <script type="text/plain" data-runtime-source="server/modules/calendar/release-announcement.service.ts">
 import { BadGatewayException, BadRequestException, ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
-import { AuthorizationSDK, CapabilityService, DRIZZLE_DATABASE, type PostgresJsDatabase } from '@lark-apaas/fullstack-nestjs-core';
+import { CapabilityService, DRIZZLE_DATABASE, type PostgresJsDatabase } from '@lark-apaas/fullstack-nestjs-core';
 import { and, eq, inArray } from 'drizzle-orm';
-import { integer, pgTable, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
+import { integer, jsonb, pgTable, timestamp, uniqueIndex, varchar } from 'drizzle-orm/pg-core';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { userProfile } from '../../database/schema';
@@ -6207,7 +6207,7 @@ const payloadSchema = z.object({
   version: z.string().regex(/^v\d+\.\d+\.\d+$/),
   highlights: z.array(z.string().trim().min(2).max(90)).min(1).max(5),
 }).strict();
-type AnnouncementPayload = z.infer<typeof payloadSchema>;
+type AnnouncementPayload = z.infer&lt;typeof payloadSchema&gt;;
 
 const announcement = pgTable('calendar_release_announcement', {
   version: varchar('version', { length: 32 }).primaryKey(),
@@ -6221,47 +6221,46 @@ const delivery = pgTable('calendar_release_delivery', {
   recipient: varchar('recipient', { length: 32 }).notNull(),
   state: varchar('state', { length: 24 }).notNull().default('pending'),
   createdBy: userProfile('_created_by'),
-}, table => [uniqueIndex('calendar_release_delivery_version_recipient_key').on(table.version, table.recipient)]);
+}, table =&gt; [uniqueIndex('calendar_release_delivery_version_recipient_key').on(table.version, table.recipient)]);
+const roster = pgTable('calendar_release_roster', {
+  version: varchar('version', { length: 32 }).primaryKey(),
+  recipientIds: jsonb('recipient_ids').$type&lt;string[]&gt;().notNull(),
+  recipientCount: integer('recipient_count').notNull(),
+  verifiedAt: timestamp('verified_at', { withTimezone: true }).notNull(),
+  source: varchar('source', { length: 80 }).notNull(),
+});
 
 function content(input: AnnouncementPayload): string {
-  return `**${input.version} 更新上线啦**\n${input.highlights.map(item => `- ${item}`).join('\n')}\n\n[查看完整更新说明](${WIKI_URL})`;
+  return `**${input.version} 更新上线啦**\n${input.highlights.map(item =&gt; `- ${item}`).join('\n')}\n\n[查看完整更新说明](${WIKI_URL})`;
 }
 
 @Injectable()
 export class ReleaseAnnouncementService {
   private readonly logger = new Logger(ReleaseAnnouncementService.name);
   constructor(
-    private readonly authz: AuthorizationSDK,
     @Inject(CapabilityService) private readonly capability: CapabilityService,
     @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
   ) {}
 
-  private async recipients(): Promise<string[]> {
-    const ids = new Set<string>();
-    let total: number | undefined;
-    for (let page = 1; page <= 100; page++) {
-      const response = await this.authz.search.search({
-        query: '', pageSize: 100, page,
-        includeExternalUser: false, includeExternalGroup: false,
-      });
-      const resultSchema = z.object({result: z.object({userResult: z.object({
-        total: z.number().int().nonnegative(),
-        items: z.array(z.object({userID: z.string().regex(/^\d+$/)}).passthrough()),
-      })})});
-      const result = z.union([resultSchema, z.object({data: resultSchema})]).parse(response as unknown);
-      const batch = 'data' in result ? result.data.result.userResult : result.result.userResult;
-      if (total !== undefined && batch.total !== total) throw new BadGatewayException('通讯录人数在读取期间变化，请重新预览。');
-      total = batch.total;
-      for (const item of batch.items) ids.add(item.userID);
-      if (ids.size >= total) break;
-      if (batch.items.length === 0) throw new BadGatewayException('通讯录分页不完整，已停止群发。');
+  private async recipients(version: string): Promise&lt;string[]&gt; {
+    if (!/^v\d+\.\d+\.\d+$/.test(version)) throw new BadRequestException('版本号无效。');
+    const [snapshot] = await this.db.select().from(roster).where(eq(roster.version, version)).limit(1);
+    if (!snapshot) throw new BadGatewayException('尚未核对该版本的企业员工名单，已停止发送。');
+    const parsed = z.array(z.string().regex(/^\d+$/)).min(1).safeParse(snapshot.recipientIds);
+    if (!parsed.success) throw new BadGatewayException('员工名单格式异常，已停止发送。');
+    const ids = [...new Set(parsed.data)].sort();
+    if (ids.length !== snapshot.recipientCount || ids.length !== parsed.data.length) {
+      throw new BadGatewayException('员工名单人数不一致，已停止发送。');
     }
-    if (!total || ids.size !== total) throw new BadGatewayException('无法核实完整的企业内部员工名单，已停止群发。');
-    return [...ids].sort();
+    const ageMs = Date.now() - snapshot.verifiedAt.getTime();
+    if (ageMs &lt; 0 || ageMs &gt; 24 * 60 * 60 * 1000 || snapshot.source !== 'feishu-contact-v3') {
+      throw new BadGatewayException('员工名单已过期或来源不明，请重新核对。');
+    }
+    return ids;
   }
 
-  async preview() {
-    const ids = await this.recipients();
+  async preview(version: string) {
+    const ids = await this.recipients(version);
     return {recipientCount: ids.length, wikiUrl: WIKI_URL};
   }
 
@@ -6275,25 +6274,25 @@ export class ReleaseAnnouncementService {
       if (existing.payloadHash !== hash) throw new ConflictException('该版本已创建通知，请勿改写同一版本的通知内容。');
       return this.summary(input.version);
     }
-    const ids = await this.recipients();
-    const created = await this.db.transaction(async tx => {
+    const ids = await this.recipients(input.version);
+    const created = await this.db.transaction(async tx =&gt; {
       const [row] = await tx.insert(announcement).values({
         version: input.version, payloadHash: hash, expectedCount: ids.length, status: 'sending', createdBy: actorId,
       }).onConflictDoNothing({target: announcement.version}).returning();
       if (!row) return false;
-      await tx.insert(delivery).values(ids.map(recipient => ({version: input.version, recipient, state: 'pending', createdBy: actorId})));
+      await tx.insert(delivery).values(ids.map(recipient =&gt; ({version: input.version, recipient, state: 'pending', createdBy: actorId})));
       return true;
     });
     if (!created) return this.summary(input.version);
 
     // Batches stay well under the plugin's 200-user limit. A failed or uncertain
     // batch is never retried automatically: the platform may have accepted it.
-    for (let offset = 0; offset < ids.length; offset += 50) {
+    for (let offset = 0; offset &lt; ids.length; offset += 50) {
       const candidateIds = ids.slice(offset, offset + 50);
       const claimed = await this.db.update(delivery).set({state: 'sending'}).where(and(
         eq(delivery.version, input.version), inArray(delivery.recipient, candidateIds), eq(delivery.state, 'pending'),
       )).returning();
-      const recipientIds = claimed.map(item => item.recipient);
+      const recipientIds = claimed.map(item =&gt; item.recipient);
       if (recipientIds.length === 0) continue;
       try {
         const result = z.object({success: z.boolean()}).parse(await this.capability.load('duck-notify').call('send_feishu_message', {
@@ -6319,9 +6318,9 @@ export class ReleaseAnnouncementService {
     const [row] = await this.db.select().from(announcement).where(eq(announcement.version, version)).limit(1);
     if (!row) throw new BadRequestException('该版本尚未创建通知。');
     const rows = await this.db.select().from(delivery).where(eq(delivery.version, version));
-    const accepted = rows.filter(item => item.state === 'accepted').length;
+    const accepted = rows.filter(item =&gt; item.state === 'accepted').length;
     return {version, expected: row.expectedCount, accepted, needsReview: row.expectedCount - accepted,
-      message: rows.length === row.expectedCount && accepted === row.expectedCount ? '全部通知请求已被平台受理。' : '部分通知需人工核对，请勿重复发送。',
+      message: rows.length === row.expectedCount &amp;&amp; accepted === row.expectedCount ? '全部通知请求已被平台受理。' : '部分通知需人工核对，请勿重复发送。',
       wikiUrl: WIKI_URL};
   }
 }
@@ -6335,75 +6334,259 @@ import { isAxiosError } from 'axios';
 type Preview = {recipientCount: number; wikiUrl: string};
 type Result = {version: string; expected: number; accepted: number; needsReview: number; message: string; wikiUrl: string};
 const wikiUrl = 'https://ycn3zdw6f1p7.feishu.cn/wiki/I6uzwNwd7izfPCkQHJDcoxdRnRb';
-const explain = (error: unknown) => isAxiosError(error)
+const explain = (error: unknown) =&gt; isAxiosError(error)
   ? String(error.response?.data?.message || error.message)
   : '请求未确认，请先核对该版本的发送状态，不要重复提交。';
 
 export default function ReleaseAnnouncement() {
   const [version, setVersion] = useState('v3.2.1');
   const [lines, setLines] = useState('首页空状态换上团队新文案：Alpha Pulse 一定会更大更强、一切安好～\n新增版本更新私聊知会，更新摘要和完整日志一键可达');
-  const [preview, setPreview] = useState<Preview | null>(null);
-  const [result, setResult] = useState<Result | null>(null);
+  const [preview, setPreview] = useState&lt;Preview | null&gt;(null);
+  const [result, setResult] = useState&lt;Result | null&gt;(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const highlights = lines.split('\n').map(line => line.trim()).filter(Boolean);
-  const canSend = !!preview && !busy && /^v\d+\.\d+\.\d+$/.test(version) && highlights.length >= 1 && highlights.length <= 5;
+  const highlights = lines.split('\n').map(line =&gt; line.trim()).filter(Boolean);
+  const canSend = !!preview &amp;&amp; !busy &amp;&amp; /^v\d+\.\d+\.\d+$/.test(version) &amp;&amp; highlights.length &gt;= 1 &amp;&amp; highlights.length &lt;= 5;
 
-  const loadPreview = async () => {
+  const loadPreview = async () =&gt; {
     setBusy(true); setError(''); setPreview(null); setResult(null);
     try {
-      const response = await axiosForBackend<Preview>({url: '/api/calendar/release-announcement/preview', method: 'GET', timeout: 30000});
+      const response = await axiosForBackend&lt;Preview&gt;({url: '/api/calendar/release-announcement/preview', method: 'GET', params: {version}, timeout: 30000});
       setPreview(response.data);
     } catch (reason) { setError(explain(reason)); }
     finally { setBusy(false); }
   };
-  const publish = async () => {
+  const publish = async () =&gt; {
     if (!canSend) return;
     setBusy(true); setError('');
     try {
-      const response = await axiosForBackend<Result>({url: '/api/calendar/release-announcement/publish', method: 'POST',
+      const response = await axiosForBackend&lt;Result&gt;({url: '/api/calendar/release-announcement/publish', method: 'POST',
         data: {version, highlights}, timeout: 120000});
       setResult(response.data);
     } catch (reason) { setError(explain(reason)); }
     finally { setBusy(false); }
   };
-  const checkStatus = async () => {
+  const checkStatus = async () =&gt; {
     if (!/^v\d+\.\d+\.\d+$/.test(version)) return;
     setBusy(true); setError('');
     try {
-      const response = await axiosForBackend<Result>({url: '/api/calendar/release-announcement/status', method: 'GET', params: {version}});
+      const response = await axiosForBackend&lt;Result&gt;({url: '/api/calendar/release-announcement/status', method: 'GET', params: {version}});
       setResult(response.data);
     } catch (reason) { setError(explain(reason)); }
     finally { setBusy(false); }
   };
 
-  return <main className="min-h-dvh bg-[#f4f6fa] px-4 py-8 text-[#27303d]">
-    <section className="mx-auto max-w-2xl rounded-3xl border border-white bg-white p-6 shadow-xl shadow-slate-200/60 sm:p-9">
-      <NavLink className="text-sm text-blue-600 hover:underline" to="/">← 返回鸭鸭日历</NavLink>
-      <h1 className="mt-6 text-3xl font-bold">版本更新知会</h1>
-      <p className="mt-2 text-sm leading-6 text-slate-500">仅版本通知管理员可发送。请先发布应用并写好更新日志，再向公司内部员工私聊发送一次。</p>
-      <label className="mt-8 block text-sm font-semibold" htmlFor="release-version">版本号</label>
-      <input id="release-version" value={version} onChange={event => {setVersion(event.target.value); setPreview(null); setResult(null);}} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-400" placeholder="v3.2.1" />
-      <label className="mt-6 block text-sm font-semibold" htmlFor="release-notes">本次更新亮点（每行一条，最多五条）</label>
-      <textarea id="release-notes" value={lines} onChange={event => {setLines(event.target.value); setPreview(null); setResult(null);}} rows={5} className="mt-2 w-full resize-y rounded-xl border border-slate-200 px-4 py-3 leading-7 outline-none focus:border-blue-400" />
-      <div className="mt-5 rounded-2xl bg-blue-50 p-4 text-sm text-blue-900">
-        <p className="font-semibold">消息预览｜鸭鸭日历发布新版本-更新说明</p>
-        <p className="mt-2">{version} 更新上线啦</p>
-        <ul className="mt-2 list-disc pl-5">{highlights.map((line, index) => <li key={index}>{line}</li>)}</ul>
-        <a className="mt-2 inline-block text-blue-600 underline" href={wikiUrl} target="_blank" rel="noreferrer">查看完整更新说明</a>
-      </div>
-      <div className="mt-6 flex flex-wrap gap-3">
-        <button type="button" disabled={busy} onClick={loadPreview} className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold disabled:opacity-50">核对全员名单</button>
-        <button type="button" disabled={busy} onClick={checkStatus} className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold disabled:opacity-50">核对发送结果</button>
-      </div>
-      {preview && <p className="mt-5 text-sm">已核对 <strong>{preview.recipientCount}</strong> 位公司内部员工。文档链接：<a className="text-blue-600 underline" href={preview.wikiUrl}>更新日志</a></p>}
-      {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-      {result && <p role="status" className="mt-5 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{result.message} {result.accepted}/{result.expected} 个请求获平台受理；{result.needsReview} 个需核对。</p>}
-      <button type="button" disabled={!canSend} onClick={publish} className="mt-8 w-full rounded-full bg-gradient-to-r from-[#ff7a56] to-[#fb4f7d] px-5 py-3 font-bold text-white shadow-lg shadow-rose-200 disabled:cursor-not-allowed disabled:opacity-40">{busy ? '处理中…' : '发布版本更新知会'}</button>
-      <p className="mt-3 text-xs leading-5 text-slate-400">同一版本只建一次批次；平台受理不等于员工已读。请求状态不明时先核对，避免重复通知。</p>
-    </section>
-  </main>;
+  return &lt;main className="min-h-dvh bg-[#f4f6fa] px-4 py-8 text-[#27303d]"&gt;
+    &lt;section className="mx-auto max-w-2xl rounded-3xl border border-white bg-white p-6 shadow-xl shadow-slate-200/60 sm:p-9"&gt;
+      &lt;NavLink className="text-sm text-blue-600 hover:underline" to="/"&gt;← 返回鸭鸭日历&lt;/NavLink&gt;
+      &lt;h1 className="mt-6 text-3xl font-bold"&gt;版本更新知会&lt;/h1&gt;
+      &lt;p className="mt-2 text-sm leading-6 text-slate-500"&gt;仅版本通知管理员可发送。请先发布应用并写好更新日志，再向公司内部员工私聊发送一次。&lt;/p&gt;
+      &lt;label className="mt-8 block text-sm font-semibold" htmlFor="release-version"&gt;版本号&lt;/label&gt;
+      &lt;input id="release-version" value={version} onChange={event =&gt; {setVersion(event.target.value); setPreview(null); setResult(null);}} className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-400" placeholder="v3.2.1" /&gt;
+      &lt;label className="mt-6 block text-sm font-semibold" htmlFor="release-notes"&gt;本次更新亮点（每行一条，最多五条）&lt;/label&gt;
+      &lt;textarea id="release-notes" value={lines} onChange={event =&gt; {setLines(event.target.value); setPreview(null); setResult(null);}} rows={5} className="mt-2 w-full resize-y rounded-xl border border-slate-200 px-4 py-3 leading-7 outline-none focus:border-blue-400" /&gt;
+      &lt;div className="mt-5 rounded-2xl bg-blue-50 p-4 text-sm text-blue-900"&gt;
+        &lt;p className="font-semibold"&gt;消息预览｜鸭鸭日历发布新版本-更新说明&lt;/p&gt;
+        &lt;p className="mt-2"&gt;{version} 更新上线啦&lt;/p&gt;
+        &lt;ul className="mt-2 list-disc pl-5"&gt;{highlights.map((line, index) =&gt; &lt;li key={index}&gt;{line}&lt;/li&gt;)}&lt;/ul&gt;
+        &lt;a className="mt-2 inline-block text-blue-600 underline" href={wikiUrl} target="_blank" rel="noreferrer"&gt;查看完整更新说明&lt;/a&gt;
+      &lt;/div&gt;
+      &lt;div className="mt-6 flex flex-wrap gap-3"&gt;
+        &lt;button type="button" disabled={busy} onClick={loadPreview} className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold disabled:opacity-50"&gt;核对全员名单&lt;/button&gt;
+        &lt;button type="button" disabled={busy} onClick={checkStatus} className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold disabled:opacity-50"&gt;核对发送结果&lt;/button&gt;
+      &lt;/div&gt;
+      {preview &amp;&amp; &lt;p className="mt-5 text-sm"&gt;已核对 &lt;strong&gt;{preview.recipientCount}&lt;/strong&gt; 位公司内部员工。文档链接：&lt;a className="text-blue-600 underline" href={preview.wikiUrl}&gt;更新日志&lt;/a&gt;&lt;/p&gt;}
+      {error &amp;&amp; &lt;p role="alert" className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"&gt;{error}&lt;/p&gt;}
+      {result &amp;&amp; &lt;p role="status" className="mt-5 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900"&gt;{result.message} {result.accepted}/{result.expected} 个请求获平台受理；{result.needsReview} 个需核对。&lt;/p&gt;}
+      &lt;button type="button" disabled={!canSend} onClick={publish} className="mt-8 w-full rounded-full bg-gradient-to-r from-[#ff7a56] to-[#fb4f7d] px-5 py-3 font-bold text-white shadow-lg shadow-rose-200 disabled:cursor-not-allowed disabled:opacity-40"&gt;{busy ? '处理中…' : '发布版本更新知会'}&lt;/button&gt;
+      &lt;p className="mt-3 text-xs leading-5 text-slate-400"&gt;同一版本只建一次批次；平台受理不等于员工已读。请求状态不明时先核对，避免重复通知。&lt;/p&gt;
+    &lt;/section&gt;
+  &lt;/main&gt;;
 }
+</script>
+<script type="text/plain" data-runtime-source="database/004_release_roster_access.sql">
+BEGIN;
+ALTER POLICY "查看全部数据" ON calendar_release_roster
+  USING (current_setting('app.user_id', TRUE) = ((_created_by).user_id)::text);
+COMMENT ON TABLE calendar_release_roster IS '从飞书正式通讯录核对后的每版本员工快照；仅导入者与服务角色可读取，24 小时内有效。';
+COMMIT;
+</script>
+<script type="text/plain" data-runtime-source="database/003_release_roster.sql">
+BEGIN;
+CREATE TABLE calendar_release_roster (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  version varchar(32) NOT NULL UNIQUE,
+  recipient_ids jsonb NOT NULL,
+  recipient_count integer NOT NULL CHECK (recipient_count &gt; 0),
+  verified_at TIMESTAMP(3) WITH TIME ZONE NOT NULL,
+  source varchar(80) NOT NULL,
+  _created_at TIMESTAMP(3) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  _created_by user_profile,
+  _updated_at TIMESTAMP(3) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  _updated_by user_profile
+);
+ALTER TABLE calendar_release_roster ENABLE ROW LEVEL SECURITY;
+CREATE POLICY service_role_bypass_policy ON calendar_release_roster TO service_role USING (true);
+CREATE POLICY "修改全部数据" ON calendar_release_roster AS PERMISSIVE FOR ALL TO authenticated USING (false);
+CREATE POLICY "查看全部数据" ON calendar_release_roster AS PERMISSIVE FOR SELECT TO authenticated, anon USING (false);
+CREATE POLICY "修改本人数据" ON calendar_release_roster AS PERMISSIVE FOR ALL TO authenticated USING (false) WITH CHECK (false);
+COMMENT ON TABLE calendar_release_roster IS '从飞书正式通讯录核对后的每版本员工快照；仅服务端读取，24 小时内有效。';
+COMMIT;
+</script>
+<script type="text/plain" data-runtime-source="scripts/refresh_release_roster.py">
+#!/usr/bin/env python3
+"""Verify all internal Feishu employees and stage one release's private DM roster.
+
+Uses the operator's existing lark-cli user authorization. Prints only counts and a
+digest; employee IDs are stored only in the Miaoda database, never in this repo.
+"""
+
+import argparse
+import hashlib
+import json
+import re
+import subprocess
+import sys
+
+APP_ID = 'app_17fstqsqv1c'
+
+
+def cli(*args, input_text=None):
+    result = subprocess.run(['lark-cli', *args, '--json'], input=input_text,
+                            text=True, capture_output=True)
+    try:
+        body = json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        raise RuntimeError('lark-cli did not return JSON') from error
+    if result.returncode or not body.get('ok'):
+        detail = body.get('error', {})
+        raise RuntimeError(f"lark-cli failed: {detail.get('subtype', 'unknown')} {detail.get('message', '')}")
+    return body['data']
+
+
+def pages(path, params):
+    token = None
+    for _ in range(100):
+        query = dict(params)
+        if token:
+            query['page_token'] = token
+        data = cli('api', 'GET', path, '--as', 'user', '--params', json.dumps(query))
+        if 'has_more' not in data:
+            raise RuntimeError('directory pagination status missing')
+        yield data.get('items') or []
+        if not data['has_more']:
+            return
+        token = data.get('page_token')
+        if not token:
+            raise RuntimeError('directory pagination token missing')
+    raise RuntimeError('directory exceeded 100 pages')
+
+
+def company_open_ids():
+    departments = ['0']
+    seen_departments = set()
+    members = set()
+    while departments:
+        department = departments.pop(0)
+        if department in seen_departments:
+            continue
+        seen_departments.add(department)
+        for batch in pages(f'/open-apis/contact/v3/departments/{department}/children',
+                           {'department_id_type': 'department_id', 'page_size': 50}):
+            for child in batch:
+                child_id = child.get('department_id')
+                if not child_id or child_id == department:
+                    raise RuntimeError('invalid department entry')
+                departments.append(child_id)
+        for batch in pages('/open-apis/contact/v3/users/find_by_department',
+                           {'department_id': department, 'department_id_type': 'department_id',
+                            'user_id_type': 'open_id', 'page_size': 50}):
+            for user in batch:
+                open_id = user.get('open_id', '')
+                if not re.fullmatch(r'ou_[0-9a-f]+', open_id):
+                    raise RuntimeError('invalid employee open_id')
+                members.add(open_id)
+    if not members:
+        raise RuntimeError('empty employee directory')
+    return sorted(members), len(seen_departments)
+
+
+def miaoda_ids(open_ids):
+    converted = set()
+    for index in range(0, len(open_ids), 100):
+        batch = open_ids[index:index + 100]
+        data = cli('apps', '+user-id-convert', '--as', 'user',
+                   '--convert-type', 'open-id-to-miaoda', '--ids', ','.join(batch))
+        if data.get('missed') or len(data.get('items', [])) != len(batch):
+            raise RuntimeError('some employees could not be mapped to Miaoda users')
+        for entry in data['items']:
+            if entry.get('source_id') not in batch or not re.fullmatch(r'\d+', entry.get('target_id', '')):
+                raise RuntimeError('invalid Miaoda ID mapping')
+            converted.add(entry['target_id'])
+    if len(converted) != len(open_ids):
+        raise RuntimeError('duplicate Miaoda account mapping')
+    return sorted(converted)
+
+
+def operator_miaoda_id():
+    result = subprocess.run(['lark-cli', 'auth', 'status', '--json'],
+                            text=True, capture_output=True)
+    if result.returncode:
+        raise RuntimeError('lark-cli user authorization is unavailable')
+    try:
+        open_id = json.loads(result.stdout)['identities']['user']['openId']
+    except (KeyError, TypeError, json.JSONDecodeError) as error:
+        raise RuntimeError('could not resolve the operator account') from error
+    data = cli('apps', '+user-id-convert', '--as', 'user',
+               '--convert-type', 'open-id-to-miaoda', '--ids', open_id)
+    items = data.get('items', [])
+    if len(items) != 1 or items[0].get('source_id') != open_id or not re.fullmatch(r'\d+', items[0].get('target_id', '')):
+        raise RuntimeError('could not map the operator to a Miaoda user')
+    return items[0]['target_id']
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('version', help='published product version, e.g. v3.2.1')
+    parser.add_argument('--apply', action='store_true', help='write verified roster to the online app database')
+    args = parser.parse_args()
+    if not re.fullmatch(r'v\d+\.\d+\.\d+', args.version):
+        parser.error('invalid version')
+    open_ids, department_count = company_open_ids()
+    user_ids = miaoda_ids(open_ids)
+    operator = operator_miaoda_id()
+    digest = hashlib.sha256(','.join(user_ids).encode()).hexdigest()[:12]
+    print(f'version={args.version} departments={department_count} employees={len(user_ids)} digest={digest}')
+    if not args.apply:
+        print('Preview only. Use --apply after checking the count.')
+        return
+    # No IDs are printed. The transaction refuses to change a version after a
+    # notification batch exists, preserving the audit trail.
+    values = json.dumps(user_ids)
+    sql = f"""BEGIN;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM calendar_release_announcement WHERE version = '{args.version}') THEN
+    RAISE EXCEPTION 'announcement already exists for this version';
+  END IF;
+END $$;
+INSERT INTO calendar_release_roster (version, recipient_ids, recipient_count, verified_at, source, _created_by, _updated_by)
+VALUES ('{args.version}', '{values}'::jsonb, {len(user_ids)}, CURRENT_TIMESTAMP, 'feishu-contact-v3', ROW('{operator}')::user_profile, ROW('{operator}')::user_profile)
+ON CONFLICT (version) DO UPDATE SET recipient_ids = EXCLUDED.recipient_ids,
+  recipient_count = EXCLUDED.recipient_count, verified_at = EXCLUDED.verified_at,
+  source = EXCLUDED.source, _created_by = EXCLUDED._created_by,
+  _updated_by = EXCLUDED._updated_by;
+COMMIT;"""
+    cli('apps', '+db-execute', '--as', 'user', '--app-id', APP_ID,
+        '--environment', 'online', '--sql', '-', '--yes', input_text=sql)
+    print('Verified roster staged in the online app database.')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except RuntimeError as error:
+        print(str(error), file=sys.stderr)
+        raise SystemExit(1)
 </script>
 <script type="text/plain" data-runtime-source="database/002_release_announcement.sql">
 BEGIN;
@@ -6448,40 +6631,40 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { ReleaseAnnouncementService } = require('../dist/server/modules/calendar/release-announcement.service');
 
-function fixture(pages) {
-  const calls = [];
-  const authz = {search: {search: async input => {
-    calls.push(input);
-    return pages[input.page - 1];
-  }}};
-  return {service: new ReleaseAnnouncementService(authz, {}, {}), calls};
+function fixture(snapshot) {
+  let reads = 0;
+  const db = {select: () =&gt; ({from: () =&gt; ({where: () =&gt; ({limit: async () =&gt; {
+    reads += 1;
+    return snapshot ? [snapshot] : [];
+  }})})})};
+  return {service: new ReleaseAnnouncementService({}, db), reads: () =&gt; reads};
 }
-const result = (total, ids) => ({data: {result: {userResult: {total, items: ids.map(userID => ({userID}))}}}});
+const good = () =&gt; ({recipientIds: ['3', '1', '2'], recipientCount: 3,
+  verifiedAt: new Date(), source: 'feishu-contact-v3'});
 
-test('preflight pages through all internal employees and excludes external contacts', async () => {
-  const f = fixture([result(3, ['3', '1']), result(3, ['2'])]);
-  const preview = await f.service.preview();
+test('preflight accepts a fresh, complete and unique official-contact snapshot', async () =&gt; {
+  const f = fixture(good());
+  const preview = await f.service.preview('v3.2.1');
   assert.equal(preview.recipientCount, 3);
   assert.match(preview.wikiUrl, /I6uzwNwd7izfPCkQHJDcoxdRnRb/);
-  assert.deepEqual(f.calls.map(call => call.page), [1, 2]);
-  assert(f.calls.every(call => call.includeExternalUser === false && call.query === ''));
+  assert.equal(f.reads(), 1);
 });
 
-test('preflight refuses partial, inconsistent or malformed directory data', async () => {
-  for (const pages of [
-    [result(3, ['1']), result(3, [])],
-    [result(3, ['1']), result(4, ['2'])],
-    [result(1, ['ou_external'])],
-    [result(0, [])],
-  ]) {
-    await assert.rejects(fixture(pages).service.preview());
+test('preflight refuses missing, stale, duplicate and malformed snapshots', async () =&gt; {
+  const stale = {...good(), verifiedAt: new Date(Date.now() - 25 * 60 * 60 * 1000)};
+  for (const snapshot of [null, stale,
+    {...good(), recipientIds: ['1', '1', '2']},
+    {...good(), recipientCount: 4},
+    {...good(), recipientIds: ['ou_external', '1', '2']},
+    {...good(), source: 'unverified'}]) {
+    await assert.rejects(fixture(snapshot).service.preview('v3.2.1'));
   }
 });
 
-test('invalid release details are rejected before any directory lookup or notification', async () => {
-  const f = fixture([]);
+test('invalid release details are rejected before directory lookup or notification', async () =&gt; {
+  const f = fixture(good());
   await assert.rejects(f.service.publish({version: 'v3.2.1', highlights: []}, '123'), /请填写有效版本号/);
-  assert.equal(f.calls.length, 0);
+  assert.equal(f.reads(), 0);
 });
 </script>
 <script type="text/plain" data-runtime-source="package.json">
