@@ -545,8 +545,8 @@
   <main>
     <section class="hero">
       <p class="greeting" id="greeting">正在读取北京时间…</p>
-      <h1>今天 <span class="number">0</span> 位同事不在</h1>
-      <p class="subtitle">今天大家都在岗 💪</p>
+      <h1>此刻没有进行中的知会</h1>
+      <p class="subtitle">登记只是知会，不作考勤判断 🦆</p>
       <div class="pills">
         <span class="pill" id="weatherIcon">☀️ 晴<small>演示</small></span
         ><span class="pill">🇨🇳 节假日与调休标记</span
@@ -560,8 +560,8 @@
     </section>
     <div class="cards">
       <section class="card">
-        <h2>此刻不在岗</h2>
-        <div class="empty"><span>☕️</span>今天大家都在岗</div>
+        <h2>此刻的知会</h2>
+        <div class="empty"><span>☕️</span>此刻没有进行中的知会</div>
       </section>
       <section class="card">
         <div class="month">
@@ -571,7 +571,7 @@
         <div class="grid" id="calendar"></div>
         <div class="legend">
           <span><i style="background: #ff8a5c"></i>年假</span
-          ><span><i style="background: #7c8cf0"></i>调休</span
+          ><span><i style="background: #7c8cf0"></i>出差</span
           ><span><i style="background: #f2b84b"></i>事假</span
           ><span><i style="background: #4cb7a5"></i>病假</span
           ><span><i style="background: #ef6f9a"></i>今天不想上班</span>
@@ -2104,9 +2104,17 @@ const u = b64(e.d), out = new Uint8Array(e.w * e.h); let p = 0;
 for (let i = 0; i < u.length; i++) { const v = u[i] & 63, k = u[i] >> 6; const n = k < 3 ? k + 1 : u[++i] + 4; out.fill(v, p, p + n); p += n; }
 return out;
 }
-for (const k in EMBED_RAW) EMB[k] = { frames: EMBED_RAW[k].frames.map(e => ({ w: e.w, h: e.h, x: e.x, y: e.y, px: unpack(e) })), eyes: EMBED_RAW[k].eyes || [] };
+function installEmbeds(raw) {
+  const names = ["slump", "sleep", "melon", "lie"];
+  if (!raw || !names.every(k => Array.isArray(raw[k]?.frames) && raw[k].frames.length)) return false;
+  for (const k of names) EMB[k] = { frames: raw[k].frames.map(e => ({ w: e.w, h: e.h, x: e.x, y: e.y, px: unpack(e) })), eyes: raw[k].eyes || [] };
+  return true;
+}
+installEmbeds(EMBED_RAW);
 function embed(name, f, dy) {
-const fr = EMB[name].frames[f % EMB[name].frames.length];
+const entry = EMB[name];
+if (!entry) return;
+const fr = entry.frames[f % entry.frames.length];
 for (let y = 0; y < fr.h; y++) for (let x = 0; x < fr.w; x++) {
 const v = fr.px[y * fr.w + x]; if (!v) continue;
 const X = AX - 32 + fr.x + x, Y = AY - 60 + fr.y + y + dy;
@@ -2243,7 +2251,7 @@ S(xx, yy, WATER); S(xx, yy + 1, WATER);
 return { w: CW, h: CHh, px, ax: x0, ay: AY - CY, posts: [4, width - 4, ...posts].sort((p, q) => p - q) };
 }
 
-return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, SIZE: { w: SW, h: SH, ax: AX, ay: AY } };
+return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, installEmbeds, SIZE: { w: SW, h: SH, ax: AX, ay: AY } };
 })();
     // ================= 0 结束：内嵌像素美术模块 =================
 
@@ -4324,6 +4332,14 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, SI
         if (isStill()) renderFx(0, false);
         updateStats();
       }
+      window.duckInstallSprites = (raw) => {
+        if (!DuckArt.installEmbeds(raw)) return false;
+        duckSprites.clear();
+        duckExtents.clear();
+        if (duckScene) duckSetScene(duckScene.family, duckScene.phase, false);
+        duckRefresh();
+        return true;
+      };
       function duckSetSeed(n) {
         n = Math.floor(Number(n));
         if (!Number.isFinite(n)) return duckSeed;
@@ -5195,7 +5211,17 @@ export interface CalendarConfig { hrUserId: string; serverTime: number; }
 export interface CalendarPerson { id: string; name: string; avatar?: string; }
 export interface CalendarEvent { id: string; userIds: string[]; type: string; start: number; end: number; }
 export interface Holiday { date: string; name: string; type: string; }
-export interface CalendarData { events: CalendarEvent[]; activeEvents: CalendarEvent[]; people: CalendarPerson[]; todayUserIds: string[]; holidays: Holiday[]; serverTime: number; }
+export interface CalendarData {
+  events: CalendarEvent[];
+  /** All notices overlapping the current Beijing date; clients resolve exact-time presence. */
+  todayEvents: CalendarEvent[];
+  activeEvents: CalendarEvent[];
+  people: CalendarPerson[];
+  /** @deprecated Historical all-day set. Do not use for current presence. */
+  todayUserIds: string[];
+  holidays: Holiday[];
+  serverTime: number;
+}
 export interface RegistrationRequest { requestKey: string; kind: RegistrationKind; mentorId: string; leaveType: string; start: string; end: string; arrivalTime: string; arrivalDate?: string; }
 export interface RegistrationResult { recorded: boolean; recordId: string | null; notifications: 'sent' | 'sending' | 'pending_review'; processing: boolean; message: string; }
 export interface WeatherData { available: boolean; scene: string; windSpeed: number; windFrom: number; cloud: number; validTime: string; updatedAt: string; source: string; }
@@ -5302,17 +5328,18 @@ export class CalendarService {
    ()=&gt;this.records('duck-leave',{filter:this.overlap(today,today+86400000),fieldNames:['申请人','类型','开始时间','结束时间','状态']}),
    ()=&gt;this.records('duck-attendance',{filter:this.overlap(today,today+86400000),fieldNames:['申请人','登记类型','开始时间','结束时间','状态']})
   ]);
-  const a=activeLeaves.flatMap(r=&gt;userIds(r.record['申请人'])),b=activeAttendance.flatMap(r=&gt;userIds(r.record['申请人']));
-  const events:CalendarEvent[]=[...leaves,...attendance].map(r=&gt;({id:r.id,userIds:userIds(r.record['申请人']),type:workLabel(z.string().parse(r.record['类型'] ?? r.record['登记类型'])),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])}));
-  const activeEvents:CalendarEvent[]=[...activeLeaves,...activeAttendance].map(r=&gt;({id:r.id,userIds:userIds(r.record['申请人']),type:workLabel(z.string().parse(r.record['类型'] ?? r.record['登记类型'])),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])})).filter(e=&gt;e.start&lt;=now&amp;&amp;e.end&gt;now);
+  const toEvent=(r:z.infer&lt;typeof recordSchema&gt;):CalendarEvent=&gt;({id:r.id,userIds:userIds(r.record['申请人']),type:workLabel(z.string().parse(r.record['类型'] ?? r.record['登记类型'])),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])});
+  const events:CalendarEvent[]=[...leaves,...attendance].map(toEvent);
+  const todayEvents:CalendarEvent[]=[...activeLeaves,...activeAttendance].map(toEvent);
+  const activeEvents:CalendarEvent[]=todayEvents.filter(e=&gt;e.start&lt;=now&amp;&amp;e.end&gt;now);
   const holidayData:Holiday[]=holidays.map(r=&gt;({date:dayText(z.number().parse(r.record['日期'])),name:textValue(r.record['节日名']),type:z.string().parse(r.record['类型'])}));
-  const ids=[...new Set([...events,...activeEvents].flatMap(e=&gt;e.userIds).concat(a,b))];
+  const ids=[...new Set([...events,...todayEvents].flatMap(e=&gt;e.userIds))];
   const people:CalendarData['people']=[];
   for(let i=0;i&lt;ids.length;i+=100) {
    const batch=ids.slice(i,i+100),users=await this.authn.listUsersByIds(batch);
    users.forEach((u,j)=&gt;people.push({id:batch[j],name:u?.name?.zh_cn||u?.name?.en_us||'帐号暂不可用',avatar:u?.avatar?.image?.large}));
   }
-  return {events,activeEvents,people,holidays:holidayData,todayUserIds:[...new Set([...a,...b])],serverTime:now};
+  return {events,todayEvents,activeEvents,people,holidays:holidayData,todayUserIds:[...new Set(todayEvents.flatMap(e=&gt;e.userIds))],serverTime:Date.now()};
  }
  private result(row:typeof calendarSubmission.$inferSelect):RegistrationResult {
   const recorded=!!row.recordId&amp;&amp;row.recordState==='created';
@@ -5447,6 +5474,7 @@ import { zhCN } from 'date-fns/locale';
 import { calendarDocument } from './calendar-document';
 import { trackRegistration } from '../../../../shared/registration-progress';
 import type { CalendarConfig, CalendarData, RegistrationKind, RegistrationRequest, RegistrationResult, RegistrationStatus, WeatherData } from '../../../../shared/api.interface';
+const initialDocument = calendarDocument.replace('/*__DUCK_SPRITE_DATA__*/', '{}');
 const today = (ms=Date.now()) =&gt; new Date(ms+480*60000).toISOString().slice(0,10);
 const dateLabel = (d:Date) =&gt; `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const timeText = (ms:number) =&gt; new Date(ms+480*60000).toISOString().slice(0,16).replace('T',' ')+'（北京时间）';
@@ -5497,9 +5525,10 @@ function RegisterForm({kind,config,onDone,onClose,onBusy}:{kind:RegistrationKind
  &lt;/form&gt;&lt;/Form&gt;;
 }
 export default function Calendar(){
- const frame=useRef&lt;HTMLIFrameElement&gt;(null),[documentText,setDocumentText]=useState(''),[frameReady,setFrameReady]=useState(false),[config,setConfig]=useState&lt;CalendarConfig|null&gt;(null),[configError,setConfigError]=useState(''),[kind,setKind]=useState&lt;RegistrationKind|null&gt;(null),[month,setMonth]=useState(today().slice(0,7)),[data,setData]=useState&lt;CalendarData|null&gt;(null),dataMonth=useRef(''),[dataError,setDataError]=useState(false),[weather,setWeather]=useState&lt;WeatherData|null&gt;(null),[revision,setRevision]=useState(0),[assetError,setAssetError]=useState(false),[formBusy,setFormBusy]=useState(false);
+ const frame=useRef&lt;HTMLIFrameElement&gt;(null),[frameReady,setFrameReady]=useState(false),[sprites,setSprites]=useState&lt;unknown|null&gt;(null),[config,setConfig]=useState&lt;CalendarConfig|null&gt;(null),[configError,setConfigError]=useState(''),[kind,setKind]=useState&lt;RegistrationKind|null&gt;(null),[month,setMonth]=useState(today().slice(0,7)),[data,setData]=useState&lt;CalendarData|null&gt;(null),dataMonth=useRef(''),[dataError,setDataError]=useState(false),[weather,setWeather]=useState&lt;WeatherData|null&gt;(null),[revision,setRevision]=useState(0),[assetError,setAssetError]=useState(false),[formBusy,setFormBusy]=useState(false);
  const post=useCallback((message:Record&lt;string,unknown&gt;)=&gt;frame.current?.contentWindow?.postMessage({duckCalendar:true,...message},location.origin),[]);
- useEffect(()=&gt;{let active=true;axiosForBackend&lt;unknown&gt;({url:'/api/calendar/sprites',method:'GET'}).then(r=&gt;r.data).then(sprite=&gt;{if(active)setDocumentText(calendarDocument.replace('/*__DUCK_SPRITE_DATA__*/',JSON.stringify(sprite).replace(/&lt;/g,'\\u003c')));}).catch(()=&gt;{if(active)setAssetError(true);});return()=&gt;{active=false;};},[]);
+ // The calendar can render and accept notices while the decorative sprites load.
+ useEffect(()=&gt;{let active=true;axiosForBackend&lt;unknown&gt;({url:'/api/calendar/sprites',method:'GET'}).then(r=&gt;{if(active)setSprites(r.data);}).catch(()=&gt;{if(active)setAssetError(true);});return()=&gt;{active=false;};},[]);
  useEffect(()=&gt;{let active=true;axiosForBackend&lt;CalendarConfig&gt;({url:'/api/calendar/config',method:'GET'}).then(r=&gt;{if(active){setConfig(r.data);setConfigError('');}}).catch(()=&gt;{if(active)setConfigError('固定人事配置读取失败，请稍后重试。');});return()=&gt;{active=false;};},[revision]);
  useEffect(()=&gt;{let active=true;setDataError(false);axiosForBackend&lt;CalendarData&gt;({url:'/api/calendar/month',method:'GET',params:{month},timeout:120000}).then(r=&gt;{if(active){dataMonth.current=month;setData(r.data);}}).catch(()=&gt;{if(active)setDataError(true);});return()=&gt;{active=false;};},[month,revision]);
  useEffect(()=&gt;{let active=true;const load=()=&gt;{if(document.hidden)return;axiosForBackend&lt;WeatherData&gt;({url:'/api/calendar/weather',method:'GET',timeout:15000}).then(r=&gt;{if(active)setWeather(r.data);}).catch(()=&gt;{if(active)setWeather({available:false,scene:'overcast',windSpeed:0,windFrom:0,cloud:.9,validTime:'',updatedAt:'',source:'天气暂不可用'});});};load();const timer=setInterval(load,5*60000+Math.random()*60000);document.addEventListener('visibilitychange',load);return()=&gt;{active=false;clearInterval(timer);document.removeEventListener('visibilitychange',load);};},[]);
@@ -5507,8 +5536,9 @@ export default function Calendar(){
  useEffect(()=&gt;{const listener=(e:MessageEvent&lt;unknown&gt;)=&gt;{if(e.source!==frame.current?.contentWindow||e.origin!==location.origin)return;const parsed=z.object({duckCalendar:z.literal(true),action:z.string(),kind:z.enum(['leave','late','early']).optional(),month:z.string().optional()}).safeParse(e.data);if(!parsed.success)return;const m=parsed.data;if(m.action==='ready')setFrameReady(true);if(m.action==='register'&amp;&amp;m.kind)setKind(m.kind);if(m.action==='refresh')setRevision(r=&gt;r+1);if(m.action==='month'&amp;&amp;m.month&amp;&amp;/^20\d{2}-(0[1-9]|1[0-2])$/.test(m.month))setMonth(m.month);};window.addEventListener('message',listener);return()=&gt;window.removeEventListener('message',listener);},[]);
  useEffect(()=&gt;{if(!frameReady)return;post(dataError?{action:'error'}:data&amp;&amp;dataMonth.current===month?{action:'calendar',data,month}:{action:'loading',month});},[data,dataError,month,frameReady,post]);
  useEffect(()=&gt;{if(frameReady&amp;&amp;weather)post({action:'weather',data:weather});},[frameReady,weather,post]);
+ useEffect(()=&gt;{if(frameReady&amp;&amp;sprites)post({action:'sprites',data:sprites});},[frameReady,sprites,post]);
  const description=useMemo(()=&gt;kind==='leave'?'填写不在岗时间，通知 Mentor 和人事':kind==='late'?'10 点以后到达公司，可提前选择日期':'今天提前离开，向同事知会一声',[kind]);
- return &lt;&gt;&lt;div style={{height:'100dvh',width:'100%',background:'#e7edf4'}}&gt;{documentText?&lt;iframe ref={frame} title="鸭鸭日历" srcDoc={documentText} sandbox="allow-scripts allow-same-origin allow-popups" style={{border:0,width:'100%',height:'100%',display:'block'}}/&gt;:&lt;div className="flex h-full flex-col items-center justify-center gap-4"&gt;&lt;h1 className="text-2xl font-bold"&gt;鸭鸭日历&lt;/h1&gt;&lt;p&gt;{assetError?'天气插画资源暂不可用，请重新加载。':'正在加载天气与鸭鸭…'}&lt;/p&gt;{assetError&amp;&amp;&lt;Button onClick={()=&gt;location.reload()}&gt;重新加载&lt;/Button&gt;}&lt;/div&gt;}&lt;/div&gt;
+ return &lt;&gt;&lt;div style={{height:'100dvh',width:'100%',background:'#e7edf4'}}&gt;&lt;iframe ref={frame} title="鸭鸭日历" srcDoc={initialDocument} sandbox="allow-scripts allow-same-origin allow-popups" style={{border:0,width:'100%',height:'100%',display:'block'}}/&gt;{assetError&amp;&amp;&lt;div role="status" className="fixed bottom-3 right-3 rounded-xl bg-white/90 px-3 py-2 text-xs text-slate-600"&gt;鸭鸭插画暂未加载，日历可正常使用&lt;/div&gt;}&lt;/div&gt;
  &lt;Dialog open={!!kind} onOpenChange={open=&gt;{if(!open&amp;&amp;!formBusy)setKind(null);}}&gt;&lt;DialogContent className="max-h-[92dvh] overflow-y-auto rounded-[28px] border-white bg-white/95 p-6 sm:max-w-[490px]"&gt;&lt;DialogHeader&gt;&lt;DialogTitle className="text-2xl font-bold text-[#322d28]"&gt;{kind?title[kind]:''}&lt;/DialogTitle&gt;&lt;DialogDescription&gt;{description}&lt;/DialogDescription&gt;&lt;/DialogHeader&gt;{kind&amp;&amp;config?&lt;RegisterForm key={kind} kind={kind} config={config} onDone={()=&gt;setRevision(r=&gt;r+1)} onClose={()=&gt;setKind(null)} onBusy={setFormBusy}/&gt;:&lt;p role="status"&gt;{configError||'正在读取后台人事配置…'}{configError&amp;&amp;&lt;Button onClick={()=&gt;setRevision(r=&gt;r+1)} variant="outline" className="ml-3"&gt;重试&lt;/Button&gt;}&lt;/p&gt;}&lt;/DialogContent&gt;&lt;/Dialog&gt;&lt;/&gt;;
 }
 </script>
@@ -5848,13 +5878,33 @@ export default function RoutesComponent() { return &lt;Routes&gt;&lt;Route index
 window.__duckRuntime = true;
 window.duckWeatherUnavailable = true;
 (() =&gt; {
- let data=null, currentMonth='', hasError=false;
+ let data=null, currentMonth='', hasError=false, transitionTimer=null;
  const runtimeOrigin=parent.location.origin;
  const day=ms=&gt;new Date(ms+480*60000).toISOString().slice(0,10);
  const send=payload=&gt;parent.postMessage({duckCalendar:true,...payload},runtimeOrigin);
  const colors={'年假':'#ff8a5c','调休':'#7c8cf0','出差':'#7c8cf0','事假':'#f2b84b','病假':'#4cb7a5','今天不想上班':'#ef6f9a','晚到':'#a399eb','提前离开':'#60b5cd'};
  const txt=(tag,value,className)=&gt;{const el=document.createElement(tag);el.textContent=value;if(className)el.className=className;return el;};
  const person=(id,type)=&gt;{const p=data?.people.find(p=&gt;p.id===id),item=txt('div','','live-person');if(p?.avatar&amp;&amp;p.avatar.startsWith('https://')){const img=document.createElement('img');img.src=p.avatar;img.alt='';item.append(img);}else item.append(txt('span',(p?.name||'同事').slice(0,1),'initial'));item.append(txt('strong',p?.name||'帐号暂不可用'),txt('small',type));return item;};
+ const classifyPresence=(events,now)=&gt;{
+  const rank={onWay:1,early:2,away:3},people=new Map();let nextTransition=Infinity;
+  for(const e of events){
+   if(e.start&gt;now)nextTransition=Math.min(nextTransition,e.start);
+   if(e.end&gt;now)nextTransition=Math.min(nextTransition,e.end);
+   if(e.start&gt;now||e.end&lt;=now)continue;
+   const kind=e.type==='晚到'||e.type==='迟到'?'onWay':e.type==='提前离开'||e.type==='早退'?'early':'away';
+   for(const id of e.userIds){const previous=people.get(id);if(!previous||rank[kind]&gt;rank[previous.kind])people.set(id,{id,kind,event:e});}
+  }
+  const counts={onWay:0,away:0,early:0};for(const p of people.values())counts[p.kind]++;
+  return {people:[...people.values()],counts,nextTransition};
+ };
+ window.duckClassifyPresence=classifyPresence;
+ const countPhrase=n=&gt;n===1?'一位':`${n} 位`;
+ const hhmm=ms=&gt;new Date(ms+480*60000).toISOString().slice(11,16);
+ const summary=counts=&gt;[
+  counts.onWay?`有${countPhrase(counts.onWay)}同事正在赶来的路上 🦆💨`:'',
+  counts.away?`有${countPhrase(counts.away)}同事此刻不在工位，鸭鸭替 TA 看着 ☕️`:'',
+  counts.early?`有${countPhrase(counts.early)}同事先去拯救世界了 🌍`:'',
+ ].filter(Boolean).join(' · ');
  window.duckRenderCalendar=(date,now)=&gt;{
   const month=currentMonth||`${date.y}-${String(date.m).padStart(2,'0')}`,[y,m]=month.split('-').map(Number),cal=document.getElementById('calendar');if(!cal)return;
   cal.replaceChildren();document.getElementById('calendarMonth').textContent=`${y} 年 ${m} 月`;document.getElementById('calendarCaption').textContent='北京时间';
@@ -5873,12 +5923,18 @@ window.duckWeatherUnavailable = true;
  };
  const render=()=&gt;{
   const now=Date.now(),n=new Date(now+480*60000),date={y:n.getUTCFullYear(),m:n.getUTCMonth()+1,d:n.getUTCDate()};window.duckRenderCalendar(date,date);
+  if(transitionTimer){clearTimeout(transitionTimer);transitionTimer=null;}
+  const presence=classifyPresence(data?.todayEvents||data?.activeEvents||[],now),{counts,people,nextTransition}=presence,total=people.length;
+  if(Number.isFinite(nextTransition))transitionTimer=setTimeout(render,Math.max(0,nextTransition-now)+50);
+  const headline=document.querySelector('.hero h1'),number=txt('span',data?String(total):'—','number');
+  if(!data)headline.replaceChildren(txt('span',hasError?'日历暂不可用':'正在读取团队日历…'));
+  else if(!total)headline.replaceChildren(txt('span','此刻没有进行中的知会'));
+  else headline.replaceChildren(document.createTextNode('此刻 '),number,document.createTextNode(counts.onWay===total?' 位同事正在路上':counts.away===total?' 位同事不在工位':counts.early===total?' 位同事先走一步':' 位同事有新动态'));
+  document.querySelector('.subtitle').textContent=data?(total?summary(counts):'登记只是知会，不作考勤判断 🦆'):(hasError?'日历数据暂不可用，请稍后重试':'正在读取团队日历…');
   const empty=document.querySelector('.empty');empty.replaceChildren();
-  document.querySelector('.number').textContent=data?String(data.todayUserIds.length):'—';
-  document.querySelector('.subtitle').textContent=data?(data.todayUserIds.length?'大家都很好，只是今天没在工位 ☕️':'今天大家都在岗 💪'):(hasError?'日历数据暂不可用，请稍后重试':'正在读取团队日历…');
-  const current=data?.activeEvents||[];const grouped=new Map();for(const e of current)for(const id of e.userIds){const list=grouped.get(id)||[];if(!list.includes(e.type))list.push(e.type);grouped.set(id,list);}
-  if(data&amp;&amp;grouped.size){empty.classList.add('live-people');for(const [id,types]of grouped)empty.append(person(id,types.join(' · ')));}
-  else {empty.classList.remove('live-people');empty.append(txt('span','☕️'),txt('div',data?'此刻大家都在岗':hasError?'数据暂不可用':'正在读取…'));}
+  document.querySelector('.card h2').textContent='此刻的知会';
+  if(data&amp;&amp;total){empty.classList.add('live-people');for(const p of people){const label=p.kind==='onWay'?`正在赶来 · 预计 ${hhmm(p.event.end)}`:p.kind==='early'?'先去拯救世界了':`${p.event.type} · 暂不在工位`;empty.append(person(p.id,label));}}
+  else {empty.classList.remove('live-people');empty.append(txt('span','☕️'),txt('div',data?'此刻没有进行中的知会':hasError?'数据暂不可用':'正在读取…'));}
   if(!data&amp;&amp;hasError){const retry=txt('button','重试','runtime-retry');retry.onclick=()=&gt;send({action:'refresh'});empty.append(retry);}
  };
  document.addEventListener('click',e=&gt;{const id=e.target.closest('button')?.id;const kind={leaveAction:'leave',lateAction:'late',earlyAction:'early'}[id];if(kind){e.preventDefault();e.stopImmediatePropagation();send({action:'register',kind});}},true);
@@ -5887,6 +5943,7 @@ window.duckWeatherUnavailable = true;
   if(e.data.action==='calendar'){data=e.data.data;currentMonth=e.data.month;hasError=false;render();}
   if(e.data.action==='loading'){data=null;currentMonth=e.data.month;hasError=false;render();}
   if(e.data.action==='error'){data=null;hasError=true;render();}
+  if(e.data.action==='sprites'&amp;&amp;window.duckInstallSprites)window.duckInstallSprites(e.data.data);
   if(e.data.action==='weather'){
    const weather=e.data.data;window.duckWeatherUnavailable=!weather.available;
    if(window.duckApplyForecast)window.duckApplyForecast(weather);
@@ -5895,7 +5952,7 @@ window.duckWeatherUnavailable = true;
   }
  });
  document.addEventListener('DOMContentLoaded',()=&gt;{
-  document.body.classList.add('clean');document.querySelector('.note').innerHTML='鸭鸭是天气装饰，不代表具体同事。合肥天气数据来源：&lt;a href="https://www.nmc.cn/publish/forecast/AAH/hefei.html" target="_blank" rel="noopener"&gt;中央气象台&lt;/a&gt;；画面为艺术化演绎，阵风为视觉模拟。';
+  document.body.classList.add('clean');document.querySelector('.note').innerHTML='日历登记只用于知会，不作考勤判断。鸭鸭是天气装饰，不代表具体同事。合肥天气数据来源：&lt;a href="https://www.nmc.cn/publish/forecast/AAH/hefei.html" target="_blank" rel="noopener"&gt;中央气象台&lt;/a&gt;；画面为艺术化演绎，阵风为视觉模拟。';
   const nav=txt('div','','runtime-month-nav');for(const [label,delta]of [['‹',-1],['今天',0],['›',1]]){const b=txt('button',label);b.type='button';b.setAttribute('aria-label',delta===-1?'上个月':delta===1?'下个月':'回到今天');b.onclick=()=&gt;{const [y,m]=(currentMonth||day(Date.now()).slice(0,7)).split('-').map(Number),d=delta?new Date(Date.UTC(y,m-1+delta,1)):new Date(Date.now()+480*60000);send({action:'month',month:`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`});};nav.append(b);}document.querySelector('.month').append(nav);
   render();setInterval(()=&gt;{if(!document.hidden)render();},30000);send({action:'ready'});
  });
@@ -6341,7 +6398,7 @@ test('same mentor and HR receive only one notification',async()=&gt;{const f=fix
 
 test('audit ownership comes from the authenticated actor and is included in Drizzle SQL',async()=&gt;{const f=fixture();await f.service.submit(payload(),ids.actor);assert.equal(f.getRow().createdBy,ids.actor);assert.equal(f.getRow().updatedBy,ids.actor);const {drizzle}=require('drizzle-orm/postgres-js');const {calendarSubmission}=require('../dist/server/database/schema');const query=drizzle({}).insert(calendarSubmission).values({...f.getRow(),id:undefined}).toSQL();assert.match(query.sql,/\"_created_by\"/);assert.match(query.sql,/\"_updated_by\"/);assert.equal(query.params.filter(v=&gt;v===ids.actor).length,3);});
 
-test('current absence uses exact instants within the day, including an arrival boundary',async(ctx)=&gt;{const now=Date.parse('2026-10-10T13:00:00+08:00');let testNow=now;ctx.mock.method(Date,'now',()=&gt;testNow);const cap={load:id=&gt;({call:async(action)=&gt;{if(action==='aggregateQuery')return {result:[],hasMore:false};if(id==='duck-holiday')return {records:[],hasMore:false};if(id==='duck-leave')return {records:[],hasMore:false};return {records:[['ended',now-3600000,now],['ongoing',now-3600000,now+3600000],['future',now+3600000,now+7200000]].map(([id,start,end])=&gt;({id,record:{申请人:[1874391929959513],登记类型:'迟到',开始时间:start,结束时间:end}})),hasMore:false};}})};const auth={listUsersByIds:async users=&gt;users.map(()=&gt;({name:{zh_cn:'员工'}}))};const service=new CalendarService(cap,auth,{}, {},{});const data=await service.month('2026-10');assert.deepEqual(data.activeEvents.map(e=&gt;e.id),['ongoing']);testNow=now+3600000;assert.deepEqual((await service.month('2026-10')).activeEvents.map(e=&gt;e.id),['future']);});
+test('current absence uses exact instants within the day, including an arrival boundary',async(ctx)=&gt;{const now=Date.parse('2026-10-10T13:00:00+08:00');let testNow=now;ctx.mock.method(Date,'now',()=&gt;testNow);const cap={load:id=&gt;({call:async(action)=&gt;{if(action==='aggregateQuery')return {result:[],hasMore:false};if(id==='duck-holiday')return {records:[],hasMore:false};if(id==='duck-leave')return {records:[],hasMore:false};return {records:[['ended',now-3600000,now],['ongoing',now-3600000,now+3600000],['future',now+3600000,now+7200000]].map(([id,start,end])=&gt;({id,record:{申请人:[1874391929959513],登记类型:'迟到',开始时间:start,结束时间:end}})),hasMore:false};}})};const auth={listUsersByIds:async users=&gt;users.map(()=&gt;({name:{zh_cn:'员工'}}))};const service=new CalendarService(cap,auth,{}, {},{});const data=await service.month('2026-10');assert.deepEqual(data.todayEvents.map(e=&gt;e.id),['ended','ongoing','future']);assert.deepEqual(data.activeEvents.map(e=&gt;e.id),['ongoing']);testNow=now+3600000;assert.deepEqual((await service.month('2026-10')).activeEvents.map(e=&gt;e.id),['future']);});
 
 test('transport read failures retry within a bound; other failures do not retry',async()=&gt;{for(const [message,expected] of [['fetch failed',3],['permission denied',1]]){let calls=0;const cap={load:()=&gt;({call:async()=&gt;{calls++;throw Error(message);}})};const service=new CalendarService(cap,{}, {},{},{});await assert.rejects(service.config(),/暂时不可用/);assert.equal(calls,expected);}});
 test('a transient read can recover and batch concurrency never exceeds two',async()=&gt;{let calls=0;const cap={load:()=&gt;({call:async()=&gt;{if(++calls===1)throw Error('fetch failed');return{id:'settings',record:{人事人员:[1859345056942250]}};}})};const service=new CalendarService(cap,{}, {},{},{});assert.equal((await service.config()).hrUserId,ids.hr);let active=0,peak=0;const tasks=Array.from({length:7},(_,i)=&gt;async()=&gt;{active++;peak=Math.max(peak,active);await new Promise(resolve=&gt;setTimeout(resolve,2));active--;return i;});assert.deepEqual(await service.readBatch(tasks),[0,1,2,3,4,5,6]);assert.equal(peak,2);});
@@ -6421,7 +6478,25 @@ test('current-month refresh uses only three searches while preserving today and 
  const auth={listUsersByIds:async ids=&gt;ids.map(id=&gt;({miaodaUserID:id,name:{zh_cn:'员工'}}))};
  const service=new CalendarService(cap,auth,{},{},{});const data=await service.month('2026-10');
  assert.equal(calls,3);assert.deepEqual(data.todayUserIds,['1','3','4']);assert.deepEqual(data.activeEvents.map(e=&gt;e.id),['cross-month']);assert.equal(data.events.length,4);
+ assert.deepEqual(data.todayEvents.map(e=&gt;e.id),['cross-month','ended','future']);
  calls=0;await service.month('2026-09');assert.equal(calls,5);
+});
+
+test('notice presence distinguishes later arrival, leave and earlier departure at exact boundaries',()=&gt;{
+ const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+ const window={addEventListener:()=&gt;{}},document={addEventListener:()=&gt;{}},parent={location:{origin:'https://example.test'}};
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../client/src/pages/Calendar/frame-runtime.js'),'utf8'),{window,document,parent});
+ const classify=window.duckClassifyPresence,at=(time)=&gt;Date.parse('2026-10-21T'+time+':00+08:00');
+ const events=[
+  {id:'late',userIds:['a'],type:'晚到',start:at('10:00'),end:at('13:00')},
+  {id:'leave',userIds:['b'],type:'年假',start:at('09:00'),end:at('18:00')},
+  {id:'early',userIds:['c'],type:'提前离开',start:at('15:00'),end:at('23:59')},
+ ];
+ const before=classify(events,at('12:59'));assert.equal(before.counts.onWay,1);assert.equal(before.counts.away,1);assert.equal(before.counts.early,0);assert.equal(before.nextTransition,at('13:00'));
+ const arrived=classify(events,at('13:00'));assert.equal(arrived.counts.onWay,0);assert.equal(arrived.counts.away,1);assert.deepEqual(Array.from(arrived.people,p=&gt;p.id),['b']);
+ const departed=classify(events,at('15:00'));assert.equal(departed.counts.early,1);assert.equal(departed.people.length,2);
+ const overlap=classify([...events,{id:'same-leave',userIds:['a'],type:'病假',start:at('12:00'),end:at('14:00')}],at('12:59'));
+ assert.equal(overlap.people.length,2);assert.equal(overlap.counts.onWay,0);assert.equal(overlap.counts.away,2);
 });
 
 const {trackRegistration}=require('../dist/shared/registration-progress');
