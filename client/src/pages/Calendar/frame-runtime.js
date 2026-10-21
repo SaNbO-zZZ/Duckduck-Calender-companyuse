@@ -51,13 +51,13 @@ window.duckWeatherUnavailable = true;
   if(Number.isFinite(nextTransition))transitionTimer=setTimeout(render,Math.max(0,nextTransition-now)+50);
   const headline=document.querySelector('.hero h1'),number=txt('span',data?String(total):'—','number');
   if(!data)headline.replaceChildren(txt('span',hasError?'日历暂不可用':'正在读取团队日历…'));
-  else if(!total)headline.replaceChildren(txt('span','此刻没有进行中的知会'));
+  else if(!total)headline.replaceChildren(txt('span','Alpha Pulse 一定会更大更强'));
   else headline.replaceChildren(document.createTextNode('此刻 '),number,document.createTextNode(counts.onWay===total?' 位同事正在路上':counts.away===total?' 位同事不在工位':counts.early===total?' 位同事先走一步':' 位同事有新动态'));
-  document.querySelector('.subtitle').textContent=data?(total?summary(counts):'登记只是知会，不作考勤判断 🦆'):(hasError?'日历数据暂不可用，请稍后重试':'正在读取团队日历…');
+  document.querySelector('.subtitle').textContent=data?(total?summary(counts):'一切安好～'):(hasError?'日历数据暂不可用，请稍后重试':'正在读取团队日历…');
   const empty=document.querySelector('.empty');empty.replaceChildren();
   document.querySelector('.card h2').textContent='此刻的知会';
   if(data&&total){empty.classList.add('live-people');for(const p of people){const label=p.kind==='onWay'?`正在赶来 · 预计 ${hhmm(p.event.end)}`:p.kind==='early'?'先去拯救世界了':`${p.event.type} · 暂不在工位`;empty.append(person(p.id,label));}}
-  else {empty.classList.remove('live-people');empty.append(txt('span','☕️'),txt('div',data?'此刻没有进行中的知会':hasError?'数据暂不可用':'正在读取…'));}
+  else {empty.classList.remove('live-people');empty.append(txt('span','☕️'),txt('div',data?'Alpha Pulse 一定会更大更强':hasError?'数据暂不可用':'正在读取…'));}
   if(!data&&hasError){const retry=txt('button','重试','runtime-retry');retry.onclick=()=>send({action:'refresh'});empty.append(retry);}
  };
  document.addEventListener('click',e=>{const id=e.target.closest('button')?.id;const kind={leaveAction:'leave',lateAction:'late',earlyAction:'early'}[id];if(kind){e.preventDefault();e.stopImmediatePropagation();send({action:'register',kind});}},true);
