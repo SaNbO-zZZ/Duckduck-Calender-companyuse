@@ -1,65 +1,67 @@
-# Dependencies
+# Dependencies and package-manager caches
 node_modules/
-*/node_modules/
+**/node_modules/
+.npm/
+.npm_cache/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
 
-# Production builds
+# Generated builds and test artifacts
 dist/
-*/dist/
+**/dist/
 build/
-*/build/
-
-# Environment files
-.env.local
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
-/logs/
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory used by tools like istanbul
+**/build/
 coverage/
-*.lcov
+**/coverage/
+.vite/
+.next/
+*.tsbuildinfo
+.eslintcache
+.swc/
+test-results/
+playwright-report/
 
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Runtime state and logs
+logs/
+**/logs/
+*.log
+*.log.*
+*.pid
+*.pid.lock
+*.seed
+tmp/
+temp/
+.cache/
+.playwright-cli/
 
-# OS generated files
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+!.env.sample
+.npmrc
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
+
+# Local agent configuration, not application source
+.agent/
+.agents/
+.claude/
+
+# Duplicate raw archive and editor/OS files
+*.zip
 .DS_Store
-.DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
 Thumbs.db
-
-# Temporary folders
-tmp/
-temp/
-.playwright-cli/
-
-# Lock files (keep package-lock.json for consistent installs)
-yarn.lock
-pnpm-lock.yaml
-
-# Cache files
-.eslintcache
-*.tsbuildinfo
-
-# swc wasm
-.swc
-
-# Agent files
-.agent/
-.npm_cache
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
