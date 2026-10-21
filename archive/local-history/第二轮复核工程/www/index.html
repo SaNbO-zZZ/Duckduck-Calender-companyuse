@@ -1,0 +1,2773 @@
+<!doctype html>
+<!--
+鸭鸭日历 · 唯一本地开发源文件
+创建日期：2026-10-08；来源：已运行的本地天气审查候选，本轮重写天气渲染与审查控件。
+所有 UI、CSS、JS、GLSL 与演示数据都在本 HTML 内；无需构建、无外部脚本或资源，可直接用浏览器打开。
+?phone=1 使用本文件自身在 390 × 844 的框内模拟窄屏（不等于手机真机测试）。
+这是尚未验收的视觉原型：不是飞书已发布页面的完整源码，不连接真实员工记录、不提交请假、不发通知。
+页面里的 0 人、2026 年 10 月日历、天气场景均为演示数据；天气不是合肥市瑶海区的真实天气。
+正式飞书版本仍为 v10/1791393770838，此文件未发布；最终部署目标仅限飞书自有妙搭，由后续阶段处理。
+配套需求见《给Claude的开发提示词.md》。
+-->
+<html lang="zh-CN">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  />
+  <title>鸭鸭日历 · 单文件本地开发版</title>
+  <!-- 01 · 页面样式与桌面／窄屏布局 -->
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: #d8e0e9;
+      color: #232831;
+      font:
+        16px -apple-system,
+        BlinkMacSystemFont,
+        "PingFang SC",
+        sans-serif;
+    }
+    button {
+      font: inherit;
+      cursor: pointer;
+      border: 1px solid #fff8;
+    }
+    button:disabled {
+      cursor: default;
+      opacity: 0.6;
+    }
+    /* 天空背景（WebGL）与前景效果层（2D：雨打卡片、积雪）都不接收点击 */
+    #sky,
+    #skyStatic,
+    #fx {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    #sky {
+      z-index: 0;
+    }
+    /* 静态备用天空（2D）：与 #sky 同层，仅在 WebGL 不可用/上下文丢失/持续低帧率时显示 */
+    #skyStatic {
+      z-index: 0;
+      display: none;
+    }
+    #fx {
+      z-index: 2;
+    }
+    .fallback {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(#738b9d, #e4ebef);
+      z-index: -1;
+    }
+    /* —— 审查栏：与日历正文分开，可隐藏（Esc 恢复） —— */
+    .toolbar {
+      position: relative;
+      z-index: 3;
+      background: #101724ef;
+      color: #eef1f5;
+      padding: 12px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 13px;
+    }
+    .toolbar .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .toolbar strong {
+      color: #ffb68b;
+      white-space: nowrap;
+    }
+    .toolbar .label {
+      color: #8fa2b4;
+      white-space: nowrap;
+    }
+    .toolbar button {
+      background: #ffffff0b;
+      border-radius: 20px;
+      padding: 6px 12px;
+      color: inherit;
+      white-space: nowrap;
+    }
+    .toolbar button.active {
+      background: #e8edf1;
+      color: #202832;
+    }
+    .toolbar input[type="range"] {
+      width: 180px;
+      accent-color: #ffb68b;
+    }
+    .toolbar input[type="date"] {
+      background: #ffffff12;
+      color: inherit;
+      border: 1px solid #fff4;
+      border-radius: 8px;
+      padding: 3px 6px;
+      font: inherit;
+      color-scheme: dark;
+    }
+    .choices {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    #timeLabel {
+      color: #c9d6e2;
+    }
+    .meta {
+      font:
+        11px ui-monospace,
+        SFMono-Regular,
+        monospace;
+      color: #b4c4d2;
+    }
+    #notice {
+      color: #f4c48d;
+    }
+    /* —— 日历正文 —— */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1060px;
+      margin: 30px auto;
+      padding: 0 24px 50px;
+    }
+    .hero {
+      border: 1px solid #ffffff42;
+      border-radius: 30px;
+      padding: 28px 34px;
+      background: linear-gradient(115deg, #f4f7f9eb, #eff4f8c4);
+      box-shadow: 0 10px 40px #1f344910;
+      color: #25303a;
+    }
+    .greeting {
+      font-size: 16px;
+      color: #687480;
+      margin: 0 0 12px;
+    }
+    .hero h1 {
+      font-size: clamp(30px, 4vw, 46px);
+      letter-spacing: -1px;
+      margin: 0 0 12px;
+      font-weight: 750;
+    }
+    .number {
+      color: #ff8758;
+    }
+    .subtitle {
+      color: #5c6a75;
+      margin: 0 0 24px;
+    }
+    .pills {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .pill {
+      border: 1px solid #fff;
+      border-radius: 40px;
+      background: #ffffffba;
+      padding: 10px 18px;
+      color: #2e3a46;
+    }
+    .pill small {
+      color: #8a96a2;
+      font-size: 12px;
+      margin-left: 4px;
+    }
+    .cta {
+      margin-left: auto;
+      color: white;
+      background: linear-gradient(110deg, #ff794e, #ff4e83);
+      border: 0;
+      padding: 13px 25px;
+      border-radius: 40px;
+      box-shadow: 0 9px 25px #fb65703a;
+      font-weight: 600;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 22px;
+      margin-top: 22px;
+      align-items: start;
+    }
+    .card {
+      border: 1px solid #fff9;
+      border-radius: 28px;
+      padding: 28px;
+      background: #fbfcf9ec;
+      box-shadow: 0 10px 45px #13222d0c;
+    }
+    .card h2 {
+      font-size: 20px;
+      margin: 0 0 22px;
+      color: #353d46;
+    }
+    .empty {
+      color: #76818c;
+      line-height: 1.8;
+      padding: 20px 0;
+      text-align: center;
+    }
+    .empty span {
+      font-size: 30px;
+      display: block;
+      margin-bottom: 12px;
+    }
+    .month {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .month h2 {
+      font-size: 27px;
+    }
+    .month small {
+      color: #78838d;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+    }
+    .weekday {
+      text-align: center;
+      color: #84909a;
+      font-size: 13px;
+      padding-bottom: 15px;
+    }
+    .date {
+      height: 60px;
+      padding: 8px;
+      border-radius: 14px;
+      font-size: 15px;
+      position: relative;
+      font-weight: 550;
+    }
+    .muted {
+      color: #acb3ba;
+    }
+    .holiday {
+      background: #fbe8ed;
+    }
+    .work {
+      border: 1px dashed #9da9ed;
+    }
+    .today {
+      background: #edf0ff;
+      border: 1px solid #bdc7ff;
+      color: #4653af;
+    }
+    .mark {
+      position: absolute;
+      font-size: 10px;
+      right: 7px;
+      top: 8px;
+      background: #ef7890;
+      color: white;
+      border-radius: 50%;
+      padding: 2px;
+    }
+    .work .mark {
+      background: #828be7;
+    }
+    .legend {
+      color: #84909a;
+      font-size: 12px;
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+    }
+    .legend i {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    .note {
+      margin: 22px 6px;
+      color: #41505d;
+      font-size: 12px;
+      background: #ffffffb8;
+      border-radius: 16px;
+      padding: 12px 16px;
+      line-height: 1.6;
+    }
+    .night .hero {
+      background: linear-gradient(115deg, #131f32ed, #17263bd0);
+      color: #f4f6fa;
+    }
+    .night .greeting,
+    .night .subtitle {
+      color: #bcc8d5;
+    }
+    .night .note {
+      color: #d5dfeb;
+      background: #152336bb;
+    }
+    body.clean .toolbar {
+      display: none;
+    }
+    /* 正常构图：顶部留一条克制的天空带，太阳在白天大部分时间落在这里（与脚本 projectSun 的 band 对应） */
+    body.clean main {
+      margin-top: clamp(24px, 12vh, 124px);
+    }
+    .exporting .toolbar button {
+      pointer-events: none;
+    }
+    .hero,
+    .card,
+    .note {
+      backdrop-filter: blur(8px);
+    }
+    @media (max-width: 720px) {
+      .toolbar {
+        padding: 10px 12px;
+      }
+      .toolbar .row {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 3px;
+      }
+      .choices {
+        flex-wrap: nowrap;
+      }
+      .toolbar button {
+        padding: 6px 10px;
+      }
+      .toolbar input[type="range"] {
+        min-width: 140px;
+      }
+      main {
+        margin: 18px auto;
+        padding: 0 16px 32px;
+      }
+      .hero {
+        padding: 24px 22px;
+        border-radius: 28px;
+      }
+      .greeting {
+        font-size: 13px;
+      }
+      .hero h1 {
+        font-size: 32px;
+      }
+      .subtitle {
+        font-size: 14px;
+      }
+      /* 窄屏：天气、节假日、主按钮固定各占一行，天气名长短变化时卡片位置不跳动 */
+      .pills {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .cta {
+        margin: 5px 0 0;
+      }
+      .cards {
+        grid-template-columns: 1fr;
+        gap: 18px;
+        margin-top: 18px;
+      }
+      .card {
+        padding: 24px 20px;
+      }
+      .empty {
+        padding: 0;
+      }
+      .empty span {
+        font-size: 23px;
+      }
+      .date {
+        height: 55px;
+        padding: 7px 4px;
+      }
+      .grid {
+        gap: 5px;
+      }
+      .month h2 {
+        font-size: 25px;
+      }
+      .meta {
+        font-size: 10px;
+        line-height: 1.6;
+      }
+    }
+  </style>
+  <!-- 02 · 页面结构：背景与前景效果层都不可阻挡正文点击 -->
+  <canvas id="sky" aria-hidden="true"></canvas>
+  <canvas id="skyStatic" aria-hidden="true"></canvas>
+  <canvas id="fx" aria-hidden="true"></canvas>
+  <div class="fallback" aria-hidden="true"></div>
+  <div class="toolbar" id="toolbar">
+    <div class="row">
+      <strong>本地候选 · 未上线 · 天气为演示</strong>
+      <div class="choices" id="scenes"></div>
+      <span class="label">组合</span>
+      <div class="choices" id="presets"></div>
+    </div>
+    <div class="row">
+      <span class="label">风</span>
+      <div class="choices" id="winds"></div>
+      <span class="label">风向</span>
+      <div class="choices" id="windDirs"></div>
+    </div>
+    <div class="row">
+      <span class="label">时间</span>
+      <div class="choices" id="times"></div>
+      <input type="range" id="clock" min="0" max="1439" step="1" aria-label="演示时间（分钟）" />
+      <input type="date" id="dateInput" aria-label="演示日期" />
+      <span id="timeLabel"></span>
+    </div>
+    <div class="row">
+      <span class="label">审查</span>
+      <button id="static">减少动态：跟随系统</button
+      ><button id="glass">玻璃水珠：关</button
+      ><button
+        id="export"
+        title="只导出天空背景画布（WebGL；降级时为 2D 静态备用），不含正文卡片与前景水花/积雪。完整页面审查请用浏览器截图"
+      >
+        导出天空背景 PNG（不含正文）</button
+      ><button
+        id="record"
+        title="只录制 WebGL 天空背景画布，不含正文卡片与前景水花/积雪；静态/降级时不可录制。完整页面审查请用浏览器录屏"
+      >
+        录制天空背景 8 秒（不含正文）</button
+      ><button id="phone">手机宽度</button
+      ><button id="clean">隐藏审查栏</button><span id="notice"></span>
+    </div>
+    <div class="meta">导出/录制只含天空背景；完整页面审查请用浏览器截图或系统录屏</div>
+    <div class="meta" id="stats">初始化实际渲染器…</div>
+  </div>
+  <main>
+    <section class="hero">
+      <p class="greeting" id="greeting">早上好 · 2026 年 10 月 8 日 周四</p>
+      <h1>今天 <span class="number">0</span> 位同事不在</h1>
+      <p class="subtitle">今天大家都在岗 💪</p>
+      <div class="pills">
+        <span class="pill" id="weatherIcon">☀️ 晴<small>演示</small></span
+        ><span class="pill">🇨🇳 节假日与调休标记</span
+        ><button class="cta" title="审查样例，不提交真实记录">
+          臣妾做不到啊😭
+        </button>
+      </div>
+    </section>
+    <div class="cards">
+      <section class="card">
+        <h2>此刻不在岗</h2>
+        <div class="empty"><span>☕️</span>今天大家都在岗</div>
+      </section>
+      <section class="card">
+        <div class="month">
+          <h2>2026 年 10 月</h2>
+          <small>‹　今天　›</small>
+        </div>
+        <div class="grid" id="calendar"></div>
+        <div class="legend">
+          <span><i style="background: #ff8a5c"></i>年假</span
+          ><span><i style="background: #7c8cf0"></i>调休</span
+          ><span><i style="background: #f2b84b"></i>事假</span
+          ><span><i style="background: #4cb7a5"></i>病假</span
+          ><span><i style="background: #ef6f9a"></i>今天不想上班</span>
+        </div>
+      </section>
+    </div>
+    <p class="note">
+      天气为本地演示场景，不是合肥市瑶海区的实时天气；日照位置按瑶海区坐标与所选时间近似计算。此页只用于画面审查，不连接员工记录、不提交请假、不发送通知。窄屏预览不等于手机真机测试。按
+      Esc 可恢复审查栏。
+    </p>
+  </main>
+  <!-- 03 · WebGL 着色器：坐标约定 vUv / gl_FragCoord 的 y 轴向上（0 在屏幕底部）。 -->
+  <script id="weather-vertex-source" type="x-shader/x-vertex">
+    attribute vec2 aPosition;
+    varying vec2 vUv;
+    void main() {
+      vUv = aPosition * 0.5 + 0.5;
+      gl_Position = vec4(aPosition, 0.0, 1.0);
+    }
+  </script>
+  <script id="weather-fragment-source" type="x-shader/x-fragment">
+    // WebGL 1 天空：只画背景，正文在独立 DOM 层。
+    // 约定：y 轴向上；"下落" = 屏幕 y 减小；风的水平分量带符号（+ 向右 / − 向左），由 JS 统一给出。
+    // 所有随时间累积的位移（云、雨、雪）都由 JS 积分后以 uniform 传入，阵风时速度平滑变化而不跳位。
+    #ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+    #else
+    precision mediump float;
+    #endif
+
+    varying vec2 vUv;
+    uniform vec2 uResolution;   // 绘图缓冲像素
+    uniform float uPxScale;     // 每 CSS 像素对应的缓冲像素
+    uniform float uAspect;
+    uniform float uTime;        // 仅用于摆动、闪烁等周期细节
+
+    // —— 日照（JS 按瑶海区坐标与时间计算） ——
+    uniform vec2 uSunPos;       // 屏幕 uv，可超出 0..1（高太阳在画面上方之外）
+    uniform float uSunVis;      // 太阳在地平线以上的可见度
+    uniform float uDaylight;    // 0 夜间 … 1 白天
+    uniform float uWarmth;      // 低太阳暖色强度
+    uniform float uTwilight;    // 民用晨昏蒙影
+    uniform vec3 uMoon;         // xy 示意位置，z 可见度（示意，不代表真实月相）
+
+    // —— 云与风 ——
+    uniform float uCloudCover;  // 0..1
+    uniform float uWindStretch; // 0..1 风大时云沿风向拉长（随风速平滑变化）
+    uniform float uScud;        // 0..1 已有云层被强风吹碎的程度（不新增云量）
+    uniform vec2 uCloudFar;
+    uniform vec2 uCloudNear;
+    uniform vec2 uScudShift;
+    uniform vec3 uHeroCloud;    // 多云：经过太阳的那团云，xy 为 (x*aspect, y)，z 强度
+
+    // —— 降水 ——
+    uniform float uRain;        // 0..3
+    uniform float uRainSlope;   // 每下落 1 像素的水平位移（向右为正、向左为负）
+    uniform vec3 uRainFall;     // 三层雨丝累计下落量（CSS 像素）
+    uniform float uSnow;        // 0..3
+    uniform vec3 uSnowFall;     // 三层雪累计下落量（视口高度）
+    uniform vec3 uSnowDrift;    // 三层雪累计水平漂移（视口高度）
+    uniform float uGlass;       // 玻璃水珠（默认关闭）
+
+    float hash12(vec2 p) {
+      vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
+      p3 += dot(p3, p3.yzx + 19.19);
+      return fract((p3.x + p3.y) * p3.z);
+    }
+
+    vec2 hash22(vec2 p) {
+      vec3 p3 = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
+      p3 += dot(p3, p3.yzx + 19.19);
+      return fract(vec2((p3.x + p3.y) * p3.z, (p3.x + p3.z) * p3.y));
+    }
+
+    float noise(vec2 p) {
+      vec2 cell = floor(p);
+      vec2 f = fract(p);
+      vec2 s = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+      return mix(
+        mix(hash12(cell), hash12(cell + vec2(1.0, 0.0)), s.x),
+        mix(hash12(cell + vec2(0.0, 1.0)), hash12(cell + vec2(1.0, 1.0)), s.x),
+        s.y
+      );
+    }
+
+    // 四个固定倍频：第四层给云边增加细碎感，避免整片"糊开"
+    float cloudNoise(vec2 p) {
+      return 0.52 * noise(p)
+           + 0.26 * noise(p * 2.03 + vec2(8.7, 2.4))
+           + 0.14 * noise(p * 4.09 + vec2(1.8, 9.3))
+           + 0.08 * noise(p * 8.17 + vec2(4.6, 7.2));
+    }
+
+    // 降水时天空不应透出太阳；晴/多云保持原云量；风不参与此处计算。
+    float clearness() {
+      float c = 1.0 - smoothstep(0.55, 0.95, uCloudCover);
+      return c * (1.0 - smoothstep(0.0, 0.6, uRain + uSnow));
+    }
+
+    // ===== 云层"透视"（风格化近似，不是严格的相机投影） =====
+    // 把屏幕坐标映射到一张水平的云底平面：屏幕越低 = 越远，同样大小的云在屏幕上越小、越扁
+    // （水平缩小 q 倍、竖直缩小 q² 倍）。k 越小透视越强（低云强、高云弱）。
+    // 画面顶部 y = 1 处与屏幕坐标 1:1，太阳所在的顶部天空带里云团尺度与运动速度基本不变。
+    vec2 cloudPlane(vec2 uv, float k) {
+      float q = 1.0 / (max(uv.y, -0.2) + k);
+      float qt = 1.0 / (1.0 + k);
+      return vec2((uv.x - 0.5) * uAspect * q / qt + 0.5 * uAspect, 1.0 + (qt - q) / (qt * qt));
+    }
+
+    // 多云时经过太阳的那团积云（屏幕坐标，相对云团中心）：几个错位的圆顶子团 + 较平的云底；不含噪声
+    float heroBlob(vec2 local) {
+      vec2 d1 = (local + vec2(0.10, 0.005)) / vec2(0.12, 0.055);
+      vec2 d2 = (local - vec2(0.07, 0.000)) / vec2(0.13, 0.058);
+      vec2 d3 = (local - vec2(-0.01, 0.035)) / vec2(0.10, 0.060);
+      vec2 d4 = (local - vec2(0.17, -0.015)) / vec2(0.07, 0.040);
+      float blob = max(max(exp(-dot(d1, d1)), 0.95 * exp(-dot(d2, d2))),
+                       max(0.85 * exp(-dot(d3, d3)), 0.6 * exp(-dot(d4, d4))));
+      return blob * smoothstep(-0.075, -0.042, local.y);
+    }
+
+    // ===== 云：同一函数既用于绘制，也用于太阳遮挡采样 =====
+    // 返回 x 透明度、y 明暗、z 云边（用于逆光亮边）、w 厚度。
+    // lighting = false 时只算透明度（太阳遮挡采样用）；透明度与 lighting 无关，两种调用结果一致。
+    vec4 cloudSample(vec2 uv, bool lighting) {
+      if (uCloudCover < 0.02) return vec4(0.0, 1.0, 0.0, 0.0);
+      float rain = clamp(uRain / 3.0, 0.0, 1.0);
+      float overcast = smoothstep(0.62, 0.92, uCloudCover);
+      // 风拉长只作用于近层，并以画面中心为基准缩放：
+      // 远层大尺度云团保持不变，强风不会因为"换了一批大云团"而改变整体明暗
+      float sx = 1.0 - 0.5 * uWindStretch;
+      // 低云透视更强；雨天云底更低、离人更近 → 透视更强、云团更大
+      float kN = mix(1.15, 0.85, rain);
+      vec2 nScale = vec2(2.1, 3.4) * mix(1.0, 0.8, rain);
+      vec2 pf = cloudPlane(uv, 2.2);
+      vec2 pn = cloudPlane(uv, kN);
+      pn.x = (pn.x - 0.5 * uAspect) * sx + 0.5 * uAspect;
+      vec2 bf = pf * vec2(1.25, 2.3) + uCloudFar;
+      vec2 bn = pn * nScale + uCloudNear + vec2(7.1, 0.8);
+      // 高层（远）：三个倍频；低层（近）：四个倍频。fl / nl 是最低倍频，后面估计受光时复用
+      float fl = noise(bf);
+      float farF = (0.52 * fl + 0.26 * noise(bf * 2.03 + vec2(8.7, 2.4)) + 0.14 * noise(bf * 4.09 + vec2(1.8, 9.3))) / 0.92;
+      float nl = noise(bn);
+      float nearF = 0.52 * nl + 0.26 * noise(bn * 2.03 + vec2(8.7, 2.4))
+                  + 0.14 * noise(bn * 4.09 + vec2(1.8, 9.3)) + 0.08 * noise(bn * 8.17 + vec2(4.6, 7.2));
+      float field = farF * 0.62 + nearF * 0.38;
+      vec2 hp = vec2(uv.x * uAspect, uv.y);
+      float hb = 0.0;
+      if (uHeroCloud.z > 0.001) {
+        // 经过太阳的云团：细节噪声锚定在云团中心，随云团一起移动
+        vec2 local = hp - uHeroCloud.xy;
+        hb = heroBlob(local);
+        if (hb > 0.01) {
+          float detail = noise(local * vec2(9.0, 15.0) + 3.7) * 0.6 + noise(local * vec2(21.0, 31.0) + 8.1) * 0.4;
+          field += uHeroCloud.z * hb * (0.2 + 0.8 * detail);
+        }
+      }
+      float threshold = mix(0.80, 0.22, uCloudCover);
+      // 碎积云边缘：只在云边附近叠一层更高倍频（约近层基频 16 倍）的起伏，把边缘"啃"碎；
+      // 均值为 0，不改变云量；云核与阴天云盖几乎不受影响
+      float rim = 1.0 - smoothstep(0.0, 0.10, abs(field - threshold));
+      if (rim > 0.0) field += rim * (noise(bn * 7.7 + vec2(5.2, 1.3)) - 0.5) * 0.16 * (1.0 - 0.75 * overcast);
+      // 少云/多云时云边更清楚，阴天时柔和连成一片
+      float soft = mix(0.05, 0.15, overcast);
+      float shape = smoothstep(threshold - soft, threshold + soft * 1.6, field);
+      float alpha = mix(shape * (0.80 + uCloudCover * 0.18), 0.80 + shape * 0.18, overcast);
+      float thick = smoothstep(threshold, threshold + 0.30, field);
+      float edge = shape * (1.0 - shape) * 4.0;
+      if (!lighting) return vec4(alpha, 1.0, edge, thick);
+      // 受光（廉价的 2D 体积光照近似）：沿屏幕上"朝向太阳"的方向偏移一小段，再取一次低倍频密度。
+      // 那一侧云更厚 → 本处处在背光面/云底，偏暗；那一侧更薄 → 本处是迎光的云边，偏亮。
+      // 太阳在地平线下（夜间）时光从上方来，且明暗对比减弱。
+      vec2 toSun = (uSunPos - uv) * vec2(uAspect, 1.0);
+      vec2 dir = normalize(mix(vec2(0.0, 1.0), toSun / max(length(toSun), 1e-3), 0.85 * uSunVis) + vec2(0.0, 1e-4));
+      vec2 uv2 = uv + dir * vec2(1.0 / uAspect, 1.0) * 0.045;
+      vec2 pf2 = cloudPlane(uv2, 2.2);
+      vec2 pn2 = cloudPlane(uv2, kN);
+      pn2.x = (pn2.x - 0.5 * uAspect) * sx + 0.5 * uAspect;
+      float low0 = fl * 0.62 + nl * 0.38;
+      float low1 = noise(pf2 * vec2(1.25, 2.3) + uCloudFar) * 0.62 + noise(pn2 * nScale + uCloudNear + vec2(7.1, 0.8)) * 0.38;
+      if (uHeroCloud.z > 0.001) {
+        low0 += uHeroCloud.z * hb * 0.55;
+        low1 += uHeroCloud.z * heroBlob(vec2(uv2.x * uAspect, uv2.y) - uHeroCloud.xy) * 0.55;
+      }
+      float sunward = (low1 - low0) * mix(0.45, 1.0, uDaylight);
+      // 积云：云核（从下方看是云底）偏暗，迎光边亮，背光侧暗
+      float light = clamp(0.88 - thick * 0.40 - sunward * 2.8 + (nearF - 0.5) * 0.35 + uv.y * 0.05, 0.0, 1.0);
+      // 阴天：连续云盖，靠大尺度起伏 + 同样的受光差分做出层次（"云卷"），雨天整体更暗
+      float deck = clamp(0.56 + (farF - 0.5) * 1.7 + (nearF - 0.5) * 0.75 - sunward * 2.0 + uv.y * 0.07, 0.0, 1.0);
+      light = mix(light, deck, overcast);
+      if (uScud > 0.01) {
+        // 强风把已有云层吹碎：只在已有云的地方叠加快速移动的明暗起伏，
+        // 起伏均值约为 0（不整体变暗），也不提高透明度，因此不新增云量、不改天空底色
+        float s = cloudNoise(pn * vec2(4.4, 8.0) + uScudShift + vec2(3.3, 5.1));
+        float low = 1.0 - smoothstep(0.25, 1.0, uv.y);
+        float amp = uScud * alpha * (0.55 + 0.45 * low);
+        light = clamp(light + (s - 0.5) * 0.5 * amp, 0.0, 1.0);
+        edge = max(edge, smoothstep(0.55, 0.76, s) * amp * 0.5);
+      }
+      return vec4(alpha, light, edge, thick);
+    }
+
+    // ===== 天空底色：随太阳高度、云量、降水连续变化 =====
+    vec3 skyColor(vec2 uv, float clear) {
+      float h = clamp(uv.y, 0.0, 1.0);
+      vec3 dayTop = mix(vec3(0.17, 0.44, 0.80), vec3(0.32, 0.45, 0.68), uWarmth);
+      vec3 dayBot = mix(vec3(0.62, 0.78, 0.93), vec3(0.95, 0.79, 0.62), uWarmth);
+      vec3 top = mix(vec3(0.020, 0.035, 0.075), dayTop, uDaylight);
+      vec3 bot = mix(vec3(0.060, 0.090, 0.160), dayBot, uDaylight);
+      top = mix(top, vec3(0.10, 0.14, 0.30), uTwilight * 0.65);
+      bot = mix(bot, vec3(0.80, 0.50, 0.46), uTwilight * 0.75);
+      vec3 sky = mix(bot, top, pow(h, 0.7));
+      // 朝霞/晚霞：只在太阳一侧的低空，且需天空足够通透
+      float side = exp(-pow((uv.x - uSunPos.x) * uAspect, 2.0) * 0.9);
+      float band = 1.0 - smoothstep(0.0, 0.55, h);
+      sky += vec3(0.30, 0.13, 0.02) * (uWarmth * uDaylight + uTwilight * 0.6) * side * band * clear;
+      // 阴、雨、雪：连续灰色云盖
+      float rain = clamp(uRain / 3.0, 0.0, 1.0);
+      float snow = clamp(uSnow / 3.0, 0.0, 1.0);
+      vec3 greyTop = mix(vec3(0.55, 0.60, 0.67), vec3(0.33, 0.39, 0.47), rain);
+      vec3 greyBot = mix(vec3(0.74, 0.77, 0.81), vec3(0.50, 0.55, 0.62), rain);
+      greyTop = mix(greyTop, vec3(0.50, 0.56, 0.64), snow);
+      greyBot = mix(greyBot, vec3(0.70, 0.74, 0.80), snow);
+      vec3 grey = mix(greyBot, greyTop, h);
+      grey = mix(vec3(0.050, 0.065, 0.095) + grey * 0.06, grey, uDaylight);
+      float overcast = smoothstep(0.55, 0.95, uCloudCover);
+      return mix(sky, grey, overcast * 0.88);
+    }
+
+    // ===== 太阳：光晕随云遮挡 occl 一起衰减 =====
+    vec3 addSun(vec3 sky, vec2 uv, float clear, float occl) {
+      float vis = uSunVis * clear;
+      if (vis < 0.002) return sky;
+      vec2 d = (uv - uSunPos) * vec2(uAspect, 1.0);
+      float r2 = dot(d, d);
+      vec3 sunCol = mix(vec3(1.0, 0.97, 0.90), vec3(1.0, 0.70, 0.42), uWarmth);
+      float through = 1.0 - occl * 0.88;
+      // 正午光线集中；低太阳光晕更宽更暖
+      float tight = mix(0.0025, 0.0045, uWarmth);
+      float wide = mix(0.040, 0.10, uWarmth);
+      float glow = exp(-r2 / tight) * 0.30 + exp(-r2 / wide) * mix(0.13, 0.18, uWarmth);
+      sky += sunCol * glow * vis * through;
+      // 一个克制的光学残影，沿太阳—画面中心轴
+      vec2 ghost = (uv - (uSunPos + (vec2(0.5) - uSunPos) * 1.4)) * vec2(uAspect, 1.0);
+      sky += sunCol * (1.0 - smoothstep(0.012, 0.030, length(ghost))) * 0.035 * vis * through;
+      // 日面始终是最亮处；低太阳略带暖色
+      float core = (1.0 - smoothstep(0.016, 0.021, sqrt(r2))) * (1.0 - smoothstep(0.3, 0.8, occl) * 0.97);
+      return mix(sky, mix(vec3(1.0, 0.995, 0.97), vec3(1.0, 0.86, 0.66), uWarmth * 0.7), core * vis);
+    }
+
+    // ===== 夜间：示意月亮与少量星点 =====
+    vec3 addNight(vec3 sky, vec2 uv, float clear) {
+      float night = 1.0 - smoothstep(0.05, 0.45, uDaylight);
+      float vis = night * clear;
+      if (vis < 0.002) return sky;
+      vec2 starUv = gl_FragCoord.xy / uPxScale / 26.0;
+      vec2 starId = floor(starUv);
+      float seed = hash12(starId);
+      if (seed > 0.991) {
+        float star = 1.0 - smoothstep(0.03, 0.09, length(fract(starUv) - 0.5));
+        float twinkle = 0.78 + 0.22 * sin(uTime * 0.6 + seed * 20.0);
+        sky += vec3(0.55, 0.60, 0.70) * star * twinkle * vis * smoothstep(0.15, 0.6, uv.y);
+      }
+      vec2 d = (uv - uMoon.xy) * vec2(uAspect, 1.0);
+      float r = length(d);
+      float disc = 1.0 - smoothstep(0.0125, 0.0155, r);
+      float lit = 1.0 - smoothstep(0.011, 0.016, length(d - vec2(-0.0055, 0.002))) * 0.82;
+      float halo = exp(-r * r / 0.004) * 0.09 + exp(-r * r / 0.05) * 0.035;
+      sky += vec3(0.72, 0.80, 0.94) * halo * vis * uMoon.z;
+      return mix(sky, vec3(0.88, 0.91, 0.95) * (0.30 + 0.70 * lit), disc * vis * uMoon.z);
+    }
+
+    vec3 addClouds(vec3 sky, vec2 uv, vec4 c, float clear) {
+      if (c.x < 0.003) return sky;
+      float overcast = smoothstep(0.62, 0.92, uCloudCover);
+      float rain = clamp(uRain / 3.0, 0.0, 1.0);
+      vec3 lit = mix(vec3(0.98, 0.985, 0.99), vec3(0.80, 0.83, 0.87), overcast);
+      vec3 shadow = mix(vec3(0.66, 0.72, 0.80), vec3(0.55, 0.60, 0.67), overcast);
+      lit = mix(lit, vec3(0.58, 0.64, 0.72), rain);
+      shadow = mix(shadow, vec3(0.33, 0.39, 0.48), rain);
+      // 早霞晚霞：只在云量适中、非阴雨时给云边上色
+      vec3 sunCol = mix(vec3(1.0, 0.97, 0.90), vec3(1.0, 0.66, 0.40), uWarmth);
+      float glowAmt = (uWarmth * uDaylight + uTwilight * 0.8) * clear;
+      lit = mix(lit, lit * sunCol * 1.04, glowAmt * 0.75);
+      shadow = mix(shadow, vec3(0.60, 0.47, 0.55), uTwilight * clear * 0.5);
+      lit = mix(vec3(0.15, 0.19, 0.26), lit, uDaylight);
+      shadow = mix(vec3(0.065, 0.09, 0.135), shadow, uDaylight);
+      vec3 col = mix(shadow, lit, c.y);
+      // 逆光：挡在太阳前的厚云发灰，薄处透光，云边微亮（克制的银边）
+      vec2 d = (uv - uSunPos) * vec2(uAspect, 1.0);
+      float r2 = dot(d, d);
+      float nearW = exp(-r2 / mix(0.03, 0.08, uWarmth)) * uSunVis * clear;
+      float nearT = exp(-r2 / 0.004) * uSunVis * clear;
+      col = mix(col, shadow * 0.90, nearW * c.w * 0.55);
+      col += sunCol * (c.z * 0.40 * nearW + (1.0 - c.w) * 0.30 * nearT);
+      col += vec3(0.20, 0.08, 0.02) * c.z * glowAmt * 0.6;
+      // 远近层次：靠近地平线的云更远，更淡、更融进大气色（阴天云盖保持连续，不减淡）
+      float haze = (1.0 - smoothstep(0.0, 0.5, uv.y)) * (1.0 - overcast);
+      col = mix(col, sky, haze * 0.25);
+      return mix(sky, col, clamp(c.x * (1.0 - haze * 0.35), 0.0, 0.97));
+    }
+
+    vec3 addAtmosphere(vec3 col, vec2 uv) {
+      float fog = 1.0 - smoothstep(0.0, 0.45, uv.y);
+      float rain = clamp(uRain / 3.0, 0.0, 1.0);
+      vec3 fogDay = mix(vec3(0.86, 0.90, 0.94), vec3(0.66, 0.71, 0.77), uCloudCover);
+      fogDay = mix(fogDay, vec3(0.46, 0.52, 0.60), rain);
+      fogDay = mix(fogDay, vec3(0.95, 0.80, 0.66), uWarmth * (1.0 - uCloudCover) * 0.5);
+      vec3 fogCol = mix(vec3(0.07, 0.10, 0.15), fogDay, uDaylight);
+      col = mix(col, fogCol, fog * (0.10 + uCloudCover * 0.10));
+      // 暴雨的雨幕雾气
+      return mix(col, fogCol, rain * rain * 0.20);
+    }
+
+    // 无雨雪遮挡的天空；玻璃水珠的折射也采样它
+    vec3 skyScene(vec2 uv, float occl) {
+      uv = clamp(uv, 0.0, 1.0);
+      float clear = clearness();
+      vec3 col = skyColor(uv, clear);
+      col = addNight(col, uv, clear);
+      col = addSun(col, uv, clear, occl);
+      col = addClouds(col, uv, cloudSample(uv, true), clear);
+      return addAtmosphere(col, uv);
+    }
+
+    // ===== 雨丝：剪切格子让雨丝方向 = 运动方向；拖尾在上（运动后方），头部在下 =====
+    // css：CSS 像素坐标（y 向上）；fall：该层累计下落量；格子 id 以 128 为周期，JS 按周期回绕 fall。
+    float rainLayer(vec2 css, float fall, vec2 cell, float density, float len, float width, float seed) {
+      float fromTop = uResolution.y / uPxScale - css.y;
+      vec2 q = vec2(css.x - uRainSlope * fromTop, css.y + fall);
+      vec2 id = floor(q / cell);
+      vec2 hid = mod(id, 128.0) + seed;
+      if (hash12(hid) > density) return 0.0;
+      vec2 center = (id + 0.5) * cell + (hash22(hid + 11.3) - 0.5) * cell * vec2(0.62, 0.55);
+      vec2 d = q - center;
+      float L = len * mix(0.7, 1.3, hash12(hid + 5.7));
+      float t = (L * 0.5 - d.y) / L; // 0 = 拖尾末端（上方），1 = 雨滴头部（下方）
+      if (t < 0.0 || t > 1.0) return 0.0;
+      float along = smoothstep(0.0, 0.8, t) * (1.0 - smoothstep(0.93, 1.0, t));
+      float across = abs(d.x) * inversesqrt(1.0 + uRainSlope * uRainSlope);
+      float w = width * 0.5;
+      return along * (1.0 - smoothstep(w, w + 0.9, across));
+    }
+
+    vec3 addRain(vec3 col) {
+      if (uRain < 0.03) return col;
+      float r = clamp(uRain / 3.0, 0.0, 1.0);
+      vec2 css = gl_FragCoord.xy / uPxScale;
+      float farRain = rainLayer(css, uRainFall.x, vec2(12.0, 90.0), mix(0.12, 0.62, r), mix(12.0, 22.0, r), 0.9, 0.0);
+      float midRain = rainLayer(css, uRainFall.y, vec2(24.0, 150.0), mix(0.10, 0.48, r), mix(20.0, 42.0, r), 1.15, 37.0);
+      float nearRain = rainLayer(css, uRainFall.z, vec2(44.0, 240.0), mix(0.07, 0.36, r), mix(32.0, 72.0, r), 1.6, 71.0);
+      float a = min(farRain * 0.40 + midRain * 0.52 + nearRain * 0.62, 0.78);
+      a *= smoothstep(0.0, 0.10, uRain);
+      vec3 rainCol = mix(vec3(0.52, 0.60, 0.70), vec3(0.90, 0.93, 0.97), uDaylight);
+      return mix(col, rainCol, a);
+    }
+
+    // ===== 雪：三层远近、不同大小与散焦；风使整体漂移，仍以下落为主 =====
+    float snowLayer(vec2 p, float fall, float drift, float scale, float density, float size, float soft, float seed) {
+      vec2 q = (p + vec2(-drift, fall)) * scale;
+      vec2 id = floor(q);
+      vec2 hid = mod(id, 128.0) + seed;
+      if (hash12(hid) > density) return 0.0;
+      vec2 j = hash22(hid + 4.2);
+      vec2 local = fract(q) - 0.5 - (j - 0.5) * 0.35;
+      local.x += sin(uTime * mix(0.6, 1.3, j.x) + j.y * 6.28) * 0.10;
+      float s = size * mix(0.6, 1.3, hash12(hid + 9.1));
+      return 1.0 - smoothstep(s * (1.0 - soft), s, length(local));
+    }
+
+    vec3 addSnow(vec3 col, vec2 uv) {
+      if (uSnow < 0.03) return col;
+      float s = clamp(uSnow / 3.0, 0.0, 1.0);
+      vec2 p = vec2(uv.x * uAspect, uv.y);
+      float farSnow = snowLayer(p, uSnowFall.x, uSnowDrift.x, 46.0, mix(0.12, 0.66, s), 0.10, 0.60, 0.0);
+      float midSnow = snowLayer(p, uSnowFall.y, uSnowDrift.y, 24.0, mix(0.06, 0.40, s), 0.12, 0.45, 19.0);
+      float nearSnow = snowLayer(p, uSnowFall.z, uSnowDrift.z, 10.0, mix(0.0, 0.20, s), 0.11, 0.85, 41.0);
+      float a = clamp(farSnow * 0.55 + midSnow * 0.88 + nearSnow * 0.45, 0.0, 0.95);
+      vec3 snowCol = mix(vec3(0.70, 0.77, 0.86), vec3(1.0), uDaylight);
+      return mix(col, snowCol, a * smoothstep(0.0, 0.10, uSnow));
+    }
+
+    // ===== 玻璃水珠（可选，默认关闭；不再承担雨量表达） =====
+    vec3 addGlassDrops(vec3 color, vec2 uv, float occl) {
+      if (uGlass < 0.5 || uRain < 0.5) return color;
+      float intensity = clamp(uRain / 3.0, 0.0, 1.0);
+      float aspect = max(uAspect, 0.1);
+      float pixel = 1.0 / max(uResolution.y, 1.0);
+      vec2 point = uv * vec2(aspect, 1.0);
+      vec3 result = color;
+      float count = floor(mix(4.0, 10.0, intensity) + 0.5);
+      for (int i = 0; i < 10; i++) {
+        if (float(i) >= count) break;
+        vec2 seed = vec2(float(i) * 7.31 + 1.7, float(i) * 13.17 + 5.9);
+        vec2 base = hash22(seed);
+        float sizeRandom = hash12(seed + 7.7);
+        float size = mix(0.004, 0.012, sizeRandom);
+        float fallSpeed = mix(0.004, 0.06, sizeRandom * sizeRandom);
+        // y 减小 = 向下滑；拖尾位于水珠上方（运动后方）
+        float y = mod(base.y - uTime * fallSpeed + 0.18, 1.36) - 0.18;
+        float x = base.x * aspect + uRainSlope * (base.y - y) * 0.15;
+        vec2 delta = point - vec2(x, y);
+        float trailLength = size * mix(2.0, 4.5, intensity) * smoothstep(0.35, 0.95, sizeRandom);
+        if (abs(delta.x) > size * 1.5 + pixel || delta.y < -size - pixel || delta.y > size + trailLength + pixel) continue;
+        float trailY = (delta.y - size * 0.45) / max(trailLength, pixel);
+        if (trailLength > pixel && trailY > 0.0 && trailY < 1.0) {
+          float trailWidth = size * 0.16 * (1.0 - trailY * 0.65);
+          float trailMask = (1.0 - smoothstep(trailWidth * 0.45, trailWidth + pixel, abs(delta.x)))
+                          * (1.0 - smoothstep(0.55, 1.0, trailY));
+          result = mix(result, skyScene(uv, occl) * 1.025, trailMask * 0.20);
+        }
+        vec2 cap = delta / size;
+        float radius2 = dot(cap, cap);
+        if (radius2 < 1.0) {
+          float nz = sqrt(max(1.0 - radius2, 0.001));
+          vec3 normal = normalize(vec3(cap, nz));
+          vec3 lens = refract(vec3(0.0, 0.0, -1.0), normal, 0.75);
+          vec3 dropColor = skyScene(uv + lens.xy * size * 2.8 * vec2(1.0 / aspect, 1.0), occl);
+          dropColor *= 1.0 - pow(1.0 - nz, 3.0) * 0.19;
+          float body = 1.0 - smoothstep(0.85, 1.0, sqrt(radius2));
+          result = mix(result, dropColor, body * 0.9);
+        }
+      }
+      return result;
+    }
+
+    void main() {
+      // 太阳中心处的云量：与绘制云使用同一函数，保证"云真正遮住太阳"
+      // 遮挡只影响太阳光晕与残影，离两者足够远的像素（光晕已 < 1/1000）跳过这次采样以省算力
+      float occl = 0.0;
+      if (uSunVis * clearness() > 0.002 && uCloudCover > 0.02) {
+        vec2 ds = (vUv - uSunPos) * vec2(uAspect, 1.0);
+        vec2 dg = (vUv - (uSunPos + (vec2(0.5) - uSunPos) * 1.4)) * vec2(uAspect, 1.0);
+        if (dot(ds, ds) < 0.9 || dot(dg, dg) < 0.002) occl = cloudSample(uSunPos, false).x;
+      }
+      vec3 color = skyScene(vUv, occl);
+      color = addRain(color);
+      color = addSnow(color, vUv);
+      color = addGlassDrops(color, vUv, occl);
+      gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
+    }
+  </script>
+  <!-- 04 · JavaScript：场景、日照、模拟、渲染、前景效果、性能、导出和本地演示日历 -->
+  <script>
+    "use strict";
+    if (new URLSearchParams(location.search).has("phone")) {
+      // 手机宽度审查：只在框内引用本文件自身，不存在另一份手机页面
+      document.body.innerHTML = "";
+      document.body.style.cssText =
+        "background:#202735;display:flex;flex-direction:column;align-items:center;padding:18px;min-height:100vh;margin:0";
+      const label = document.createElement("p");
+      label.textContent = "手机宽度审查 · 390 × 844 · 桌面浏览器模拟（非真机）";
+      label.style.cssText = "color:#cbd6e1;font-size:13px";
+      document.body.append(label);
+      const frame = document.createElement("iframe"),
+        url = new URL(location.href);
+      url.search = "";
+      frame.src = url.href;
+      frame.title = "手机宽度天气候选";
+      frame.style.cssText =
+        "width:390px;height:844px;border:1px solid #7c8798;border-radius:24px;background:#dce5ec;box-shadow:0 20px 60px #0005";
+      document.body.append(frame);
+    } else {
+      startDuckCalendar();
+    }
+
+    function startDuckCalendar() {
+      // ================= 1. 常量与演示数据 =================
+      // 天气地点固定：合肥市瑶海区代表坐标；北京时间 UTC+8
+      const SITE = { name: "合肥市瑶海区", lat: 31.8696, lon: 117.3154, utcOffsetMin: 480 };
+
+      // 基础天气（演示预设，不是实时天气）：只决定云量 cloud 0..1、降水 rain/snow 0..3、
+      // 以及多云时经过太阳的云团 hero；不含风。
+      const WEATHERS = [
+        { key: "clear", label: "晴", icon: "☀️", cloud: 0.1, rain: 0, snow: 0, hero: 0 },
+        { key: "partly", label: "多云", icon: "⛅", cloud: 0.46, rain: 0, snow: 0, hero: 1 },
+        { key: "overcast", label: "阴", icon: "☁️", cloud: 0.93, rain: 0, snow: 0, hero: 0 },
+        { key: "lightRain", label: "小雨", icon: "🌧️", cloud: 0.82, rain: 0.85, snow: 0, hero: 0 },
+        { key: "heavyRain", label: "大雨", icon: "🌧️", cloud: 0.95, rain: 2.0, snow: 0, hero: 0 },
+        { key: "storm", label: "暴雨", icon: "🌧️", cloud: 1, rain: 3.0, snow: 0, hero: 0 },
+        { key: "lightSnow", label: "小雪", icon: "🌨️", cloud: 0.85, rain: 0, snow: 0.7, hero: 0 },
+        { key: "snow", label: "中雪", icon: "🌨️", cloud: 0.9, rain: 0, snow: 1.5, hero: 0 },
+        { key: "heavySnow", label: "大雪", icon: "❄️", cloud: 0.96, rain: 0, snow: 2.6, hero: 0 },
+      ];
+      // 风（独立维度）：speed 基础风速 km/h，gust 阵风幅度；方向另由 windDir = +1（向右）/ −1（向左）给出
+      const WINDS = {
+        breeze: { label: "微风", speed: 6, gust: 0.1 },
+        normal: { label: "常风", speed: 18, gust: 0.25 },
+        strong: { label: "强风", speed: 60, gust: 0.75 },
+      };
+      // 组合快捷预设：只是同时设置天气与风等级，不改变天气本身的云量
+      const PRESETS = [
+        { label: "晴·强风", weather: "clear", wind: "strong" },
+        { label: "大雨·强风", weather: "heavyRain", wind: "strong" },
+      ];
+      // 旧场景名兼容：只映射到天气，不带风
+      const LEGACY_SCENES = { windy: "clear", rainWind: "heavyRain" };
+      const WEATHER_KEYS = ["cloud", "rain", "snow", "hero"];
+      const SUN_KEYS = ["x", "y", "vis", "daylight", "warmth", "twilight", "moonX", "moonY", "moonVis"];
+      // 与着色器 rainLayer / snowLayer 的格子尺寸一一对应；fall 按 128 个格子回绕
+      const RAIN_LAYERS = [
+        { cellY: 90, speed: 620 },
+        { cellY: 150, speed: 900 },
+        { cellY: 240, speed: 1250 },
+      ];
+      const SNOW_LAYERS = [
+        { scale: 46, speed: 0.055, drift: 0.6 },
+        { scale: 24, speed: 0.085, drift: 0.8 },
+        { scale: 10, speed: 0.13, drift: 1.0 },
+      ];
+      const TIME_PRESETS = [
+        { key: "live", label: "实时" },
+        { key: "dawn", label: "清晨" },
+        { key: "noon", label: "正午" },
+        { key: "dusk", label: "傍晚" },
+        { key: "night", label: "夜间" },
+      ];
+
+      // ================= 2. 状态 =================
+      const $ = (id) => document.getElementById(id);
+      const canvas = $("sky"),
+        fx = $("fx"),
+        fctx = fx.getContext("2d"),
+        stats = $("stats"),
+        notice = $("notice"),
+        motion = matchMedia("(prefers-reduced-motion: reduce)"),
+        small = matchMedia("(max-width: 720px)");
+      let weatherIndex = 0,
+        windLevel = "normal",
+        windDir = 1,
+        forceStatic = false,
+        glassDrops = false,
+        quality = 1,
+        fallback = false,
+        hidden = document.hidden,
+        reviewPaused = false,
+        gl = null,
+        program = null,
+        buffer = null,
+        uniforms = {},
+        raf = 0,
+        gate = null,
+        lastDraw = 0,
+        frames = 0,
+        ticks = 0,
+        tickRate = 0,
+        sampleAt = 0,
+        fps = 0,
+        slowCount = 0,
+        recording = null,
+        pageSuspended = false,
+        pageTornDown = false,
+        liveTimer = 0,
+        timeMode = "live",
+        timePreset = "live",
+        demoMinutes = 720,
+        demoDate = null,
+        dayInfoCache = null,
+        snowAmount = 0,
+        impactsInWindow = 0,
+        impactRate = 0;
+      // 当前（平滑过渡中的）天气参数与日照参数；
+      // 风单独平滑：windSigned 为带符号水平风速（方向切换时连续穿过 0），windSpeed 为风速大小
+      const cur = Object.fromEntries(WEATHER_KEYS.map((k) => [k, WEATHERS[0][k]]));
+      Object.assign(cur, { windSigned: WINDS.normal.speed, windSpeed: WINDS.normal.speed, gust: WINDS.normal.gust });
+      const sunTarget = { elev: 0, az: 180 },
+        sunNow = {};
+      // 累积位移：全部按真实时间积分，暂停后恢复不会跳跃
+      const sim = {
+        clock: 0,
+        gust: 0,
+        wind: 0,
+        windSigned: 0,
+        slope: 0,
+        cloudFar: [0, 0],
+        cloudNear: [0, 0],
+        scud: [0, 0],
+        hero: 0.15,
+        rainFall: [0, 0, 0],
+        snowFall: [0, 0, 0],
+        snowDrift: [0, 0, 0],
+      };
+
+      // ================= 3. 小工具 =================
+      const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+      const lerp = (a, b, t) => a + (b - a) * t;
+      function smoothstep(a, b, v) {
+        const t = clamp((v - a) / (b - a), 0, 1);
+        return t * t * (3 - 2 * t);
+      }
+      function hash1(n) {
+        const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+        return s - Math.floor(s);
+      }
+      function valueNoise1(x, seed) {
+        const i = Math.floor(x),
+          f = x - i;
+        return lerp(hash1(i + seed), hash1(i + 1 + seed), f * f * (3 - 2 * f));
+      }
+      function hhmm(minutes) {
+        const m = ((Math.round(minutes) % 1440) + 1440) % 1440;
+        return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+      }
+      function setMessage(t) {
+        notice.textContent = t;
+      }
+      function isStill() {
+        return forceStatic || motion.matches || fallback;
+      }
+
+      // ================= 4. 日照：低精度天文算法 =================
+      // 采用《天文年历》低精度太阳位置公式（1950–2050 年误差约 0.01°），
+      // 不含大气折射修正；日出日落取太阳中心高度 -0.833°，误差约 1–2 分钟。
+      function julianDay(y, m, d, localMinutes) {
+        return Date.UTC(y, m - 1, d) / 86400000 + 2440587.5 + (localMinutes - SITE.utcOffsetMin) / 1440;
+      }
+      function solarPosition(jd) {
+        const rad = Math.PI / 180,
+          n = jd - 2451545.0;
+        const L = (280.46 + 0.9856474 * n) % 360;
+        const g = ((357.528 + 0.9856003 * n) % 360) * rad;
+        const lambda = (L + 1.915 * Math.sin(g) + 0.02 * Math.sin(2 * g)) * rad;
+        const eps = (23.439 - 0.0000004 * n) * rad;
+        const ra = Math.atan2(Math.cos(eps) * Math.sin(lambda), Math.cos(lambda));
+        const dec = Math.asin(Math.sin(eps) * Math.sin(lambda));
+        const gmst = (18.697374558 + 24.06570982441908 * n) % 24;
+        const ha = (gmst * 15 + SITE.lon) * rad - ra;
+        const lat = SITE.lat * rad;
+        const elev = Math.asin(Math.sin(lat) * Math.sin(dec) + Math.cos(lat) * Math.cos(dec) * Math.cos(ha));
+        const az = Math.atan2(Math.sin(ha), Math.cos(ha) * Math.sin(lat) - Math.tan(dec) * Math.cos(lat)) / rad + 180;
+        return { elev: elev / rad, az: ((az % 360) + 360) % 360 };
+      }
+      // 日出、日落、正午（太阳最高）——每个日期只算一次
+      function dayInfo(y, m, d) {
+        const key = y + "-" + m + "-" + d;
+        if (dayInfoCache && dayInfoCache.key === key) return dayInfoCache;
+        let rise = null,
+          set = null,
+          noon = 720,
+          best = -90,
+          prev = solarPosition(julianDay(y, m, d, 0)).elev;
+        for (let t = 2; t <= 1440; t += 2) {
+          const e = solarPosition(julianDay(y, m, d, t)).elev;
+          if (prev < -0.833 && e >= -0.833) rise = t - 2 + (2 * (-0.833 - prev)) / (e - prev);
+          if (prev >= -0.833 && e < -0.833) set = t - 2 + (2 * (prev + 0.833)) / (prev - e);
+          if (e > best) (best = e), (noon = t);
+          prev = e;
+        }
+        dayInfoCache = { key, rise: rise ?? 360, set: set ?? 1080, noon, maxElev: best };
+        return dayInfoCache;
+      }
+      // —— 屏幕视觉投影（风格化示意，不是相机透视，也不是等角映射） ——
+      // 真实天文量只有 solarPosition 算出的高度 elev 与方位 az（随日期、时刻、季节连续变化，写在审查栏里）。
+      // 下面只是把它们“画到页面背景上”的单调、连续映射：
+      //  · 水平：面向正南，东在左、西在右；off = (az − 180°) / 70°，x = 0.5 + sign(off)·|off|^0.6·0.45。
+      //  · 竖直：y = hY + (yTop − hY) · (1 − e^(−elev/12°)) / (1 − e^(−90°/12°))。
+      //    太阳升起后很快升入页面顶部的天空带（正文上方的留白），约 30° 以上的高度都压缩在天空带内缓慢升降。
+      //    这是为了不让太阳躲到卡片后面而做的风格化压缩，屏幕高度不代表真实仰角比例。
+      //  · 地平线高度 hY：横屏左右有留白能看见低太阳，地平线在画面底部；竖屏两侧几乎没有留白，
+      //    地平线随宽高比连续抬到天空带下沿附近，低太阳也落在顶部天空带内。
+      // 参数只取决于视口尺寸（与 CSS 里 body.clean main 的上边距 clamp(24px, 12vh, 124px) 对应），
+      // 不读取卡片边缘；对时间是连续光滑的，太阳不会因为卡片而跳动。
+      function projectSun(elev, az) {
+        const H = Math.max(1, innerHeight),
+          band = clamp(0.12 * H, 24, 124) / H,
+          yTop = 1 - 0.18 * band,
+          hY = lerp(1 - 1.08 * band, 0.05, smoothstep(0.6, 1.2, innerWidth / H)),
+          rise = (1 - Math.exp(-elev / 12)) / (1 - Math.exp(-90 / 12)),
+          off = clamp((az - 180) / 70, -1, 1);
+        return { x: 0.5 + Math.sign(off) * Math.pow(Math.abs(off), 0.6) * 0.45, y: hY + (yTop - hY) * rise };
+      }
+      // 把太阳高度/方位映射为天空状态与屏幕位置
+      function skyStateFor(date, minutes) {
+        const info = dayInfo(date.y, date.m, date.d);
+        const pos = solarPosition(julianDay(date.y, date.m, date.d, minutes));
+        const e = pos.elev;
+        const screen = projectSun(e, pos.az);
+        // 夜间进度：从日落到次日日出，用于示意月亮位置
+        const nightLen = 1440 - info.set + info.rise;
+        const sinceSet = minutes >= info.set ? minutes - info.set : minutes + 1440 - info.set;
+        const p = clamp(sinceSet / nightLen, 0, 1);
+        return {
+          elev: e,
+          az: pos.az,
+          info,
+          x: screen.x,
+          y: screen.y,
+          vis: smoothstep(-1.2, 1.0, e),
+          daylight: smoothstep(-8, 3, e),
+          twilight: smoothstep(-10, -3, e) * (1 - smoothstep(-1, 5, e)),
+          warmth: (1 - smoothstep(2, 24, e)) * smoothstep(-4, 0.5, e),
+          // 示意月亮放在桌面右侧留白处缓慢升降，不代表真实月亮位置或月相
+          moonX: 0.935,
+          moonY: 0.55 + 0.3 * Math.sin(Math.PI * p),
+          moonVis: 1 - smoothstep(-8, 0, e),
+        };
+      }
+      function shanghaiNow() {
+        const parts = Object.fromEntries(
+          new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Shanghai",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hourCycle: "h23",
+          })
+            .formatToParts(new Date())
+            .map((x) => [x.type, x.value]),
+        );
+        return { y: +parts.year, m: +parts.month, d: +parts.day, minutes: +parts.hour * 60 + +parts.minute };
+      }
+      function greetingFor(minutes) {
+        if (minutes >= 300 && minutes < 660) return "早上好";
+        if (minutes >= 660 && minutes < 780) return "中午好";
+        if (minutes >= 780 && minutes < 1080) return "下午好";
+        return "晚上好";
+      }
+      // 时间状态更新：与动画帧分离，只在切换时间或每 30 秒执行
+      function updateTimeState(instant) {
+        const now = shanghaiNow();
+        const date = demoDate || now;
+        const info = dayInfo(date.y, date.m, date.d);
+        if (timePreset === "dawn") demoMinutes = Math.round(info.rise + 25);
+        if (timePreset === "noon") demoMinutes = info.noon;
+        if (timePreset === "dusk") demoMinutes = Math.round(info.set - 25);
+        if (timePreset === "night") demoMinutes = 21 * 60 + 30;
+        const minutes = timeMode === "live" ? now.minutes : demoMinutes;
+        Object.assign(sunTarget, skyStateFor(date, minutes));
+        if (instant || isStill() || sunNow.x === undefined) for (const k of SUN_KEYS) sunNow[k] = sunTarget[k];
+        $("clock").value = minutes;
+        $("dateInput").value =
+          date.y + "-" + String(date.m).padStart(2, "0") + "-" + String(date.d).padStart(2, "0");
+        $("timeLabel").textContent =
+          (timeMode === "live" ? "实时 · 北京时间 " : "演示时间 ") +
+          hhmm(minutes) +
+          (demoDate ? "（演示日期）" : "") +
+          " · 日出 " +
+          hhmm(info.rise) +
+          " / 日落 " +
+          hhmm(info.set) +
+          "（近似）· 太阳高度 " +
+          sunTarget.elev.toFixed(1) +
+          "° 方位 " +
+          sunTarget.az.toFixed(0) +
+          "°";
+        const week = "日一二三四五六"[new Date(Date.UTC(date.y, date.m - 1, date.d)).getUTCDay()];
+        $("greeting").textContent =
+          greetingFor(minutes) + " · " + date.y + " 年 " + date.m + " 月 " + date.d + " 日 周" + week;
+        document.body.classList.toggle("night", sunTarget.daylight < 0.3);
+        document
+          .querySelectorAll("#times button")
+          .forEach((b) => b.classList.toggle("active", b.dataset.key === timePreset));
+        updateFallbackBackground();
+        if (isStill()) redrawStill();
+        else updateStats();
+      }
+
+      // ================= 5. 模拟：天气参数平滑过渡、阵风、位移积分 =================
+      // 阵风：几条不可公度正弦叠加后取阈值，形成"平滑加速—回落"的间歇阵风，而非匀速或随机抖动
+      function gustShape(t) {
+        const a = Math.sin(0.42 * t) + 0.55 * Math.sin(0.91 * t + 1.7) + 0.3 * Math.sin(1.73 * t + 0.4);
+        return smoothstep(0.35, 1.5, a);
+      }
+      // 由平滑后的风速派生：云沿风向拉长、已有云层被吹碎（云量不足时为 0，不凭空生成云）
+      function windStretch() {
+        // 上限 0.25：更大的拉长会把值噪声的网格拉成台阶状方块
+        return 0.25 * smoothstep(8, 65, cur.windSpeed);
+      }
+      function windScud() {
+        return smoothstep(0.35, 0.55, cur.cloud) * smoothstep(25, 60, cur.windSpeed);
+      }
+      // 雨丝倾角：每下落 1 像素的水平位移，符号即风向；限幅保证雨始终以下落为主
+      function rainSlope(signed) {
+        return clamp(signed / 105, -0.8, 0.8);
+      }
+      function simulate(dt) {
+        sim.clock += dt;
+        const target = WEATHERS[weatherIndex],
+          wind = WINDS[windLevel],
+          k = 1 - Math.exp(-dt / 0.7),
+          kw = 1 - Math.exp(-dt / 1.0),
+          ks = 1 - Math.exp(-dt / 0.5);
+        for (const key of WEATHER_KEYS) cur[key] += (target[key] - cur[key]) * k;
+        // 风：对带符号的水平速度做指数平滑，换向时倾角/漂移连续经过 0，不跳变
+        cur.windSigned += (wind.speed * windDir - cur.windSigned) * kw;
+        cur.windSpeed += (wind.speed - cur.windSpeed) * kw;
+        cur.gust += (wind.gust - cur.gust) * kw;
+        for (const key of SUN_KEYS) sunNow[key] += (sunTarget[key] - sunNow[key]) * ks;
+        // 阵风只放大速度，位移仍按时间积分
+        sim.gust = gustShape(sim.clock) * cur.gust;
+        const w = cur.windSigned * (1 + sim.gust);
+        sim.windSigned = w;
+        sim.wind = Math.abs(w);
+        // 云随风移动（噪声坐标减小 = 向右）；近层更快，碎云起伏最快。
+        // 云在高空、离得远，屏幕速度按风速的 0.8 次幂增长（以 18 km/h 为基准），强风约为常风的 2.6 倍，避免"飞逝"。
+        const cw = Math.sign(w) * 18 * Math.pow(Math.abs(w) / 18, 0.8);
+        sim.cloudFar[0] -= cw * 0.0011 * dt;
+        sim.cloudNear[0] -= cw * 0.003 * dt;
+        sim.scud[0] -= cw * 0.0055 * dt;
+        sim.hero += ((cw * 0.003) / (2.1 * (1 - 0.5 * windStretch()))) * dt;
+        sim.slope = rainSlope(w);
+        const r = clamp(cur.rain / 3, 0, 1);
+        RAIN_LAYERS.forEach((L, i) => {
+          sim.rainFall[i] = (sim.rainFall[i] + L.speed * (0.85 + 0.3 * r) * dt) % (L.cellY * 128);
+        });
+        SNOW_LAYERS.forEach((L, i) => {
+          const period = 128 / L.scale;
+          sim.snowFall[i] = (sim.snowFall[i] + L.speed * dt) % period;
+          sim.snowDrift[i] = (sim.snowDrift[i] + w * 0.0016 * L.drift * dt) % period;
+        });
+        // 积雪示意：下雪时向上限逼近（约 8 秒时间常数），停雪后约 2.5 秒消退
+        if (cur.snow > 0.05) snowAmount += (1 - snowAmount) * (1 - Math.exp(-dt / 8));
+        else snowAmount *= Math.exp(-dt / 2.5);
+      }
+      // 静止模式 / 自动化：直接取目标值，保留同一天气的静态画面
+      function settleToTarget() {
+        const target = WEATHERS[weatherIndex],
+          wind = WINDS[windLevel];
+        for (const key of WEATHER_KEYS) cur[key] = target[key];
+        cur.windSigned = wind.speed * windDir;
+        cur.windSpeed = wind.speed;
+        cur.gust = wind.gust;
+        for (const key of SUN_KEYS) sunNow[key] = sunTarget[key];
+        sim.windSigned = cur.windSigned;
+        sim.wind = wind.speed;
+        sim.gust = 0;
+        sim.slope = rainSlope(cur.windSigned);
+        snowAmount = cur.snow > 0.05 ? 1 : 0;
+      }
+
+      // ================= 6. WebGL 背景 =================
+      const UNIFORM_NAMES = [
+        "uResolution", "uPxScale", "uAspect", "uTime",
+        "uSunPos", "uSunVis", "uDaylight", "uWarmth", "uTwilight", "uMoon",
+        "uCloudCover", "uWindStretch", "uScud", "uCloudFar", "uCloudNear", "uScudShift", "uHeroCloud",
+        "uRain", "uRainSlope", "uRainFall", "uSnow", "uSnowFall", "uSnowDrift", "uGlass",
+      ];
+      function compile(type, src) {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+          const e = gl.getShaderInfoLog(s);
+          gl.deleteShader(s);
+          throw Error(e);
+        }
+        return s;
+      }
+      function initGL() {
+        try {
+          gl = canvas.getContext("webgl", {
+            alpha: false,
+            antialias: false,
+            preserveDrawingBuffer: false,
+            powerPreference: "low-power",
+          });
+          if (!gl) throw Error("WebGL 不可用");
+          const v = compile(gl.VERTEX_SHADER, $("weather-vertex-source").textContent),
+            f = compile(gl.FRAGMENT_SHADER, $("weather-fragment-source").textContent);
+          program = gl.createProgram();
+          gl.attachShader(program, v);
+          gl.attachShader(program, f);
+          gl.linkProgram(program);
+          gl.deleteShader(v);
+          gl.deleteShader(f);
+          if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw Error(gl.getProgramInfoLog(program));
+          gl.useProgram(program);
+          buffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+          const p = gl.getAttribLocation(program, "aPosition");
+          gl.enableVertexAttribArray(p);
+          gl.vertexAttribPointer(p, 2, gl.FLOAT, false, 0, 0);
+          uniforms = {};
+          for (const n of UNIFORM_NAMES) uniforms[n] = gl.getUniformLocation(program, n);
+          fallback = false;
+          slowCount = 0;
+          canvas.style.display = "";
+        } catch (e) {
+          enterFallback("静态备用：" + e.message);
+        }
+        resize();
+        restart();
+      }
+      // 三种降级入口（WebGL 初始化失败、上下文丢失、持续低帧率）都走这里：停止帧循环，显示 2D 静态备用天空
+      function enterFallback(message) {
+        if (raf) cancelAnimationFrame(raf);
+        raf = 0;
+        fallback = true;
+        fps = 0;
+        canvas.style.display = "none";
+        const wasRecording = !!recording;
+        stopRecording(true);
+        setMessage(message + (wasRecording ? "；录制已提前结束（已保存已录部分）" : ""));
+        redrawStill();
+      }
+      // 离开降级：WebGL 仍可用则直接恢复动画，否则重新初始化
+      function exitFallback() {
+        if (!gl || !program || gl.isContextLost()) return initGL();
+        fallback = false;
+        slowCount = 0;
+        canvas.style.display = "";
+        setMessage("");
+        resize();
+        restart();
+      }
+      function resize() {
+        resizeFx();
+        if (!gl || gl.isContextLost() || fallback) return updateStats();
+        // 像素预算：限制 DPR 与总像素，低帧率时 quality 继续下调
+        let d = Math.min(devicePixelRatio || 1, small.matches ? 1.25 : 1.5) * quality;
+        d = Math.min(d, Math.sqrt(1300000 / (innerWidth * innerHeight)));
+        canvas.width = Math.max(1, Math.round(innerWidth * d));
+        canvas.height = Math.max(1, Math.round(innerHeight * d));
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        draw();
+        updateStats();
+      }
+      function draw() {
+        if (!gl || !program || gl.isContextLost() || fallback) return;
+        const U = uniforms,
+          W = canvas.width,
+          H = canvas.height,
+          aspect = W / H;
+        gl.useProgram(program);
+        gl.uniform2f(U.uResolution, W, H);
+        gl.uniform1f(U.uPxScale, W / Math.max(1, innerWidth));
+        gl.uniform1f(U.uAspect, aspect);
+        gl.uniform1f(U.uTime, sim.clock);
+        gl.uniform2f(U.uSunPos, sunNow.x, sunNow.y);
+        gl.uniform1f(U.uSunVis, sunNow.vis);
+        gl.uniform1f(U.uDaylight, sunNow.daylight);
+        gl.uniform1f(U.uWarmth, sunNow.warmth);
+        gl.uniform1f(U.uTwilight, sunNow.twilight);
+        gl.uniform3f(U.uMoon, sunNow.moonX, sunNow.moonY, sunNow.moonVis);
+        gl.uniform1f(U.uCloudCover, cur.cloud);
+        gl.uniform1f(U.uWindStretch, windStretch());
+        gl.uniform1f(U.uScud, windScud());
+        gl.uniform2f(U.uCloudFar, sim.cloudFar[0], sim.cloudFar[1]);
+        gl.uniform2f(U.uCloudNear, sim.cloudNear[0], sim.cloudNear[1]);
+        gl.uniform2f(U.uScudShift, sim.scud[0], sim.scud[1]);
+        // 多云：一团云沿风向经过太阳位置，两端淡入淡出（风向左时 sim.hero 递减，自然从右侧进入）；
+        // 它是云场的一部分，遮挡采样同样计入
+        const span = 1.1,
+          phase = ((sim.hero % span) + span) % span,
+          fade = smoothstep(0, 0.18, phase) * (1 - smoothstep(span - 0.18, span, phase));
+        gl.uniform3f(U.uHeroCloud, sunNow.x * aspect - span * 0.5 + phase, sunNow.y + 0.012, cur.hero * fade);
+        gl.uniform1f(U.uRain, cur.rain);
+        gl.uniform1f(U.uRainSlope, sim.slope);
+        gl.uniform3f(U.uRainFall, sim.rainFall[0], sim.rainFall[1], sim.rainFall[2]);
+        gl.uniform1f(U.uSnow, cur.snow);
+        gl.uniform3f(U.uSnowFall, sim.snowFall[0], sim.snowFall[1], sim.snowFall[2]);
+        gl.uniform3f(U.uSnowDrift, sim.snowDrift[0], sim.snowDrift[1], sim.snowDrift[2]);
+        gl.uniform1f(U.uGlass, glassDrops ? 1 : 0);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+      }
+      // WebGL 不可用时的静态备用底色（正文始终可读）
+      function updateFallbackBackground() {
+        const bg = document.querySelector(".fallback"),
+          s = WEATHERS[weatherIndex],
+          day = sunTarget.daylight ?? 1;
+        let top = s.cloud > 0.6 ? "#8996a4" : "#5f8fc4",
+          bottom = s.cloud > 0.6 ? "#c9d0d8" : "#dbe8f2";
+        if (day < 0.3) (top = "#0b1220"), (bottom = "#1d283a");
+        bg.style.background = "linear-gradient(" + top + "," + bottom + ")";
+      }
+
+      // ================= 6b. 静态备用天空（2D，一次性绘制，保留天气身份） =================
+      // 用于 WebGL 不可用 / 上下文丢失 / 持续低帧率（fallback = true）。不做持续动画：
+      // 只在天气、风、时间、尺寸变化时重绘（staticKey 判断）。配色公式移植自着色器 skyColor / addClouds / addAtmosphere。
+      // 若 2D 也失败，则保持隐藏，由最底层 .fallback 渐变兜底。
+      const skyStatic = $("skyStatic");
+      let sctx = null,
+        staticKey = "",
+        staticDrawMs = 0,
+        static2dOk = false;
+      // 静态雨/雪等级：per = 每 10 万 CSS 像素面积的条数（点数），len = 雨丝长度范围（px），size = 雪点尺寸倍率
+      const STATIC_RAIN = [
+        { min: 0.03, per: 12, len: [10, 18] },
+        { min: 1.5, per: 45, len: [18, 38] },
+        { min: 2.5, per: 110, len: [30, 60] },
+      ];
+      const STATIC_SNOW = [
+        { min: 0.03, per: 22, size: 0.85 },
+        { min: 1.1, per: 60, size: 1.1 },
+        { min: 2.1, per: 140, size: 1.45 },
+      ];
+      // 确定性伪随机（mulberry32）：同一种子每次画出同样的云、雨丝、星点，不闪烁
+      function seededRandom(seed) {
+        let a = seed >>> 0;
+        return () => {
+          a = (a + 0x6d2b79f5) >>> 0;
+          let t = a;
+          t = Math.imul(t ^ (t >>> 15), t | 1);
+          t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      const mix3 = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+      function rgba(c, a = 1) {
+        const v = (x) => Math.round(clamp(x, 0, 1) * 255);
+        return "rgba(" + v(c[0]) + "," + v(c[1]) + "," + v(c[2]) + "," + clamp(a, 0, 1).toFixed(3) + ")";
+      }
+      // h = 屏幕高度位置（uv，0 = 底，1 = 顶）处的天空底色（含阴雨云盖与近地雾气）
+      function staticSkyColor(h, w, sun) {
+        const rain = clamp(w.rain / 3, 0, 1),
+          snow = clamp(w.snow / 3, 0, 1);
+        let top = mix3([0.02, 0.035, 0.075], mix3([0.17, 0.44, 0.8], [0.32, 0.45, 0.68], sun.warmth), sun.daylight),
+          bot = mix3([0.06, 0.09, 0.16], mix3([0.62, 0.78, 0.93], [0.95, 0.79, 0.62], sun.warmth), sun.daylight);
+        top = mix3(top, [0.1, 0.14, 0.3], sun.twilight * 0.65);
+        bot = mix3(bot, [0.8, 0.5, 0.46], sun.twilight * 0.75);
+        const sky = mix3(bot, top, Math.pow(h, 0.7));
+        let gTop = mix3([0.55, 0.6, 0.67], [0.33, 0.39, 0.47], rain),
+          gBot = mix3([0.74, 0.77, 0.81], [0.5, 0.55, 0.62], rain);
+        gTop = mix3(gTop, [0.5, 0.56, 0.64], snow);
+        gBot = mix3(gBot, [0.7, 0.74, 0.8], snow);
+        const g = mix3(gBot, gTop, h),
+          grey = mix3([0.05 + g[0] * 0.06, 0.065 + g[1] * 0.06, 0.095 + g[2] * 0.06], g, sun.daylight);
+        // 静态版没有着色器的噪声云场补灰，云盖阈值更低：小雨/小雪（云量≈ 0.82）即为整片灰天
+        let col = mix3(sky, grey, smoothstep(0.5, 0.82, w.cloud) * 0.9);
+        let fogDay = mix3([0.86, 0.9, 0.94], [0.66, 0.71, 0.77], w.cloud);
+        fogDay = mix3(fogDay, [0.46, 0.52, 0.6], rain);
+        fogDay = mix3(fogDay, [0.95, 0.8, 0.66], sun.warmth * (1 - w.cloud) * 0.5);
+        const fogCol = mix3([0.07, 0.1, 0.15], fogDay, sun.daylight);
+        col = mix3(col, fogCol, (1 - smoothstep(0, 0.45, h)) * (0.1 + w.cloud * 0.1));
+        return mix3(col, fogCol, rain * rain * 0.2);
+      }
+      // 一团积云：底排若干子团 + 顶部圆顶；底部略平（裁切）、顶部亮、底部偏灰。
+      // (cx, by) 为云底中心（CSS 像素），R 为尺度，flat 为竖直压扁系数
+      function staticCumulus(c, rnd, cx, by, R, flat, lit, shadow, alpha) {
+        const puffs = [],
+          n = 3 + Math.floor(rnd() * 3);
+        for (let i = 0; i < n; i++) {
+          const t = n === 1 ? 0 : i / (n - 1) - 0.5;
+          puffs.push([t * R * 2.6, -R * (0.35 + 0.1 * rnd()), R * (0.5 + 0.15 * rnd())]);
+        }
+        const tops = 1 + Math.floor(rnd() * 3);
+        for (let i = 0; i < tops; i++) puffs.push([(rnd() - 0.5) * R * 1.4, -R * (0.75 + 0.35 * rnd()), R * (0.6 + 0.25 * rnd())]);
+        c.save();
+        c.translate(cx, by);
+        c.scale(1, flat);
+        c.beginPath();
+        c.rect(-R * 4, -R * 4, R * 8, R * 4 + R * 0.08);
+        c.clip();
+        // 先铺偏灰的整体（底部），再在上移、略小处叠亮色（顶部受光）
+        for (const pass of [0, 1]) {
+          const col = pass ? lit : shadow;
+          for (const [x, y, r] of puffs) {
+            const py = y - (pass ? r * 0.28 : 0),
+              pr = r * (pass ? 0.82 : 1),
+              g = c.createRadialGradient(x, py, 0, x, py, pr);
+            g.addColorStop(0, rgba(col, alpha));
+            g.addColorStop(0.62, rgba(col, alpha * 0.92));
+            g.addColorStop(1, rgba(col, 0));
+            c.fillStyle = g;
+            c.fillRect(x - pr, py - pr, pr * 2, pr * 2);
+          }
+        }
+        c.restore();
+      }
+      function drawStaticClouds(c, W, H, w, sun, clear, sunX, sunY) {
+        if (w.cloud < 0.03) return;
+        const overcast = smoothstep(0.62, 0.92, w.cloud),
+          rain = clamp(w.rain / 3, 0, 1),
+          sunCol = mix3([1, 0.97, 0.9], [1, 0.66, 0.4], sun.warmth),
+          glowAmt = (sun.warmth * sun.daylight + sun.twilight * 0.8) * clear;
+        let lit = mix3([0.98, 0.985, 0.99], [0.8, 0.83, 0.87], overcast),
+          shadow = mix3([0.66, 0.72, 0.8], [0.55, 0.6, 0.67], overcast);
+        lit = mix3(lit, [0.58, 0.64, 0.72], rain);
+        shadow = mix3(shadow, [0.33, 0.39, 0.48], rain);
+        lit = mix3(lit, [lit[0] * sunCol[0] * 1.04, lit[1] * sunCol[1] * 1.04, lit[2] * sunCol[2] * 1.04], glowAmt * 0.75);
+        shadow = mix3(shadow, [0.6, 0.47, 0.55], sun.twilight * clear * 0.5);
+        lit = mix3([0.15, 0.19, 0.26], lit, sun.daylight);
+        shadow = mix3([0.065, 0.09, 0.135], shadow, sun.daylight);
+        const rnd = seededRandom(20261009),
+          sizeK = Math.sqrt(clamp(Math.min(W, H * 1.6) / 1300, 0.45, 1.2));
+        // 透视（与着色器 cloudPlane 同思路）：屏幕越低越远，水平缩小 q、竖直缩小 q²
+        const persp = (y) => (1 - y / H + 1.15) / 2.15;
+        if (overcast > 0.01) {
+          // 阴/雨/雪：连续云盖——大片重叠的柔和明暗团块，让灰色天空有起伏而不是平涂
+          const n = Math.round((W * H) / 26000);
+          for (let i = 0; i < n; i++) {
+            const y = Math.pow(rnd(), 1.3) * H * 0.9,
+              q = persp(y),
+              x = rnd() * W,
+              r = (110 + 140 * rnd()) * q * sizeK * (1 + 0.25 * rain),
+              dark = rnd() < 0.55,
+              col = dark ? mix3(shadow, [0.2, 0.24, 0.3], rain * 0.35 * sun.daylight) : lit,
+              a = (dark ? 0.32 : 0.22) * overcast;
+            c.save();
+            c.translate(x, y);
+            c.scale(1.7, 0.75 * q);
+            const g = c.createRadialGradient(0, 0, 0, 0, 0, r);
+            g.addColorStop(0, rgba(col, a));
+            g.addColorStop(1, rgba(col, 0));
+            c.fillStyle = g;
+            c.fillRect(-r, -r, r * 2, r * 2);
+            c.restore();
+          }
+        }
+        // 可辨认的积云团：晴极少（2 朵小淡云），多云若干；阴/雨/雪只用上面的连续云盖
+        if (overcast >= 0.5) return;
+        const count = w.cloud < 0.2 ? 2 : Math.round(clamp((W * H) / 120000, 5, 12)),
+          baseR = w.cloud < 0.2 ? 34 : 60,
+          alpha = w.cloud < 0.2 ? 0.55 : 0.95;
+        for (let i = 0; i < count; i++) {
+          const y = (0.08 + 0.72 * Math.pow(rnd(), 1.15)) * H,
+            q = persp(y);
+          let x = (i + 0.15 + 0.7 * rnd()) * (W / count);
+          const R = baseR * (0.75 + 0.5 * rnd()) * q * sizeK;
+          // 多云时不压住日面（太阳要保持可见）
+          if (Math.hypot(x - sunX, y - R * 0.6 - sunY) < R * 2.2) x += (x < sunX ? -1 : 1) * R * 2.6;
+          staticCumulus(c, rnd, x, y, R, 0.62 * q, lit, shadow, alpha);
+        }
+      }
+      function drawStaticRain(c, W, H, w, sun) {
+        if (w.rain < 0.03) return;
+        const L = STATIC_RAIN.filter((x) => w.rain >= x.min).pop(),
+          slope = rainSlope(WINDS[windLevel].speed * windDir),
+          norm = 1 / Math.sqrt(1 + slope * slope),
+          total = Math.round((L.per * W * H) / 100000),
+          col = mix3([0.6, 0.67, 0.77], [0.9, 0.93, 0.97], sun.daylight),
+          rnd = seededRandom(7331),
+          pad = Math.abs(slope) * (L.len[1] + 20);
+        c.lineCap = "round";
+        // 三层远近：远层多而细短淡，近层少而粗长；每条分三段——顶端（拖尾）淡、底端（雨滴头部）实
+        const layers = [
+          { share: 0.55, width: 0.8, a: 0.42, l: [0, 0.55] },
+          { share: 0.3, width: 1.1, a: 0.55, l: [0.3, 0.8] },
+          { share: 0.15, width: 1.5, a: 0.62, l: [0.6, 1] },
+        ];
+        for (const ly of layers) {
+          const segs = [new Path2D(), new Path2D(), new Path2D()],
+            n = Math.round(total * ly.share);
+          for (let i = 0; i < n; i++) {
+            const hx = -pad + rnd() * (W + pad * 2),
+              hy = rnd() * (H + 40),
+              len = lerp(L.len[0], L.len[1], lerp(ly.l[0], ly.l[1], rnd())),
+              dx = -slope * len * norm,
+              dy = -len * norm;
+            // 段 0：拖尾（上方，0–40%），段 1：中段（40–75%），段 2：头部（75–100%）
+            const cut = [0, 0.4, 0.75, 1];
+            for (let s = 0; s < 3; s++) {
+              segs[s].moveTo(hx + dx * (1 - cut[s]), hy + dy * (1 - cut[s]));
+              segs[s].lineTo(hx + dx * (1 - cut[s + 1]), hy + dy * (1 - cut[s + 1]));
+            }
+          }
+          c.lineWidth = ly.width;
+          [0.18, 0.5, 1].forEach((k, s) => {
+            c.strokeStyle = rgba(col, ly.a * k);
+            c.stroke(segs[s]);
+          });
+        }
+      }
+      function drawStaticSnow(c, W, H, w, sun) {
+        if (w.snow < 0.03) return;
+        const L = STATIC_SNOW.filter((x) => w.snow >= x.min).pop(),
+          total = Math.round((L.per * W * H) / 100000),
+          col = mix3([0.7, 0.77, 0.86], [1, 1, 1], sun.daylight),
+          rnd = seededRandom(4127);
+        // 远：小而淡；中：中等较实；近：大而虚（外圈淡光晕 + 内芯）
+        const layers = [
+          { share: 0.55, r: [0.7, 1.2], a: 0.55, soft: false },
+          { share: 0.32, r: [1.3, 2.1], a: 0.85, soft: false },
+          { share: 0.13, r: [2.4, 3.6], a: 0.55, soft: true },
+        ];
+        for (const ly of layers) {
+          const core = new Path2D(),
+            halo = new Path2D(),
+            n = Math.round(total * ly.share);
+          for (let i = 0; i < n; i++) {
+            const x = rnd() * W,
+              y = rnd() * H,
+              r = lerp(ly.r[0], ly.r[1], rnd()) * L.size;
+            if (ly.soft) {
+              halo.moveTo(x + r * 1.5, y);
+              halo.arc(x, y, r * 1.5, 0, Math.PI * 2);
+            }
+            const rc = ly.soft ? r * 0.75 : r;
+            core.moveTo(x + rc, y);
+            core.arc(x, y, rc, 0, Math.PI * 2);
+          }
+          if (ly.soft) {
+            c.fillStyle = rgba(col, ly.a * 0.35);
+            c.fill(halo);
+          }
+          c.fillStyle = rgba(col, ly.a);
+          c.fill(core);
+        }
+      }
+      function drawStaticSky() {
+        const t0 = performance.now(),
+          W = Math.max(1, innerWidth),
+          H = Math.max(1, innerHeight);
+        // 像素预算：DPR ≤ 1.5，总像素 ≤ 160 万
+        let d = Math.min(devicePixelRatio || 1, 1.5);
+        d = Math.min(d, Math.sqrt(1600000 / (W * H)));
+        const pw = Math.max(1, Math.round(W * d)),
+          ph = Math.max(1, Math.round(H * d));
+        if (skyStatic.width !== pw || skyStatic.height !== ph) (skyStatic.width = pw), (skyStatic.height = ph);
+        const c = sctx,
+          w = WEATHERS[weatherIndex],
+          sun = sunTarget,
+          clear = (1 - smoothstep(0.55, 0.95, w.cloud)) * (1 - smoothstep(0, 0.6, w.rain + w.snow)),
+          // uv（y 向上）→ CSS 像素（y 向下）
+          sunX = sun.x * W,
+          sunY = (1 - sun.y) * H;
+        c.setTransform(pw / W, 0, 0, ph / H, 0, 0);
+        c.globalCompositeOperation = "source-over";
+        // 1) 天空底色
+        const g = c.createLinearGradient(0, 0, 0, H);
+        for (let i = 0; i <= 8; i++) g.addColorStop(i / 8, rgba(staticSkyColor(1 - i / 8, w, sun)));
+        c.fillStyle = g;
+        c.fillRect(0, 0, W, H);
+        c.globalCompositeOperation = "lighter";
+        // 2) 清晨/傍晚：太阳一侧低空的克制暖色
+        const warm = (sun.warmth * sun.daylight + sun.twilight * 0.6) * clear;
+        if (warm > 0.02) {
+          c.save();
+          c.translate(sunX, H);
+          c.scale(1.8, 1);
+          const r = H * 0.6,
+            wg = c.createRadialGradient(0, 0, 0, 0, 0, r);
+          wg.addColorStop(0, rgba([0.3, 0.13, 0.02], warm));
+          wg.addColorStop(1, rgba([0.3, 0.13, 0.02], 0));
+          c.fillStyle = wg;
+          c.fillRect(-r, -r, r * 2, r * 2);
+          c.restore();
+        }
+        // 3) 夜间：固定位置的少量星点 + 示意月亮（与着色器同一 moonX/moonY）
+        const nv = (1 - smoothstep(0.05, 0.45, sun.daylight)) * clear;
+        if (nv > 0.01) {
+          const rnd = seededRandom(91),
+            n = Math.round((W * H) / 20000);
+          c.fillStyle = rgba([0.75, 0.8, 0.9], 1);
+          for (let i = 0; i < n; i++) {
+            const x = rnd() * W,
+              y = rnd() * H * 0.62,
+              a = (0.3 + 0.5 * rnd()) * nv * (1 - smoothstep(0.4, 0.62, y / H));
+            c.globalAlpha = a;
+            c.fillRect(x, y, 1.3, 1.3);
+          }
+          c.globalAlpha = 1;
+          const mv = nv * sun.moonVis;
+          if (mv > 0.01) {
+            const mx = sun.moonX * W,
+              my = (1 - sun.moonY) * H,
+              R = 0.014 * H,
+              hg = c.createRadialGradient(mx, my, 0, mx, my, R * 9);
+            hg.addColorStop(0, rgba([0.72, 0.8, 0.94], 0.14 * mv));
+            hg.addColorStop(1, rgba([0.72, 0.8, 0.94], 0));
+            c.fillStyle = hg;
+            c.fillRect(mx - R * 9, my - R * 9, R * 18, R * 18);
+            c.globalCompositeOperation = "source-over";
+            c.save();
+            c.beginPath();
+            c.arc(mx, my, R, 0, Math.PI * 2);
+            c.fillStyle = rgba([0.88, 0.91, 0.95], mv);
+            c.fill();
+            c.clip();
+            // 月相示意：左上偏移的暗圆
+            c.beginPath();
+            c.arc(mx - 0.0055 * H, my - 0.002 * H, R * 0.95, 0, Math.PI * 2);
+            c.fillStyle = rgba([0.26, 0.27, 0.29], 0.82 * mv);
+            c.fill();
+            c.restore();
+            c.globalCompositeOperation = "lighter";
+          }
+        }
+        // 4) 太阳：晴/多云可见柔和光晕与日面；阴/雨/雪 clear≈0 不透亮
+        const sv = sun.vis * clear;
+        if (sv > 0.01) {
+          const sunCol = mix3([1, 0.97, 0.9], [1, 0.7, 0.42], sun.warmth),
+            R = 0.019 * H,
+            gr = H * lerp(0.32, 0.5, sun.warmth),
+            sg = c.createRadialGradient(sunX, sunY, 0, sunX, sunY, gr);
+          sg.addColorStop(0, rgba(sunCol, 0.45 * sv));
+          sg.addColorStop(0.1, rgba(sunCol, 0.24 * sv));
+          sg.addColorStop(0.4, rgba(sunCol, 0.07 * sv));
+          sg.addColorStop(1, rgba(sunCol, 0));
+          c.fillStyle = sg;
+          c.fillRect(sunX - gr, sunY - gr, gr * 2, gr * 2);
+          c.globalCompositeOperation = "source-over";
+          const core = mix3([1, 0.995, 0.97], [1, 0.86, 0.66], sun.warmth * 0.7),
+            dg = c.createRadialGradient(sunX, sunY, R * 0.8, sunX, sunY, R * 1.1);
+          dg.addColorStop(0, rgba(core, sv));
+          dg.addColorStop(1, rgba(core, 0));
+          c.fillStyle = dg;
+          c.beginPath();
+          c.arc(sunX, sunY, R * 1.1, 0, Math.PI * 2);
+          c.fill();
+        }
+        c.globalCompositeOperation = "source-over";
+        // 5) 云、6) 雨丝、7) 雪点
+        drawStaticClouds(c, W, H, w, sun, clear, sunX, sunY);
+        drawStaticRain(c, W, H, w, sun);
+        drawStaticSnow(c, W, H, w, sun);
+        staticDrawMs = performance.now() - t0;
+      }
+      // 静态备用层的显示/隐藏与按需重绘；非 fallback 时隐藏（WebGL 动画或 WebGL 单帧接管）
+      function updateStaticSky() {
+        if (!fallback) {
+          skyStatic.style.display = "none";
+          return;
+        }
+        if (!sctx) {
+          try {
+            sctx = skyStatic.getContext("2d");
+          } catch (e) {
+            sctx = null;
+          }
+        }
+        if (!sctx) {
+          static2dOk = false;
+          skyStatic.style.display = "none";
+          return;
+        }
+        const s = sunTarget,
+          key = [
+            weatherIndex, windLevel, windDir, innerWidth, innerHeight, devicePixelRatio,
+            s.x, s.y, s.vis, s.daylight, s.warmth, s.twilight, s.moonX, s.moonY, s.moonVis,
+          ]
+            .map((v) => (typeof v === "number" ? v.toFixed(3) : v))
+            .join("|");
+        try {
+          if (key !== staticKey) drawStaticSky();
+          staticKey = key;
+          static2dOk = true;
+          skyStatic.style.display = "block";
+        } catch (e) {
+          static2dOk = false;
+          staticKey = "";
+          skyStatic.style.display = "none";
+        }
+      }
+      function staticMode() {
+        if (fallback) return "2d-fallback";
+        return isStill() ? "webgl-still" : "none";
+      }
+
+      // ================= 7. 前景效果层：雨打卡片上沿、积雪覆盖 =================
+      // 只在卡片上沿外侧/边线上绘制；pointer-events:none；不改布局。
+      let fxW = 1,
+        fxH = 1,
+        fxScale = 1,
+        fxHadContent = false,
+        geometryDirty = true;
+      const surfaces = [],
+        drops = [],
+        splashes = [],
+        crowns = [],
+        flakes = [];
+      let dropAcc = 0,
+        flakeAcc = 0;
+      function collectSurfaces() {
+        surfaces.length = 0;
+        document.querySelectorAll(".hero, .cards .card, .note").forEach((el, i) => {
+          surfaces.push({ el, seed: i * 17.3 + 3.1, x: 0, y: 0, w: 0, h: 0, r: 0, prof: null, profW: -1 });
+        });
+        geometryDirty = true;
+      }
+      function buildProfile(s) {
+        // 不规则积雪轮廓：三种尺度的确定性一维噪声（同一卡片宽度下结果可复现）
+        const n = Math.max(2, Math.ceil(s.w / 3) + 1);
+        s.prof = new Float32Array(n);
+        s.bump = new Float32Array(n);
+        for (let i = 0; i < n; i++) {
+          const x = (i * s.w) / (n - 1);
+          s.prof[i] =
+            0.55 * valueNoise1(x / 95, s.seed) + 0.3 * valueNoise1(x / 36, s.seed + 50) + 0.15 * valueNoise1(x / 13, s.seed + 90);
+          s.bump[i] = valueNoise1(x / 6, s.seed + 130);
+        }
+        s.profW = Math.round(s.w);
+      }
+      // 几何更新：仅在滚动、缩放、布局变化后测量，不在每帧测量
+      function measureSurfaces() {
+        for (const s of surfaces) {
+          const b = s.el.getBoundingClientRect();
+          s.x = b.left;
+          s.y = b.top;
+          s.w = b.width;
+          s.h = b.height;
+          s.r = Math.min(parseFloat(getComputedStyle(s.el).borderTopLeftRadius) || 0, b.width / 2, b.height / 2);
+          if (Math.round(s.w) !== s.profW) buildProfile(s);
+        }
+        geometryDirty = false;
+      }
+      function resizeFx() {
+        fxW = Math.max(1, innerWidth);
+        fxH = Math.max(1, innerHeight);
+        fxScale = Math.min(devicePixelRatio || 1, 2, Math.sqrt(3200000 / (fxW * fxH)));
+        fx.width = Math.round(fxW * fxScale);
+        fx.height = Math.round(fxH * fxScale);
+        geometryDirty = true;
+        fxHadContent = true;
+      }
+      // 圆角矩形的上沿 y（含圆角弧段）
+      function edgeY(s, x) {
+        const lx = x - s.x,
+          r = s.r;
+        let dx = 0;
+        if (lx < r) dx = r - lx;
+        else if (lx > s.w - r) dx = lx - (s.w - r);
+        if (dx <= 0) return s.y;
+        dx = Math.min(dx, r);
+        return s.y + r - Math.sqrt(r * r - dx * dx);
+      }
+      function edgeVisible(s) {
+        return s.w > 40 && s.y > 6 && s.y < fxH - 6;
+      }
+      function pickEdgePoint() {
+        let total = 0;
+        for (const s of surfaces) if (edgeVisible(s)) total += s.w - s.r * 0.6;
+        if (total <= 0) return null;
+        let pick = Math.random() * total;
+        for (let i = 0; i < surfaces.length; i++) {
+          const s = surfaces[i];
+          if (!edgeVisible(s)) continue;
+          const len = s.w - s.r * 0.6;
+          if (pick <= len) return { si: i, lx: s.r * 0.3 + pick };
+          pick -= len;
+        }
+        return null;
+      }
+      function visibleEdgeLength() {
+        let total = 0;
+        for (const s of surfaces) if (edgeVisible(s)) total += s.w;
+        return total;
+      }
+      function limits() {
+        const k = small.matches ? 0.5 : 1;
+        return { drops: Math.round(70 * k * quality), splashes: Math.round(170 * k * quality), flakes: Math.round(40 * k * quality) };
+      }
+      // 雨滴击中卡片上沿：产生 2–4 个向两侧弹出、随后在重力下落回的小水滴，以及一闪而过的小水冠
+      function impact(d) {
+        const s = surfaces[d.si];
+        if (!s) return;
+        const r = clamp(cur.rain / 3, 0, 1),
+          ix = s.x + d.lx,
+          ly = edgeY(s, ix) - s.y,
+          n = r < 0.4 ? 2 : r < 0.8 ? 3 : 3 + (Math.random() < 0.5 ? 1 : 0),
+          lim = limits();
+        // 首颗水花方向随机，之后左右交替：奇数颗时不再固定偏左，平均方向只由风决定
+        const first = Math.random() < 0.5 ? -1 : 1;
+        for (let k = 0; k < n && splashes.length < lim.splashes; k++) {
+          const dir = k % 2 ? -first : first;
+          splashes.push({
+            si: d.si,
+            lx: d.lx,
+            ly: ly - 0.5,
+            vx: dir * (35 + Math.random() * 95) + d.slope * 140,
+            vy: -(80 + Math.random() * 120) * (0.8 + 0.4 * r),
+            age: 0,
+            life: 0.45 + Math.random() * 0.3,
+            rad: 0.7 + Math.random() * 0.7,
+          });
+        }
+        crowns.push({ si: d.si, lx: d.lx, ly, age: 0, life: 0.14, w: 4 + 6 * r });
+        impactsInWindow++;
+      }
+      function stepFx(dt) {
+        const r = clamp(cur.rain / 3, 0, 1),
+          sN = clamp(cur.snow / 3, 0, 1),
+          lim = limits(),
+          edgeK = visibleEdgeLength() / 1000;
+        // 击打频率（每 1000 CSS 像素边长每秒）：小雨约 1.6、大雨约 8、暴雨约 22
+        if (cur.rain > 0.05) {
+          dropAcc += (0.6 + 21 * Math.pow(r, 2.4)) * edgeK * dt;
+          while (dropAcc >= 1) {
+            dropAcc -= 1;
+            const pt = drops.length < lim.drops ? pickEdgePoint() : null;
+            if (!pt) continue;
+            const v = 1000 * (0.85 + 0.3 * r);
+            drops.push({ ...pt, v, rem: (50 + Math.random() * 110) / v, slope: sim.slope, len: lerp(26, 60, r) * (0.8 + Math.random() * 0.4) });
+          }
+        } else dropAcc = 0;
+        if (cur.snow > 0.05) {
+          flakeAcc += (0.5 + 5 * sN) * edgeK * dt;
+          while (flakeAcc >= 1) {
+            flakeAcc -= 1;
+            const pt = flakes.length < lim.flakes ? pickEdgePoint() : null;
+            if (!pt) continue;
+            const v = 45 + Math.random() * 35;
+            flakes.push({ ...pt, v, rem: (60 + Math.random() * 90) / v, phase: Math.random() * 6.28, rad: 1.1 + Math.random() * 1.3 });
+          }
+        } else flakeAcc = 0;
+        for (let i = drops.length - 1; i >= 0; i--) {
+          drops[i].rem -= dt;
+          if (drops[i].rem <= 0) {
+            impact(drops[i]);
+            drops.splice(i, 1);
+          }
+        }
+        for (let i = flakes.length - 1; i >= 0; i--) {
+          flakes[i].rem -= dt;
+          if (flakes[i].rem <= 0) flakes.splice(i, 1);
+        }
+        for (let i = splashes.length - 1; i >= 0; i--) {
+          const p = splashes[i],
+            s = surfaces[p.si];
+          p.vy += 1700 * dt;
+          p.lx += p.vx * dt;
+          p.ly += p.vy * dt;
+          p.age += dt;
+          const onCard = p.lx > 0 && p.lx < s.w,
+            edge = edgeY(s, s.x + clamp(p.lx, 0, s.w)) - s.y;
+          // 落回卡片面：在上沿下方 9px 内消失（卡片内边距 ≥ 22px，不会进入正文）；从两侧弹出则沿外侧继续下落
+          if (p.age > p.life || (onCard && p.vy > 0 && p.ly > edge + 9) || p.ly > edge + 70) splashes.splice(i, 1);
+        }
+        for (let i = crowns.length - 1; i >= 0; i--) {
+          crowns[i].age += dt;
+          if (crowns[i].age > crowns[i].life) crowns.splice(i, 1);
+        }
+      }
+      function snowHeightAt(s, i, x, sN, maxH, th, lean) {
+        const lx = x - s.x;
+        let corner = 1;
+        const dx = lx < s.r ? s.r - lx : lx > s.w - s.r ? lx - (s.w - s.r) : 0;
+        // 圆角越陡越难积雪
+        if (dx > 0 && s.r > 0) corner = smoothstep(0.5, 0.95, Math.sqrt(Math.max(0, s.r * s.r - dx * dx)) / s.r);
+        const n = s.prof[i];
+        // 迎风侧稍薄、背风侧稍厚：lean 带符号，|lean| ≤ 0.4 → 最厚处不超过原来的 1.2 倍
+        const windward = 1 + lean * (lx / Math.max(1, s.w) - 0.5);
+        return maxH * smoothstep(th, th + 0.22, n) * (0.4 + 0.45 * n + 0.3 * (s.bump[i] - 0.5)) * corner * windward * snowAmount;
+      }
+      function drawSnowCaps(daylight) {
+        const sN = clamp(cur.snow / 3, 0, 1);
+        if (snowAmount < 0.01 || sN < 0.01) return;
+        // 上限：小雪约 2.7px、中雪约 5px、大雪约 9px（CSS 像素，视觉示意，不代表真实积雪深度）
+        const maxH = (1.2 + 9 * Math.pow(sN, 1.2)) * (small.matches ? 0.85 : 1),
+          th = 0.72 - 0.67 * sN,
+          // 用平滑后的风速（不含阵风），避免积雪轮廓随阵风抽动
+          lean = 0.4 * Math.sign(cur.windSigned) * smoothstep(20, 60, Math.abs(cur.windSigned));
+        const light = Math.round(lerp(175, 255, daylight)),
+          lightB = Math.round(lerp(140, 226, daylight));
+        for (const s of surfaces) {
+          if (!s.prof || s.y < -12 || s.y > fxH + 12) continue;
+          const n = s.prof.length,
+            step = s.w / (n - 1),
+            tops = new Float32Array(n),
+            bots = new Float32Array(n);
+          let any = false;
+          for (let i = 0; i < n; i++) {
+            const x = s.x + i * step,
+              ey = edgeY(s, x),
+              h = snowHeightAt(s, i, x, sN, maxH, th, lean);
+            tops[i] = ey - h;
+            // 无雪处厚度为 0，避免出现一条白色描边
+            bots[i] = ey + Math.min(1.3, h * 0.6);
+            if (h > 0.3) any = true;
+          }
+          if (!any) continue;
+          // 柔和阴影：只在有雪处、紧贴上沿下方
+          fctx.beginPath();
+          for (let i = 0; i < n; i++) {
+            const x = s.x + i * step;
+            if (bots[i] - tops[i] > 1.2) {
+              fctx.moveTo(x, bots[i] + 0.8);
+              fctx.lineTo(x + step, bots[i] + 0.8);
+            }
+          }
+          fctx.strokeStyle = "rgba(60,80,110," + (0.16 * daylight + 0.1).toFixed(3) + ")";
+          fctx.lineWidth = 1.6;
+          fctx.stroke();
+          fctx.beginPath();
+          fctx.moveTo(s.x, bots[0]);
+          for (let i = 0; i < n; i++) fctx.lineTo(s.x + i * step, tops[i]);
+          for (let i = n - 1; i >= 0; i--) fctx.lineTo(s.x + i * step, bots[i]);
+          fctx.closePath();
+          const g = fctx.createLinearGradient(0, s.y - maxH, 0, s.y + 1.5);
+          g.addColorStop(0, "rgba(" + light + "," + light + "," + Math.min(255, light + 6) + ",0.98)");
+          g.addColorStop(1, "rgba(" + lightB + "," + (lightB + 8) + "," + Math.min(255, lightB + 20) + ",0.96)");
+          fctx.fillStyle = g;
+          fctx.fill();
+        }
+      }
+      function clipOutsideCards() {
+        fctx.beginPath();
+        fctx.rect(0, 0, fxW, fxH);
+        for (const s of surfaces) {
+          if (fctx.roundRect) fctx.roundRect(s.x, s.y, s.w, s.h, s.r);
+          else fctx.rect(s.x, s.y, s.w, s.h);
+        }
+        fctx.clip("evenodd");
+      }
+      function renderFx(dt, animate) {
+        if (geometryDirty) measureSurfaces();
+        if (!animate) {
+          drops.length = splashes.length = crowns.length = flakes.length = 0;
+        } else if (dt > 0) stepFx(dt);
+        const active =
+          cur.rain > 0.05 || (cur.snow > 0.05 && snowAmount > 0.01) || snowAmount > 0.01 || drops.length || splashes.length || flakes.length;
+        if (!active) {
+          if (fxHadContent) {
+            fctx.setTransform(1, 0, 0, 1, 0, 0);
+            fctx.clearRect(0, 0, fx.width, fx.height);
+            fxHadContent = false;
+          }
+          return;
+        }
+        fxHadContent = true;
+        const daylight = sunNow.daylight ?? 1;
+        fctx.setTransform(fxScale, 0, 0, fxScale, 0, 0);
+        fctx.clearRect(0, 0, fxW, fxH);
+        // 1) 即将击中上沿的雨滴与雪花：只在卡片外侧可见，不覆盖正文
+        if (drops.length || flakes.length) {
+          fctx.save();
+          clipOutsideCards();
+          fctx.lineCap = "round";
+          const rc = daylight > 0.4 ? "rgba(232,239,248," : "rgba(160,176,198,";
+          for (const d of drops) {
+            const s = surfaces[d.si],
+              ix = s.x + d.lx,
+              iy = edgeY(s, ix),
+              dist = d.rem * d.v,
+              hx = ix - d.slope * dist,
+              hy = iy - dist,
+              norm = 1 / Math.sqrt(1 + d.slope * d.slope),
+              tx = hx - d.slope * d.len * norm,
+              ty = hy - d.len * norm;
+            fctx.strokeStyle = rc + "0.25)";
+            fctx.lineWidth = 1.1;
+            fctx.beginPath();
+            fctx.moveTo(tx, ty);
+            fctx.lineTo((tx + hx) / 2, (ty + hy) / 2);
+            fctx.stroke();
+            fctx.strokeStyle = rc + "0.7)";
+            fctx.lineWidth = 1.4;
+            fctx.beginPath();
+            fctx.moveTo((tx + hx) / 2, (ty + hy) / 2);
+            fctx.lineTo(hx, hy);
+            fctx.stroke();
+          }
+          const slopeS = (sim.windSigned * 0.0016) / 0.13;
+          fctx.fillStyle = daylight > 0.4 ? "rgba(255,255,255,0.92)" : "rgba(200,212,230,0.85)";
+          for (const f of flakes) {
+            const s = surfaces[f.si],
+              dist = f.rem * f.v,
+              x = s.x + f.lx - slopeS * dist + Math.sin(f.phase + f.rem * 2.2) * 3,
+              y = edgeY(s, s.x + f.lx) - dist - f.rad * 0.6;
+            fctx.beginPath();
+            fctx.arc(x, y, f.rad, 0, Math.PI * 2);
+            fctx.fill();
+          }
+          fctx.restore();
+        }
+        // 2) 积雪覆盖
+        drawSnowCaps(daylight);
+        // 3) 水花：深色细边 + 浅色芯，在天空与浅色卡片上都能看见
+        if (splashes.length || crowns.length) {
+          fctx.lineCap = "round";
+          for (const p of splashes) {
+            const s = surfaces[p.si],
+              x = s.x + p.lx,
+              y = s.y + p.ly,
+              a = 1 - p.age / p.life,
+              ex = x - p.vx * 0.012,
+              ey = y - p.vy * 0.012;
+            fctx.strokeStyle = "rgba(90,115,145," + (0.35 * a).toFixed(3) + ")";
+            fctx.lineWidth = p.rad * 2 + 1;
+            fctx.beginPath();
+            fctx.moveTo(ex, ey);
+            fctx.lineTo(x, y);
+            fctx.stroke();
+            fctx.strokeStyle = "rgba(240,246,252," + (0.9 * a).toFixed(3) + ")";
+            fctx.lineWidth = p.rad * 2;
+            fctx.stroke();
+          }
+          for (const c of crowns) {
+            const s = surfaces[c.si],
+              t = c.age / c.life;
+            fctx.strokeStyle = "rgba(225,235,246," + (0.75 * (1 - t)).toFixed(3) + ")";
+            fctx.lineWidth = 1.1;
+            fctx.beginPath();
+            fctx.ellipse(s.x + c.lx, s.y + c.ly, c.w * (0.35 + t * 0.8), 1.2 + t * 1.8, 0, Math.PI, Math.PI * 2);
+            fctx.stroke();
+          }
+        }
+      }
+
+      // ================= 8. 动画循环、性能与降级 =================
+      let geometryCheckAt = 0;
+      function frame(dt) {
+        simulate(dt);
+        draw();
+        // 兜底：每 0.3 秒复核一次卡片位置（只测 4 个元素），防止漏掉的布局变化让水花/积雪错位
+        geometryCheckAt += dt;
+        if (geometryCheckAt > 0.3) (geometryCheckAt = 0), (geometryDirty = true);
+        renderFx(dt, true);
+      }
+      function redrawStill() {
+        geometryDirty = true;
+        settleToTarget();
+        draw();
+        updateStaticSky();
+        renderFx(0, false);
+        updateStats();
+      }
+      // 帧调度闸门（纯函数：不读 DOM 与全局状态，可单独用时间戳序列验证）。
+      // 到期时刻按目标间隔累加而不是重置为当前时刻，余量留给下一帧，故 90/120/144 Hz 下平均帧率贴近目标；
+      // 落后超过一个间隔（后台恢复、长卡顿）时重新对齐到当前时刻，不补帧。首次调用只定锚、不绘制。
+      function createFrameGate(targetFps) {
+        const interval = 1000 / targetFps,
+          // 容差：比到期时刻早不超过 1/5 间隔也算到点，吸收 rAF 时间戳抖动；
+          // 取 1/5 而非更大，是为了 120 Hz 下 30 目标（回调间隔 = 1/4 目标间隔）不提前一拍
+          slack = interval * 0.2;
+        let due = -1;
+        return {
+          targetFps,
+          interval,
+          shouldDraw(now) {
+            if (due < 0) {
+              due = now + interval;
+              return false;
+            }
+            if (now < due - slack) return false;
+            due = now - due > interval ? now + interval : due + interval;
+            return true;
+          },
+          reset() {
+            due = -1;
+          },
+        };
+      }
+      function tick(now) {
+        raf = 0;
+        if (hidden || reviewPaused || pageSuspended) return;
+        // 个别环境不派发 matchMedia change 事件：在帧循环里兜底切换为静态画面（restart 会清零 FPS 统计）
+        if (isStill()) return restart();
+        const target = small.matches ? 30 : 60;
+        if (!gate || gate.targetFps !== target) (gate = createFrameGate(target)), (lastDraw = 0);
+        if (!lastDraw) lastDraw = now;
+        if (!sampleAt) sampleAt = now;
+        else ticks++;
+        if (gate.shouldDraw(now)) {
+          // dt 为两次实际绘制之间的真实时间；上限 0.1 秒：卡顿后粒子不会突然飞走
+          frame(Math.min((now - lastDraw) / 1000, 0.1));
+          lastDraw = now;
+          frames++;
+        }
+        if (now - sampleAt >= 1500) {
+          fps = Math.round((frames * 1000) / (now - sampleAt));
+          tickRate = Math.round((ticks * 1000) / (now - sampleAt));
+          impactRate = Math.round((impactsInWindow * 1000) / (now - sampleAt));
+          impactsInWindow = 0;
+          frames = ticks = 0;
+          sampleAt = now;
+          // 低帧率阈值约为目标的 2/3（60→40，30→22）：先连续 3 次（4.5 秒）再降一档画质（含前景粒子上限），
+          // 画质降到下限后仍低于 15 FPS 才切静态备用
+          if (fps < (small.matches ? 22 : 40)) {
+            slowCount++;
+            if (slowCount >= 3 && quality > 0.55) {
+              quality *= 0.8;
+              slowCount = 0;
+              resize();
+            } else if (slowCount >= 4 && fps < 15) {
+              enterFallback("设备较慢，已切换为静态备用画面");
+              return;
+            }
+          } else slowCount = 0;
+          updateStats();
+        }
+        raf = requestAnimationFrame(tick);
+      }
+      function restart() {
+        if (raf) cancelAnimationFrame(raf);
+        raf = 0;
+        // 重新计时：恢复后的首帧 dt 是一个回调间隔，而不是暂停/后台的时长
+        lastDraw = sampleAt = ticks = 0;
+        if (gate) gate.reset();
+        frames = fps = 0;
+        if (isStill()) {
+          stopRecording(true, "已切换为静态画面，录制提前结束（已保存已录部分）");
+          redrawStill();
+        } else {
+          updateStaticSky();
+          draw();
+          renderFx(0, true);
+          updateStats();
+          if (!hidden && !reviewPaused && !pageSuspended) raf = requestAnimationFrame(tick);
+        }
+      }
+      function windDirLabel(dir) {
+        return dir > 0 ? "西风（向右吹）" : "东风（向左吹）";
+      }
+      // 天气胶囊：只显示图标与简短名称；强风时附加"· 💨 强风"
+      function weatherPillText() {
+        const s = WEATHERS[weatherIndex],
+          icon = (sunTarget.daylight ?? 1) < 0.3 && s.key === "clear" ? "🌙" : s.icon;
+        return icon + " " + s.label + (windLevel === "strong" ? " · 💨 强风" : "");
+      }
+      function updateStats() {
+        const s = WEATHERS[weatherIndex],
+          wind = WINDS[windLevel];
+        $("weatherIcon").innerHTML = "";
+        $("weatherIcon").append(weatherPillText());
+        const tag = document.createElement("small");
+        tag.textContent = "演示";
+        $("weatherIcon").append(tag);
+        const mode = staticMode(),
+          still = mode !== "none";
+        stats.textContent = [
+          s.label + "（演示预设）",
+          wind.label +
+            " · " +
+            windDirLabel(windDir) +
+            (still ? " · " + wind.speed + " km/h（静态，不表现阵风）" : " · 实时 " + Math.round(sim.wind || wind.speed) + " km/h（含阵风）"),
+          mode === "2d-fallback"
+            ? static2dOk
+              ? "静态备用（2D） " + skyStatic.width + "×" + skyStatic.height + " · 重绘 " + staticDrawMs.toFixed(1) + " ms"
+              : "静态备用（CSS 渐变）"
+            : "WebGL " + canvas.width + "×" + canvas.height,
+          "前景 " + fx.width + "×" + fx.height,
+          mode === "2d-fallback"
+            ? "静止（无动画）"
+            : mode === "webgl-still"
+              ? "静态（WebGL 单帧）"
+              : fps + " FPS（目标 " + (small.matches ? 30 : 60) + "）",
+          still ? "水花已停（静态）" : "击打 " + impactRate + "/s · 水花 " + splashes.length,
+          s.snow ? "积雪示意 " + Math.round(snowAmount * 100) + "%" : "",
+          "画质 " + Math.round(quality * 100) + "%",
+        ]
+          .filter(Boolean)
+          .join(" · ");
+        $("static").textContent = forceStatic
+          ? "减少动态：静态预览"
+          : motion.matches
+            ? "减少动态：系统已开启"
+            : "减少动态：跟随系统";
+        $("glass").textContent = "玻璃水珠：" + (glassDrops ? "开" : "关");
+      }
+
+      // ================= 9. 审查控件 =================
+      // 点击时平滑过渡（simulate 里的指数平滑）；自动化调用再另行 settleToTarget()
+      function refreshControls() {
+        document
+          .querySelectorAll("#scenes button")
+          .forEach((x, n) => x.classList.toggle("active", n === weatherIndex));
+        document.querySelectorAll("#presets button").forEach((x, n) => {
+          const p = PRESETS[n];
+          x.classList.toggle("active", WEATHERS[weatherIndex].key === p.weather && windLevel === p.wind);
+        });
+        document.querySelectorAll("#winds button").forEach((x) => x.classList.toggle("active", x.dataset.key === windLevel));
+        document.querySelectorAll("#windDirs button").forEach((x) => x.classList.toggle("active", +x.dataset.dir === windDir));
+      }
+      function applyWeatherAndWind() {
+        refreshControls();
+        updateFallbackBackground();
+        restart();
+      }
+      function selectWeather(i) {
+        weatherIndex = i;
+        applyWeatherAndWind();
+      }
+      function selectWind(level, dir) {
+        if (level !== undefined) windLevel = level;
+        if (dir !== undefined) windDir = dir;
+        applyWeatherAndWind();
+      }
+      WEATHERS.forEach((s, i) => {
+        const b = document.createElement("button");
+        b.textContent = s.icon + " " + s.label;
+        b.onclick = () => selectWeather(i);
+        $("scenes").append(b);
+      });
+      PRESETS.forEach((p) => {
+        const b = document.createElement("button");
+        b.textContent = "💨 " + p.label;
+        b.onclick = () => {
+          weatherIndex = WEATHERS.findIndex((w) => w.key === p.weather);
+          selectWind(p.wind);
+        };
+        $("presets").append(b);
+      });
+      for (const [key, w] of Object.entries(WINDS)) {
+        const b = document.createElement("button");
+        b.textContent = w.label + " " + w.speed + " km/h";
+        b.dataset.key = key;
+        b.onclick = () => selectWind(key);
+        $("winds").append(b);
+      }
+      for (const dir of [1, -1]) {
+        const b = document.createElement("button");
+        b.textContent = (dir > 0 ? "→ " : "← ") + windDirLabel(dir);
+        b.dataset.dir = dir;
+        b.onclick = () => selectWind(undefined, dir);
+        $("windDirs").append(b);
+      }
+      refreshControls();
+      TIME_PRESETS.forEach((p) => {
+        const b = document.createElement("button");
+        b.textContent = p.label;
+        b.dataset.key = p.key;
+        b.onclick = () => {
+          timePreset = p.key;
+          timeMode = p.key === "live" ? "live" : "demo";
+          if (p.key === "live") demoDate = null;
+          updateTimeState(false);
+        };
+        $("times").append(b);
+      });
+      $("clock").addEventListener("input", (e) => {
+        timeMode = "demo";
+        timePreset = "custom";
+        demoMinutes = +e.target.value;
+        updateTimeState(true);
+      });
+      $("dateInput").addEventListener("change", (e) => {
+        const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(e.target.value);
+        if (!m) return;
+        demoDate = { y: +m[1], m: +m[2], d: +m[3] };
+        updateTimeState(true);
+      });
+      $("static").onclick = () => {
+        forceStatic = !forceStatic;
+        restart();
+      };
+      $("glass").onclick = () => {
+        glassDrops = !glassDrops;
+        if (isStill()) redrawStill();
+        updateStats();
+      };
+      $("phone").onclick = () => {
+        const u = new URL(location.href);
+        u.search = "phone=1";
+        window.open(u.href, "_blank");
+      };
+      $("clean").onclick = () => {
+        document.body.classList.add("clean");
+        geometryDirty = true;
+        if (isStill()) redrawStill();
+      };
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          document.body.classList.remove("clean");
+          geometryDirty = true;
+          if (isStill()) redrawStill();
+        }
+      });
+      function save(blob, name) {
+        const a = document.createElement("a"),
+          url = URL.createObjectURL(blob);
+        a.href = url;
+        a.download = name;
+        document.body.append(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 15000);
+      }
+      function fileStem() {
+        return (
+          "鸭鸭日历-仅天空背景" +
+          (fallback ? "（静态备用）" : "") +
+          "-" +
+          WEATHERS[weatherIndex].label +
+          "-" +
+          WINDS[windLevel].label +
+          (windDir > 0 ? "西风" : "东风") +
+          "-" +
+          hhmm($("clock").value).replace(":", "")
+        );
+      }
+      // 只导出天空背景画布：WebGL 动画/单帧时导出 #sky，降级时导出 #skyStatic；都不含正文与前景层
+      $("export").onclick = () => {
+        let src = canvas,
+          label = "天空背景";
+        if (fallback) {
+          if (!static2dOk) return setMessage("静态备用为 CSS 渐变，没有可导出的天空画布");
+          src = skyStatic;
+          label = "天空背景（静态备用）";
+        } else draw();
+        src.toBlob((b) => {
+          if (b) {
+            save(b, fileStem() + ".png");
+            setMessage("已导出" + label + " PNG（不含正文与前景水花/积雪）");
+          } else setMessage("无法导出当前画布");
+        }, "image/png");
+      };
+      // 结束录制并立即释放：停止轨道、清定时器、移除 exporting；keep=false 时丢弃数据（出错/离开页面）
+      function stopRecording(keep, message) {
+        const rec = recording;
+        if (!rec) return;
+        recording = null;
+        rec.keep = keep;
+        clearTimeout(rec.timer);
+        try {
+          if (rec.recorder.state !== "inactive") rec.recorder.stop();
+        } catch (e) {
+          rec.keep = false;
+        }
+        rec.media.getTracks().forEach((t) => t.stop());
+        document.body.classList.remove("exporting");
+        if (message) setMessage(message);
+      }
+      $("record").onclick = () => {
+        if (recording || isStill()) return setMessage(isStill() ? "静态模式不录制动画" : "正在录制");
+        if (!canvas.captureStream || !window.MediaRecorder) return setMessage("此浏览器不支持录制");
+        const mime = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm", "video/mp4"].find((x) =>
+          MediaRecorder.isTypeSupported(x),
+        );
+        if (!mime) return setMessage("无可用录制格式");
+        const media = canvas.captureStream(small.matches ? 30 : 60);
+        let recorder;
+        try {
+          recorder = new MediaRecorder(media, { mimeType: mime, videoBitsPerSecond: 3500000 });
+        } catch (e) {
+          media.getTracks().forEach((t) => t.stop());
+          return setMessage("录制失败：" + e.message);
+        }
+        const rec = { recorder, media, timer: 0, keep: true, chunks: [], name: fileStem() };
+        recorder.ondataavailable = (e) => {
+          if (e.data.size) rec.chunks.push(e.data);
+        };
+        recorder.onerror = () => stopRecording(false, "录制出错，已停止并释放资源");
+        // onstop 只负责保存；资源已在 stopRecording 里释放
+        recorder.onstop = () => {
+          if (rec.keep && rec.chunks.length)
+            save(new Blob(rec.chunks, { type: mime }), rec.name + (mime.includes("mp4") ? ".mp4" : ".webm"));
+        };
+        recording = rec;
+        document.body.classList.add("exporting");
+        recorder.start();
+        setMessage("正在录制 8 秒天空背景（不含正文）…");
+        rec.timer = setTimeout(
+          () => stopRecording(true, "8 秒天空背景录像已保存（不含正文与前景水花/积雪）"),
+          8000,
+        );
+      };
+      document.querySelector(".cta").onclick = () => setMessage("这是审查样例，不提交真实记录");
+
+      // ================= 10. 生命周期 =================
+      motion.addEventListener("change", restart);
+      small.addEventListener("change", () => {
+        resize();
+        restart();
+      });
+      window.addEventListener("resize", () => {
+        // 太阳的屏幕投影取决于视口尺寸，尺寸变化后重算
+        updateTimeState(true);
+        resize();
+        if (isStill()) redrawStill();
+      });
+      window.addEventListener(
+        "scroll",
+        () => {
+          geometryDirty = true;
+          if (isStill()) renderFx(0, false);
+        },
+        { passive: true },
+      );
+      const layoutObserver = new ResizeObserver(() => {
+        geometryDirty = true;
+        if (isStill()) renderFx(0, false);
+      });
+      function observeLayout() {
+        layoutObserver.observe(document.querySelector("main"));
+        layoutObserver.observe(document.body);
+      }
+      observeLayout();
+      function startLiveTimer() {
+        clearInterval(liveTimer);
+        liveTimer = setInterval(() => {
+          if (timeMode === "live" && !hidden) updateTimeState(false);
+        }, 30000);
+      }
+      function stopLiveTimer() {
+        clearInterval(liveTimer);
+        liveTimer = 0;
+      }
+      document.addEventListener("visibilitychange", () => {
+        hidden = document.hidden;
+        if (hidden) stopRecording(true, "页面已隐藏，录制提前结束（已保存已录部分）");
+        restart();
+      });
+      canvas.addEventListener("webglcontextlost", (e) => {
+        e.preventDefault();
+        enterFallback("绘图上下文丢失，已切换为静态备用画面");
+      });
+      canvas.addEventListener("webglcontextrestored", () => {
+        program = null;
+        setMessage("");
+        initGL();
+      });
+      // 离开页面：先暂停（rAF、live 定时器、录制）；persisted=true 表示进入往返缓存，可能原样返回，
+      // 因此只暂停、不销毁 GL 资源、不断开观察器；否则彻底清理。监听器只在启动时注册这一次。
+      window.addEventListener("pagehide", (e) => {
+        pageSuspended = true;
+        if (raf) cancelAnimationFrame(raf);
+        raf = 0;
+        stopLiveTimer();
+        stopRecording(false);
+        if (e.persisted) return;
+        pageTornDown = true;
+        layoutObserver.disconnect();
+        if (gl && !gl.isContextLost()) {
+          gl.deleteBuffer(buffer);
+          gl.deleteProgram(program);
+        }
+        program = buffer = null;
+      });
+      // 从往返缓存返回：恢复定时器与帧循环；若此前已彻底清理则重新观察布局并重建 GL
+      window.addEventListener("pageshow", (e) => {
+        if (!e.persisted || !pageSuspended) return;
+        pageSuspended = false;
+        hidden = document.hidden;
+        startLiveTimer();
+        updateTimeState(true);
+        geometryDirty = true;
+        if (pageTornDown) {
+          pageTornDown = false;
+          observeLayout();
+          if (!fallback) return initGL();
+        }
+        if (!fallback && (!gl || gl.isContextLost() || !program)) return initGL();
+        resize();
+        restart();
+      });
+
+      // ================= 11. 本地演示日历（2026 年 10 月，节假日数据已核对） =================
+      const cal = $("calendar");
+      for (const w of ["一", "二", "三", "四", "五", "六", "日"]) {
+        const d = document.createElement("div");
+        d.className = "weekday";
+        d.textContent = w;
+        cal.append(d);
+      }
+      for (let n = -2; n <= 32; n++) {
+        const d = document.createElement("div");
+        d.className = "date";
+        d.textContent = n <= 0 ? 30 + n : n > 31 ? n - 31 : n;
+        if (n <= 0 || n > 31) d.classList.add("muted");
+        if (n >= 1 && n <= 7) {
+          d.classList.add("holiday");
+          d.insertAdjacentHTML("beforeend", '<span class="mark">休</span>');
+        }
+        if (n === 10) {
+          d.classList.add("work");
+          d.insertAdjacentHTML("beforeend", '<span class="mark">班</span>');
+        }
+        if (n === 8) d.classList.add("today");
+        cal.append(d);
+      }
+
+      // ================= 12. 审查钩子（仅本地审查/自动化截图使用，不涉及业务数据） =================
+      window.duckReview = {
+        scenes: WEATHERS.map((s) => s.key),
+        weathers: WEATHERS.map((s) => s.key),
+        // 以下三个设置接口立即生效（settleToTarget），供自动化截图使用
+        setWeather(key) {
+          const i = WEATHERS.findIndex((s) => s.key === key);
+          if (i < 0) throw Error("未知天气 " + key);
+          selectWeather(i);
+          settleToTarget();
+          draw();
+          updateStats();
+        },
+        setWind(level, dir) {
+          if (level !== undefined && !WINDS[level]) throw Error("未知风等级 " + level);
+          if (dir !== undefined && dir !== 1 && dir !== -1) throw Error("风向只能是 1 或 -1");
+          selectWind(level, dir);
+          settleToTarget();
+          draw();
+          updateStats();
+        },
+        // 兼容旧接口：只设置天气，不改风（windy → 晴，rainWind → 大雨）
+        setScene(key) {
+          this.setWeather(LEGACY_SCENES[key] || key);
+        },
+        setTime(value) {
+          if (value === "live") (timeMode = "live"), (timePreset = "live"), (demoDate = null);
+          else if (typeof value === "string") (timeMode = "demo"), (timePreset = value);
+          else (timeMode = "demo"), (timePreset = "custom"), (demoMinutes = value);
+          updateTimeState(true);
+        },
+        setDate(text) {
+          const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+          demoDate = m ? { y: +m[1], m: +m[2], d: +m[3] } : null;
+          updateTimeState(true);
+        },
+        setHeroPhase(phase) {
+          sim.hero = phase;
+          draw();
+        },
+        // 把累积位移与时钟归零，便于在相同云场位置下对比不同风况（仅审查用）
+        resetMotion() {
+          sim.clock = 0;
+          sim.hero = 0.15;
+          for (const a of [sim.cloudFar, sim.cloudNear, sim.scud, sim.rainFall, sim.snowFall, sim.snowDrift]) a.fill(0);
+          draw();
+        },
+        pause() {
+          reviewPaused = true;
+          restart();
+        },
+        resume() {
+          reviewPaused = false;
+          restart();
+        },
+        // 以固定步长推进模拟，便于逐帧检查运动方向
+        advance(seconds, step = 1 / 60) {
+          geometryDirty = true;
+          for (let t = 0; t < seconds - 1e-6; t += step) {
+            simulate(step);
+            renderFx(step, !isStill());
+          }
+          draw();
+          updateStats();
+        },
+        // 读取背景 canvas 指定区域的灰度（左下角为原点），用于自动检查运动方向
+        readGray(x, y, w, h) {
+          draw();
+          const px = new Uint8Array(w * h * 4);
+          gl.readPixels(x, y, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+          const out = new Float32Array(w * h);
+          for (let i = 0; i < w * h; i++) out[i] = (px[i * 4] + px[i * 4 + 1] + px[i * 4 + 2]) / 3;
+          return Array.from(out);
+        },
+        // 仅审查：模拟持续低帧率降级（与 tick 里低帧率触发的是同一个 enterFallback）；false 时恢复 WebGL
+        forceFallback(on) {
+          if (on) enterFallback("设备较慢，已切换为静态备用画面");
+          else exitFallback();
+          return staticMode();
+        },
+        // 性能基准（仅审查）：当前状态下连续 draw + gl.finish n 次，末尾读回 1 像素确保 GPU 完成，返回每帧毫秒
+        benchmark(n = 60) {
+          if (!gl || fallback) return NaN;
+          const px = new Uint8Array(4);
+          draw();
+          gl.finish();
+          gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+          const t0 = performance.now();
+          for (let i = 0; i < n; i++) {
+            draw();
+            gl.finish();
+          }
+          gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+          return (performance.now() - t0) / n;
+        },
+        state() {
+          return {
+            scene: WEATHERS[weatherIndex].key,
+            weather: WEATHERS[weatherIndex].key,
+            windLevel,
+            windDir,
+            windSigned: sim.windSigned,
+            cloudCover: cur.cloud,
+            hero: sim.hero,
+            pill: weatherPillText(),
+            clock: sim.clock,
+            canvas: [canvas.width, canvas.height],
+            fx: [fx.width, fx.height],
+            fps,
+            // 调试：每秒 tick 回调次数（应≈显示器刷新率；若翻倍说明有重复帧循环）与活跃句柄
+            tickRate,
+            rafActive: !!raf,
+            liveTimerActive: !!liveTimer,
+            recording: !!recording,
+            exporting: document.body.classList.contains("exporting"),
+            pageSuspended,
+            limits: limits(),
+            quality,
+            fallback,
+            still: isStill(),
+            staticMode: staticMode(),
+            static2dOk,
+            staticDrawMs,
+            staticCanvas: [skyStatic.width, skyStatic.height],
+            staticVisible: skyStatic.style.display === "block",
+            sun: { ...sunTarget, info: undefined },
+            info: { ...dayInfo((demoDate || shanghaiNow()).y, (demoDate || shanghaiNow()).m, (demoDate || shanghaiNow()).d) },
+            wind: sim.wind,
+            slope: sim.slope,
+            snowAmount,
+            drops: drops.map((d) => ({ si: d.si, rem: d.rem, v: d.v })),
+            splashes: splashes.map((p) => {
+              const s = surfaces[p.si];
+              return { x: s.x + p.lx, y: s.y + p.ly, edge: edgeY(s, s.x + clamp(p.lx, 0, s.w)), vx: p.vx, vy: p.vy, card: [s.x, s.y, s.w] };
+            }),
+            surfaces: surfaces.map((s) => ({ x: s.x, y: s.y, w: s.w, h: s.h, r: s.r })),
+          };
+        },
+      };
+
+      // ================= 13. 启动 =================
+      collectSurfaces();
+      updateTimeState(true);
+      startLiveTimer();
+      initGL();
+    }
+  </script>
+</html>

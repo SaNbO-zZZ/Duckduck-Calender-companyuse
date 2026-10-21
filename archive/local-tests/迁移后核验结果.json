@@ -1,0 +1,9 @@
+{
+  "js": "parse passed",
+  "layouts": 15,
+  "viewports": "320/360/390/720/1440 × DPR 1/2/3",
+  "gust": "60km/h→0.75, 105km/h→1; distinct sprite keys",
+  "contextLoss": "9 PNG ducks remain; restored returns to Canvas",
+  "spriteCreationFailure": "9 PNG ducks remain",
+  "artwork": 1854
+}

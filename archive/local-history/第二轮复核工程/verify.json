@@ -1,0 +1,1571 @@
+{
+ "errors": [
+  "bfcache console Failed to load resource: the server responded with a status of 404 (File not found)"
+ ],
+ "independence": [
+  {
+   "weather": "clear",
+   "breeze": {
+    "cloud": 0.1,
+    "pill": "☀️ 晴",
+    "wind": 6,
+    "slope": 0.057
+   },
+   "normal": {
+    "cloud": 0.1,
+    "pill": "☀️ 晴",
+    "wind": 18,
+    "slope": 0.171
+   },
+   "strong": {
+    "cloud": 0.1,
+    "pill": "☀️ 晴 · 💨 强风",
+    "wind": 60,
+    "slope": 0.571
+   },
+   "cloudSame": true
+  },
+  {
+   "weather": "partly",
+   "breeze": {
+    "cloud": 0.46,
+    "pill": "⛅ 多云",
+    "wind": 6,
+    "slope": 0.057
+   },
+   "normal": {
+    "cloud": 0.46,
+    "pill": "⛅ 多云",
+    "wind": 18,
+    "slope": 0.171
+   },
+   "strong": {
+    "cloud": 0.46,
+    "pill": "⛅ 多云 · 💨 强风",
+    "wind": 60,
+    "slope": 0.571
+   },
+   "cloudSame": true
+  },
+  {
+   "weather": "overcast",
+   "breeze": {
+    "cloud": 0.93,
+    "pill": "☁️ 阴",
+    "wind": 6,
+    "slope": 0.057
+   },
+   "normal": {
+    "cloud": 0.93,
+    "pill": "☁️ 阴",
+    "wind": 18,
+    "slope": 0.171
+   },
+   "strong": {
+    "cloud": 0.93,
+    "pill": "☁️ 阴 · 💨 强风",
+    "wind": 60,
+    "slope": 0.571
+   },
+   "cloudSame": true
+  },
+  {
+   "weather": "lightRain",
+   "breeze": {
+    "cloud": 0.82,
+    "pill": "🌧️ 小雨",
+    "wind": 6,
+    "slope": 0.057
+   },
+   "normal": {
+    "cloud": 0.82,
+    "pill": "🌧️ 小雨",
+    "wind": 18,
+    "slope": 0.171
+   },
+   "strong": {
+    "cloud": 0.82,
+    "pill": "🌧️ 小雨 · 💨 强风",
+    "wind": 60,
+    "slope": 0.571
+   },
+   "cloudSame": true
+  },
+  {
+   "weather": "heavyRain",
+   "breeze": {
+    "cloud": 0.95,
+    "pill": "🌧️ 大雨",
+    "wind": 6,
+    "slope": 0.057
+   },
+   "normal": {
+    "cloud": 0.95,
+    "pill": "🌧️ 大雨",
+    "wind": 18,
+    "slope": 0.171
+   },
+   "strong": {
+    "cloud": 0.95,
+    "pill": "🌧️ 大雨 · 💨 强风",
+    "wind": 60,
+    "slope": 0.571
+   },
+   "cloudSame": true
+  },
+  {
+   "weather": "storm",
+   "breeze": {
+    "cloud": 1,
+    "pill": "🌧️ 暴雨",
+    "wind": 6,
+    "slope": 0.057
+   },
+   "normal": {
+    "cloud": 1,
+    "pill": "🌧️ 暴雨",
+    "wind": 18,
+    "slope": 0.171
+   },
+   "strong": {
+    "cloud": 1,
+    "pill": "🌧️ 暴雨 · 💨 强风",
+    "wind": 60,
+    "slope": 0.571
+   },
+   "cloudSame": true
+  },
+  {
+   "weather": "lightSnow",
+   "breeze": {
+    "cloud": 0.85,
+    "pill": "🌨️ 小雪",
+    "wind": 6,
+    "slope": 0.057
+   },
+   "normal": {
+    "cloud": 0.85,
+    "pill": "🌨️ 小雪",
+    "wind": 18,
+    "slope": 0.171
+   },
+   "strong": {
+    "cloud": 0.85,
+    "pill": "🌨️ 小雪 · 💨 强风",
+    "wind": 60,
+    "slope": 0.571
+   },
+   "cloudSame": true
+  },
+  {
+   "weather": "snow",
+   "breeze": {
+    "cloud": 0.9,
+    "pill": "🌨️ 中雪",
+    "wind": 6,
+    "slope": 0.057
+   },
+   "normal": {
+    "cloud": 0.9,
+    "pill": "🌨️ 中雪",
+    "wind": 18,
+    "slope": 0.171
+   },
+   "strong": {
+    "cloud": 0.9,
+    "pill": "🌨️ 中雪 · 💨 强风",
+    "wind": 60,
+    "slope": 0.571
+   },
+   "cloudSame": true
+  },
+  {
+   "weather": "heavySnow",
+   "breeze": {
+    "cloud": 0.96,
+    "pill": "❄️ 大雪",
+    "wind": 6,
+    "slope": 0.057
+   },
+   "normal": {
+    "cloud": 0.96,
+    "pill": "❄️ 大雪",
+    "wind": 18,
+    "slope": 0.171
+   },
+   "strong": {
+    "cloud": 0.96,
+    "pill": "❄️ 大雪 · 💨 强风",
+    "wind": 60,
+    "slope": 0.571
+   },
+   "cloudSame": true
+  }
+ ],
+ "copy": {
+  "cta": true,
+  "category": true,
+  "demo": true,
+  "secretsLike": false
+ },
+ "directions": [
+  {
+   "weather": "heavyRain",
+   "wind": "normal",
+   "dir": 1,
+   "dt": 0.0167,
+   "dx": 6,
+   "dy": 11,
+   "peak": 0.352
+  },
+  {
+   "weather": "heavyRain",
+   "wind": "strong",
+   "dir": 1,
+   "dt": 0.0167,
+   "dx": -65,
+   "dy": 23,
+   "peak": 0.169
+  },
+  {
+   "weather": "heavyRain",
+   "wind": "strong",
+   "dir": -1,
+   "dt": 0.0167,
+   "dx": -46,
+   "dy": 15,
+   "peak": 0.154
+  },
+  {
+   "weather": "storm",
+   "wind": "normal",
+   "dir": 1,
+   "dt": 0.0167,
+   "dx": 6,
+   "dy": 12,
+   "peak": 0.282
+  },
+  {
+   "weather": "storm",
+   "wind": "strong",
+   "dir": 1,
+   "dt": 0.0167,
+   "dx": 44,
+   "dy": 12,
+   "peak": 0.195
+  },
+  {
+   "weather": "storm",
+   "wind": "strong",
+   "dir": -1,
+   "dt": 0.0167,
+   "dx": -10,
+   "dy": -5,
+   "peak": 0.142
+  },
+  {
+   "weather": "heavySnow",
+   "wind": "normal",
+   "dir": 1,
+   "dt": 0.25,
+   "dx": 4,
+   "dy": 12,
+   "peak": 0.263
+  },
+  {
+   "weather": "heavySnow",
+   "wind": "strong",
+   "dir": 1,
+   "dt": 0.25,
+   "dx": 16,
+   "dy": 12,
+   "peak": 0.27
+  },
+  {
+   "weather": "heavySnow",
+   "wind": "strong",
+   "dir": -1,
+   "dt": 0.25,
+   "dx": -16,
+   "dy": 12,
+   "peak": 0.219
+  },
+  {
+   "weather": "overcast",
+   "wind": "normal",
+   "dir": 1,
+   "dt": 2.0,
+   "dx": 42,
+   "dy": 1,
+   "peak": 0.042
+  },
+  {
+   "weather": "overcast",
+   "wind": "strong",
+   "dir": 1,
+   "dt": 2.0,
+   "dx": 46,
+   "dy": 16,
+   "peak": 0.024
+  },
+  {
+   "weather": "overcast",
+   "wind": "strong",
+   "dir": -1,
+   "dt": 2.0,
+   "dx": -117,
+   "dy": -1,
+   "peak": 0.026
+  },
+  {
+   "weather": "partly",
+   "wind": "normal",
+   "dir": 1,
+   "dt": 2.0,
+   "dx": 0,
+   "dy": 0,
+   "peak": 1.0
+  },
+  {
+   "weather": "partly",
+   "wind": "strong",
+   "dir": 1,
+   "dt": 2.0,
+   "dx": -10,
+   "dy": -3,
+   "peak": 0.023
+  },
+  {
+   "weather": "partly",
+   "wind": "strong",
+   "dir": -1,
+   "dt": 2.0,
+   "dx": 0,
+   "dy": 0,
+   "peak": 0.986
+  }
+ ],
+ "splashes": [
+  {
+   "wind": "normal",
+   "dir": 1,
+   "n": 42,
+   "meanVx": 17.5,
+   "deepInCard": 0
+  },
+  {
+   "wind": "strong",
+   "dir": 1,
+   "n": 41,
+   "meanVx": 108.6,
+   "deepInCard": 4
+  },
+  {
+   "wind": "strong",
+   "dir": -1,
+   "n": 31,
+   "meanVx": -119.8,
+   "deepInCard": 0
+  }
+ ],
+ "sun": [
+  {
+   "time": "dawn",
+   "clean": false,
+   "x": 68,
+   "y": 615,
+   "max": 242.0,
+   "underCard": false,
+   "elev": 4.4
+  },
+  {
+   "time": "dawn",
+   "clean": true,
+   "x": 68,
+   "y": 615,
+   "max": 242.0,
+   "underCard": false,
+   "elev": 4.4
+  },
+  {
+   "time": "noon",
+   "clean": false,
+   "x": 699,
+   "y": 16,
+   "max": 252.0,
+   "underCard": false,
+   "elev": 52.3
+  },
+  {
+   "time": "noon",
+   "clean": true,
+   "x": 699,
+   "y": 16,
+   "max": 252.0,
+   "underCard": false,
+   "elev": 52.3
+  },
+  {
+   "time": "dusk",
+   "clean": false,
+   "x": 1362,
+   "y": 611,
+   "max": 242.3333282470703,
+   "underCard": false,
+   "elev": 4.5
+  },
+  {
+   "time": "dusk",
+   "clean": true,
+   "x": 1362,
+   "y": 611,
+   "max": 242.3333282470703,
+   "underCard": false,
+   "elev": 4.5
+  }
+ ],
+ "export": {
+  "png": "鸭鸭日历-仅天空背景-大雨-强风东风-1158.png",
+  "exportBtn": "导出天空背景 PNG（不含正文）",
+  "recordBtn": "录制天空背景 8 秒（不含正文）",
+  "exportingDuring": true,
+  "video": "鸭鸭日历-仅天空背景-大雨-强风东风-1158.webm",
+  "after": {
+   "recording": false,
+   "exporting": false
+  },
+  "hiddenStopSaved": "鸭鸭日历-仅天空背景-大雨-强风东风-1158.webm",
+  "hidden": {
+   "recording": false,
+   "exporting": false,
+   "rafActive": false
+  },
+  "visibleAgain": {
+   "rafActive": true,
+   "fps": 60,
+   "tickRate": 60
+  }
+ },
+ "fallback": {
+  "desk-nowebgl": {
+   "rows": [
+    {
+     "weather": "clear",
+     "wind": "normal",
+     "pill": "☀️ 晴",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 155.2,
+      "grad": 0.32
+     }
+    },
+    {
+     "weather": "clear",
+     "wind": "strong",
+     "pill": "☀️ 晴 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 155.2,
+      "grad": 0.32
+     }
+    },
+    {
+     "weather": "partly",
+     "wind": "normal",
+     "pill": "⛅ 多云",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 158.9,
+      "grad": 0.88
+     }
+    },
+    {
+     "weather": "partly",
+     "wind": "strong",
+     "pill": "⛅ 多云 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 158.9,
+      "grad": 0.88
+     }
+    },
+    {
+     "weather": "overcast",
+     "wind": "normal",
+     "pill": "☁️ 阴",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 176.1,
+      "grad": 1.51
+     }
+    },
+    {
+     "weather": "overcast",
+     "wind": "strong",
+     "pill": "☁️ 阴 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 176.1,
+      "grad": 1.51
+     }
+    },
+    {
+     "weather": "lightRain",
+     "wind": "normal",
+     "pill": "🌧️ 小雨",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 162.5,
+      "grad": 1.78
+     }
+    },
+    {
+     "weather": "lightRain",
+     "wind": "strong",
+     "pill": "🌧️ 小雨 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 162.5,
+      "grad": 1.78
+     }
+    },
+    {
+     "weather": "heavyRain",
+     "wind": "normal",
+     "pill": "🌧️ 大雨",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 142.3,
+      "grad": 2.33
+     }
+    },
+    {
+     "weather": "heavyRain",
+     "wind": "strong",
+     "pill": "🌧️ 大雨 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 142.3,
+      "grad": 2.29
+     }
+    },
+    {
+     "weather": "storm",
+     "wind": "normal",
+     "pill": "🌧️ 暴雨",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 127.3,
+      "grad": 4.24
+     }
+    },
+    {
+     "weather": "storm",
+     "wind": "strong",
+     "pill": "🌧️ 暴雨 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 127.2,
+      "grad": 4.06
+     }
+    },
+    {
+     "weather": "lightSnow",
+     "wind": "normal",
+     "pill": "🌨️ 小雪",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 175.3,
+      "grad": 1.63
+     }
+    },
+    {
+     "weather": "lightSnow",
+     "wind": "strong",
+     "pill": "🌨️ 小雪 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 175.3,
+      "grad": 1.63
+     }
+    },
+    {
+     "weather": "snow",
+     "wind": "normal",
+     "pill": "🌨️ 中雪",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 173.6,
+      "grad": 1.94
+     }
+    },
+    {
+     "weather": "snow",
+     "wind": "strong",
+     "pill": "🌨️ 中雪 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 173.6,
+      "grad": 1.94
+     }
+    },
+    {
+     "weather": "heavySnow",
+     "wind": "normal",
+     "pill": "❄️ 大雪",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 172.5,
+      "grad": 2.96
+     }
+    },
+    {
+     "weather": "heavySnow",
+     "wind": "strong",
+     "pill": "❄️ 大雪 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 172.5,
+      "grad": 2.96
+     }
+    }
+   ],
+   "distinctSignatures": 11,
+   "of": 18
+  },
+  "desk-reduced": {
+   "rows": [
+    {
+     "weather": "clear",
+     "wind": "normal",
+     "pill": "☀️ 晴",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 182.4,
+      "grad": 0.0
+     }
+    },
+    {
+     "weather": "clear",
+     "wind": "strong",
+     "pill": "☀️ 晴 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 182.4,
+      "grad": 0.0
+     }
+    },
+    {
+     "weather": "partly",
+     "wind": "normal",
+     "pill": "⛅ 多云",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 181.8,
+      "grad": 0.0
+     }
+    },
+    {
+     "weather": "partly",
+     "wind": "strong",
+     "pill": "⛅ 多云 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 181.8,
+      "grad": 0.0
+     }
+    },
+    {
+     "weather": "overcast",
+     "wind": "normal",
+     "pill": "☁️ 阴",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 169.2,
+      "grad": 0.07
+     }
+    },
+    {
+     "weather": "overcast",
+     "wind": "strong",
+     "pill": "☁️ 阴 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 168.6,
+      "grad": 0.09
+     }
+    },
+    {
+     "weather": "lightRain",
+     "wind": "normal",
+     "pill": "🌧️ 小雨",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 171.5,
+      "grad": 0.31
+     }
+    },
+    {
+     "weather": "lightRain",
+     "wind": "strong",
+     "pill": "🌧️ 小雨 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 171.0,
+      "grad": 0.31
+     }
+    },
+    {
+     "weather": "heavyRain",
+     "wind": "normal",
+     "pill": "🌧️ 大雨",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 137.1,
+      "grad": 0.77
+     }
+    },
+    {
+     "weather": "heavyRain",
+     "wind": "strong",
+     "pill": "🌧️ 大雨 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 136.7,
+      "grad": 0.78
+     }
+    },
+    {
+     "weather": "storm",
+     "wind": "normal",
+     "pill": "🌧️ 暴雨",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 122.2,
+      "grad": 1.33
+     }
+    },
+    {
+     "weather": "storm",
+     "wind": "strong",
+     "pill": "🌧️ 暴雨 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 121.8,
+      "grad": 1.25
+     }
+    },
+    {
+     "weather": "lightSnow",
+     "wind": "normal",
+     "pill": "🌨️ 小雪",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 179.4,
+      "grad": 0.26
+     }
+    },
+    {
+     "weather": "lightSnow",
+     "wind": "strong",
+     "pill": "🌨️ 小雪 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 178.8,
+      "grad": 0.28
+     }
+    },
+    {
+     "weather": "snow",
+     "wind": "normal",
+     "pill": "🌨️ 中雪",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 171.0,
+      "grad": 0.49
+     }
+    },
+    {
+     "weather": "snow",
+     "wind": "strong",
+     "pill": "🌨️ 中雪 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 170.4,
+      "grad": 0.52
+     }
+    },
+    {
+     "weather": "heavySnow",
+     "wind": "normal",
+     "pill": "❄️ 大雪",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 169.7,
+      "grad": 0.77
+     }
+    },
+    {
+     "weather": "heavySnow",
+     "wind": "strong",
+     "pill": "❄️ 大雪 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 169.1,
+      "grad": 0.79
+     }
+    }
+   ],
+   "distinctSignatures": 16,
+   "of": 18
+  },
+  "phone-nowebgl": {
+   "rows": [
+    {
+     "weather": "clear",
+     "wind": "normal",
+     "pill": "☀️ 晴",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 158.5,
+      "grad": 0.42
+     }
+    },
+    {
+     "weather": "clear",
+     "wind": "strong",
+     "pill": "☀️ 晴 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 158.5,
+      "grad": 0.42
+     }
+    },
+    {
+     "weather": "partly",
+     "wind": "normal",
+     "pill": "⛅ 多云",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 160.6,
+      "grad": 0.94
+     }
+    },
+    {
+     "weather": "partly",
+     "wind": "strong",
+     "pill": "⛅ 多云 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 160.6,
+      "grad": 0.94
+     }
+    },
+    {
+     "weather": "overcast",
+     "wind": "normal",
+     "pill": "☁️ 阴",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 173.6,
+      "grad": 0.8
+     }
+    },
+    {
+     "weather": "overcast",
+     "wind": "strong",
+     "pill": "☁️ 阴 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 173.6,
+      "grad": 0.8
+     }
+    },
+    {
+     "weather": "lightRain",
+     "wind": "normal",
+     "pill": "🌧️ 小雨",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 160,
+      "grad": 0.92
+     }
+    },
+    {
+     "weather": "lightRain",
+     "wind": "strong",
+     "pill": "🌧️ 小雨 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 160,
+      "grad": 0.91
+     }
+    },
+    {
+     "weather": "heavyRain",
+     "wind": "normal",
+     "pill": "🌧️ 大雨",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 141.1,
+      "grad": 1.43
+     }
+    },
+    {
+     "weather": "heavyRain",
+     "wind": "strong",
+     "pill": "🌧️ 大雨 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 141,
+      "grad": 1.35
+     }
+    },
+    {
+     "weather": "storm",
+     "wind": "normal",
+     "pill": "🌧️ 暴雨",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 126.4,
+      "grad": 3.29
+     }
+    },
+    {
+     "weather": "storm",
+     "wind": "strong",
+     "pill": "🌧️ 暴雨 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 126.2,
+      "grad": 2.94
+     }
+    },
+    {
+     "weather": "lightSnow",
+     "wind": "normal",
+     "pill": "🌨️ 小雪",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 172.2,
+      "grad": 0.89
+     }
+    },
+    {
+     "weather": "lightSnow",
+     "wind": "strong",
+     "pill": "🌨️ 小雪 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 172.2,
+      "grad": 0.89
+     }
+    },
+    {
+     "weather": "snow",
+     "wind": "normal",
+     "pill": "🌨️ 中雪",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 170.5,
+      "grad": 1.16
+     }
+    },
+    {
+     "weather": "snow",
+     "wind": "strong",
+     "pill": "🌨️ 中雪 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 170.5,
+      "grad": 1.16
+     }
+    },
+    {
+     "weather": "heavySnow",
+     "wind": "normal",
+     "pill": "❄️ 大雪",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 169,
+      "grad": 2.03
+     }
+    },
+    {
+     "weather": "heavySnow",
+     "wind": "strong",
+     "pill": "❄️ 大雪 · 💨 强风",
+     "fallback": true,
+     "still": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "sig": {
+      "mean": 169,
+      "grad": 2.03
+     }
+    }
+   ],
+   "distinctSignatures": 12,
+   "of": 18
+  },
+  "phone-reduced": {
+   "rows": [
+    {
+     "weather": "clear",
+     "wind": "normal",
+     "pill": "☀️ 晴",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 184.6,
+      "grad": 0.0
+     }
+    },
+    {
+     "weather": "clear",
+     "wind": "strong",
+     "pill": "☀️ 晴 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 184.6,
+      "grad": 0.0
+     }
+    },
+    {
+     "weather": "partly",
+     "wind": "normal",
+     "pill": "⛅ 多云",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 183.9,
+      "grad": 0.0
+     }
+    },
+    {
+     "weather": "partly",
+     "wind": "strong",
+     "pill": "⛅ 多云 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 183.9,
+      "grad": 0.0
+     }
+    },
+    {
+     "weather": "overcast",
+     "wind": "normal",
+     "pill": "☁️ 阴",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 167.6,
+      "grad": 0.05
+     }
+    },
+    {
+     "weather": "overcast",
+     "wind": "strong",
+     "pill": "☁️ 阴 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 168.1,
+      "grad": 0.06
+     }
+    },
+    {
+     "weather": "lightRain",
+     "wind": "normal",
+     "pill": "🌧️ 小雨",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 170.3,
+      "grad": 0.25
+     }
+    },
+    {
+     "weather": "lightRain",
+     "wind": "strong",
+     "pill": "🌧️ 小雨 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 170.7,
+      "grad": 0.31
+     }
+    },
+    {
+     "weather": "heavyRain",
+     "wind": "normal",
+     "pill": "🌧️ 大雨",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 135.3,
+      "grad": 0.64
+     }
+    },
+    {
+     "weather": "heavyRain",
+     "wind": "strong",
+     "pill": "🌧️ 大雨 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 136.4,
+      "grad": 0.73
+     }
+    },
+    {
+     "weather": "storm",
+     "wind": "normal",
+     "pill": "🌧️ 暴雨",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 120.4,
+      "grad": 1.03
+     }
+    },
+    {
+     "weather": "storm",
+     "wind": "strong",
+     "pill": "🌧️ 暴雨 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 121.5,
+      "grad": 1.08
+     }
+    },
+    {
+     "weather": "lightSnow",
+     "wind": "normal",
+     "pill": "🌨️ 小雪",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 178.1,
+      "grad": 0.24
+     }
+    },
+    {
+     "weather": "lightSnow",
+     "wind": "strong",
+     "pill": "🌨️ 小雪 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 178.4,
+      "grad": 0.25
+     }
+    },
+    {
+     "weather": "snow",
+     "wind": "normal",
+     "pill": "🌨️ 中雪",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 169.5,
+      "grad": 0.44
+     }
+    },
+    {
+     "weather": "snow",
+     "wind": "strong",
+     "pill": "🌨️ 中雪 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 170.0,
+      "grad": 0.45
+     }
+    },
+    {
+     "weather": "heavySnow",
+     "wind": "normal",
+     "pill": "❄️ 大雪",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 168.0,
+      "grad": 0.62
+     }
+    },
+    {
+     "weather": "heavySnow",
+     "wind": "strong",
+     "pill": "❄️ 大雪 · 💨 强风",
+     "fallback": false,
+     "still": true,
+     "staticVisible": false,
+     "rafActive": false,
+     "sig": {
+      "mean": 168.5,
+      "grad": 0.62
+     }
+    }
+   ],
+   "distinctSignatures": 16,
+   "of": 18
+  },
+  "contextLost": {
+   "lost": {
+    "fallback": true,
+    "staticVisible": true,
+    "rafActive": false,
+    "fps": 0,
+    "tickRate": 0,
+    "pill": "🌧️ 暴雨"
+   },
+   "restored": {
+    "fallback": false,
+    "staticVisible": false,
+    "rafActive": true,
+    "fps": 0,
+    "tickRate": 0,
+    "pill": "🌧️ 暴雨"
+   },
+   "restored+2s": {
+    "fallback": false,
+    "staticVisible": false,
+    "rafActive": true,
+    "fps": 60,
+    "tickRate": 60,
+    "pill": "🌧️ 暴雨"
+   },
+   "forceOn": [
+    "2d-fallback",
+    {
+     "fallback": true,
+     "staticVisible": true,
+     "rafActive": false,
+     "fps": 0,
+     "tickRate": 60,
+     "pill": "🌧️ 暴雨"
+    }
+   ],
+   "forceOff": [
+    "none",
+    {
+     "fallback": false,
+     "staticVisible": false,
+     "rafActive": true,
+     "fps": 60,
+     "tickRate": 60,
+     "pill": "🌧️ 暴雨"
+    }
+   ]
+  }
+ },
+ "bfcache": {
+  "restoredFromBfcache": false,
+  "pagehidePersisted": "false",
+  "reason": "null"
+ },
+ "live": [
+  {
+   "dev": "desk",
+   "weather": "clear",
+   "wind": "normal",
+   "fps": 60,
+   "tickRate": 60,
+   "quality": 1,
+   "canvas": [
+    1442,
+    901
+   ],
+   "gpuMsPerFrame": 1.06
+  },
+  {
+   "dev": "desk",
+   "weather": "partly",
+   "wind": "strong",
+   "fps": 60,
+   "tickRate": 60,
+   "quality": 1,
+   "canvas": [
+    1442,
+    901
+   ],
+   "gpuMsPerFrame": 1.74
+  },
+  {
+   "dev": "desk",
+   "weather": "storm",
+   "wind": "strong",
+   "fps": 60,
+   "tickRate": 60,
+   "quality": 1,
+   "canvas": [
+    1442,
+    901
+   ],
+   "gpuMsPerFrame": 1.78
+  },
+  {
+   "dev": "desk",
+   "weather": "heavySnow",
+   "wind": "strong",
+   "fps": 60,
+   "tickRate": 60,
+   "quality": 1,
+   "canvas": [
+    1442,
+    901
+   ],
+   "gpuMsPerFrame": 1.91
+  },
+  {
+   "dev": "phone",
+   "weather": "clear",
+   "wind": "normal",
+   "fps": 30,
+   "tickRate": 60,
+   "quality": 1,
+   "canvas": [
+    488,
+    1055
+   ],
+   "gpuMsPerFrame": 0.68
+  },
+  {
+   "dev": "phone",
+   "weather": "partly",
+   "wind": "strong",
+   "fps": 30,
+   "tickRate": 60,
+   "quality": 1,
+   "canvas": [
+    488,
+    1055
+   ],
+   "gpuMsPerFrame": 1.24
+  },
+  {
+   "dev": "phone",
+   "weather": "storm",
+   "wind": "strong",
+   "fps": 30,
+   "tickRate": 60,
+   "quality": 1,
+   "canvas": [
+    488,
+    1055
+   ],
+   "gpuMsPerFrame": 1.25
+  },
+  {
+   "dev": "phone",
+   "weather": "heavySnow",
+   "wind": "strong",
+   "fps": 30,
+   "tickRate": 60,
+   "quality": 1,
+   "canvas": [
+    488,
+    1055
+   ],
+   "gpuMsPerFrame": 0.98
+  }
+ ],
+ "ua": "154.0.8037.98"
+}

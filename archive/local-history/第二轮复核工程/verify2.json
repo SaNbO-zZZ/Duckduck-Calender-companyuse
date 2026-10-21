@@ -1,0 +1,241 @@
+{
+ "errors": [],
+ "rainTilt": [
+  {
+   "weather": "lightRain",
+   "wind": "normal",
+   "dir": 1,
+   "tiltDeg": 15.3,
+   "coherence": 0.71,
+   "move4x(1/240s)": [
+    8.0,
+    40.0
+   ],
+   "peak": 0.309
+  },
+  {
+   "weather": "lightRain",
+   "wind": "strong",
+   "dir": 1,
+   "tiltDeg": 43.9,
+   "coherence": 0.82,
+   "move4x(1/240s)": [
+    32.0,
+    40.0
+   ],
+   "peak": 0.327
+  },
+  {
+   "weather": "lightRain",
+   "wind": "strong",
+   "dir": -1,
+   "tiltDeg": -43.4,
+   "coherence": 0.86,
+   "move4x(1/240s)": [
+    -32.0,
+    40.0
+   ],
+   "peak": 0.346
+  },
+  {
+   "weather": "heavyRain",
+   "wind": "normal",
+   "dir": 1,
+   "tiltDeg": 14.6,
+   "coherence": 0.8,
+   "move4x(1/240s)": [
+    8.0,
+    44.0
+   ],
+   "peak": 0.467
+  },
+  {
+   "weather": "heavyRain",
+   "wind": "strong",
+   "dir": 1,
+   "tiltDeg": 42.0,
+   "coherence": 0.92,
+   "move4x(1/240s)": [
+    36.0,
+    44.0
+   ],
+   "peak": 0.532
+  },
+  {
+   "weather": "heavyRain",
+   "wind": "strong",
+   "dir": -1,
+   "tiltDeg": -41.9,
+   "coherence": 0.93,
+   "move4x(1/240s)": [
+    -36.0,
+    44.0
+   ],
+   "peak": 0.394
+  },
+  {
+   "weather": "storm",
+   "wind": "normal",
+   "dir": 1,
+   "tiltDeg": 14.4,
+   "coherence": 0.82,
+   "move4x(1/240s)": [
+    8.0,
+    48.0
+   ],
+   "peak": 0.38
+  },
+  {
+   "weather": "storm",
+   "wind": "strong",
+   "dir": 1,
+   "tiltDeg": 41.7,
+   "coherence": 0.94,
+   "move4x(1/240s)": [
+    40.0,
+    48.0
+   ],
+   "peak": 0.442
+  },
+  {
+   "weather": "storm",
+   "wind": "strong",
+   "dir": -1,
+   "tiltDeg": -41.8,
+   "coherence": 0.94,
+   "move4x(1/240s)": [
+    -40.0,
+    48.0
+   ],
+   "peak": 0.331
+  }
+ ],
+ "clouds": [
+  {
+   "weather": "partly",
+   "wind": "normal",
+   "dir": 1,
+   "dx_per_s": 0.0,
+   "dy_per_s": 0.0,
+   "peak": 0.373
+  },
+  {
+   "weather": "partly",
+   "wind": "strong",
+   "dir": 1,
+   "dx_per_s": 7.0,
+   "dy_per_s": 0.0,
+   "peak": 0.314
+  },
+  {
+   "weather": "partly",
+   "wind": "strong",
+   "dir": -1,
+   "dx_per_s": 0.0,
+   "dy_per_s": 0.0,
+   "peak": 0.364
+  },
+  {
+   "weather": "overcast",
+   "wind": "normal",
+   "dir": 1,
+   "dx_per_s": 20.0,
+   "dy_per_s": 0.0,
+   "peak": 0.487
+  },
+  {
+   "weather": "overcast",
+   "wind": "strong",
+   "dir": 1,
+   "dx_per_s": 50.0,
+   "dy_per_s": 0.0,
+   "peak": 0.208
+  },
+  {
+   "weather": "overcast",
+   "wind": "strong",
+   "dir": -1,
+   "dx_per_s": -67.0,
+   "dy_per_s": 0.0,
+   "peak": 0.294
+  }
+ ],
+ "splashDeepInsideCard": [],
+ "splashDeepInsideCardCount": 0,
+ "bfcacheSynthetic": {
+  "hidePersisted": {
+   "rafActive": false,
+   "liveTimerActive": false,
+   "pageSuspended": true
+  },
+  "showPersisted": {
+   "rafActive": true,
+   "liveTimerActive": true,
+   "pageSuspended": false,
+   "fps": 60,
+   "tickRate": 60,
+   "fallback": false
+  },
+  "hideTorn": {
+   "rafActive": false,
+   "liveTimerActive": false,
+   "pageSuspended": true
+  },
+  "showAfterTorn": {
+   "rafActive": true,
+   "liveTimerActive": true,
+   "pageSuspended": false,
+   "fps": 60,
+   "tickRate": 60,
+   "fallback": false
+  },
+  "drawsAfterTorn": true
+ },
+ "hiddenResume": {
+  "splashesBefore": 30,
+  "clockAdvancedWhileHidden": 0.0,
+  "after(clock,splashes)": [
+   [
+    14.199,
+    35
+   ],
+   [
+    14.249,
+    32
+   ],
+   [
+    14.299,
+    34
+   ],
+   [
+    14.366,
+    36
+   ],
+   [
+    14.416,
+    30
+   ],
+   [
+    14.466,
+    33
+   ],
+   [
+    14.533,
+    33
+   ],
+   [
+    14.583,
+    30
+   ],
+   [
+    14.633,
+    27
+   ],
+   [
+    14.683,
+    34
+   ]
+  ],
+  "tickRate": 60
+ }
+}

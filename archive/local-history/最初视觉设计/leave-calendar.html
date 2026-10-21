@@ -1,0 +1,118 @@
+<div id="leave-calendar-preview" aria-label="飞书请假日历设计预览">
+  <style>
+    #leave-calendar-preview{--lc-bg:light-dark(#ffffff,#1e222a);--lc-soft:light-dark(#f6f8fb,#252b35);--lc-line:light-dark(#e6eaf0,#39414e);--lc-text:light-dark(#1e293b,#e6ecf5);--lc-muted:light-dark(#64748b,#adb9cb);--lc-blue:light-dark(#2563eb,#8ab4ff);--lc-tag:light-dark(#edf4ff,#283c58);color:var(--lc-text);background:var(--lc-bg);font:14px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;border:1px solid var(--lc-line);border-radius:12px;overflow:hidden}
+    #leave-calendar-preview *{box-sizing:border-box}
+    #leave-calendar-preview [hidden]{display:none!important}
+    #leave-calendar-preview .lc-top{padding:20px 24px;display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid var(--lc-line);flex-wrap:wrap}
+    #leave-calendar-preview .lc-brand{display:flex;align-items:center;gap:12px;font-size:18px;font-weight:500}
+    #leave-calendar-preview .lc-brand i{color:var(--lc-blue)}
+    #leave-calendar-preview .lc-muted{color:var(--lc-muted);font-size:12px}
+    #leave-calendar-preview .lc-layout{display:grid;grid-template-columns:minmax(0,1fr) 320px}
+    #leave-calendar-preview .lc-calendar{padding:20px 24px 24px;min-width:0}
+    #leave-calendar-preview .lc-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+    #leave-calendar-preview .lc-tabs{display:flex;gap:18px;border-bottom:1px solid var(--lc-line);margin-bottom:22px}
+    #leave-calendar-preview .lc-tab{padding:4px 0 11px;color:var(--lc-muted)}
+    #leave-calendar-preview .lc-tab.active{color:var(--lc-blue);border-bottom:2px solid var(--lc-blue)}
+    #leave-calendar-preview .lc-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:0}
+    #leave-calendar-preview .lc-dayname{text-align:center;color:var(--lc-muted);font-size:12px;padding:8px 0}
+    #leave-calendar-preview button{font:inherit;color:inherit}
+    #leave-calendar-preview .lc-date{min-height:116px;background:var(--lc-bg);border:0;border-top:1px solid var(--lc-line);border-right:1px solid var(--lc-line);padding:10px 6px;text-align:left;display:flex;flex-direction:column;gap:14px}
+    #leave-calendar-preview .lc-date:nth-child(7n){border-right:0}
+    #leave-calendar-preview .lc-date:hover,#leave-calendar-preview .lc-date[aria-pressed=true]{background:var(--lc-soft)}
+    #leave-calendar-preview .lc-n{padding-left:4px;font-size:13px}
+    #leave-calendar-preview .lc-event{display:block;background:var(--lc-tag);color:var(--lc-blue);border-radius:5px;padding:5px;font-size:11px;word-break:break-word}
+    #leave-calendar-preview .lc-hint{padding-top:16px;color:var(--lc-muted);font-size:12px}
+    #leave-calendar-preview .lc-side{padding:22px;background:var(--lc-soft);border-left:1px solid var(--lc-line);min-width:0}
+    #leave-calendar-preview h3{font:500 16px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;margin:0 0 18px}
+    #leave-calendar-preview .lc-field{display:block;margin:0 0 15px;font-size:12px;color:var(--lc-muted)}
+    #leave-calendar-preview .lc-input{width:100%;margin-top:6px;border:1px solid var(--lc-line);border-radius:7px;padding:9px 10px;background:var(--lc-bg);color:var(--lc-text);font:14px/1.4 inherit;min-height:39px}
+    #leave-calendar-preview .lc-static{margin-top:6px;padding:10px;background:var(--lc-bg);border:1px solid var(--lc-line);border-radius:7px;color:var(--lc-text);display:flex;justify-content:space-between;gap:8px;align-items:center}
+    #leave-calendar-preview .lc-person{display:flex;gap:8px;align-items:center}
+    #leave-calendar-preview .lc-avatar{display:inline-flex;width:23px;height:23px;align-items:center;justify-content:center;background:var(--lc-tag);border-radius:50%;color:var(--lc-blue);font-size:11px}
+    #leave-calendar-preview .lc-btn{border:0;border-radius:7px;background:var(--lc-blue);color:light-dark(#fff,#142644);padding:10px 15px}
+    #leave-calendar-preview .lc-btn:disabled{opacity:.45}
+    #leave-calendar-preview .lc-search-list{padding:5px;background:var(--lc-bg);border:1px solid var(--lc-line);border-radius:7px;margin-top:5px}
+    #leave-calendar-preview .lc-person-option{display:block;text-align:left;width:100%;padding:8px;background:transparent;border:0;border-radius:4px}
+    #leave-calendar-preview .lc-person-option:hover{background:var(--lc-soft)}
+    #leave-calendar-preview .lc-feedback{margin-top:12px;font-size:12px;color:var(--lc-muted)}
+    #leave-calendar-preview .lc-note{font-size:12px;color:var(--lc-muted);margin-top:20px;padding-top:16px;border-top:1px solid var(--lc-line)}
+    @media(max-width:750px){#leave-calendar-preview .lc-layout{grid-template-columns:minmax(0,1fr)}#leave-calendar-preview .lc-side{border-left:0;border-top:1px solid var(--lc-line)}#leave-calendar-preview .lc-date{min-height:88px}#leave-calendar-preview .lc-calendar{padding:18px 12px}#leave-calendar-preview .lc-top{padding:18px 16px}}
+    @media(pointer:coarse){#leave-calendar-preview input,#leave-calendar-preview select{font-size:16px}#leave-calendar-preview .lc-btn,#leave-calendar-preview .lc-person-option{min-height:44px}}
+  </style>
+  <div class="lc-top"><div class="lc-brand"><i data-lucide="calendar-days" aria-hidden="true"></i>休假协作</div><span class="lc-muted">设计预览 · 演示数据</span></div>
+  <div class="lc-layout">
+    <section class="lc-calendar" aria-label="团队日历">
+      <div class="lc-tabs"><span class="lc-tab active">团队日历</span><span class="lc-tab">申请记录</span></div>
+      <div class="lc-tools"><strong style="font-weight:500">2026 年 9 月 / 10 月</strong><button class="lc-btn cursor-interaction" data-new type="button">新建请假</button></div>
+      <div class="lc-week">
+        <span class="lc-dayname">周一</span><span class="lc-dayname">周二</span><span class="lc-dayname">周三</span><span class="lc-dayname">周四</span><span class="lc-dayname">周五</span><span class="lc-dayname">周六</span><span class="lc-dayname">周日</span>
+        <button class="lc-date cursor-interaction" type="button" data-date="2026-09-28" aria-pressed="false" aria-label="9月28日新建请假"><span class="lc-n">28</span><span class="lc-event">示例员工 A · 年假</span></button>
+        <button class="lc-date cursor-interaction" type="button" data-date="2026-09-29" aria-pressed="false" aria-label="9月29日新建请假"><span class="lc-n">29</span></button>
+        <button class="lc-date cursor-interaction" type="button" data-date="2026-09-30" aria-pressed="true" aria-label="9月30日新建请假"><span class="lc-n">30</span><span class="lc-event">示例员工 B · 调休</span></button>
+        <button class="lc-date cursor-interaction" type="button" data-date="2026-10-01" aria-pressed="false" aria-label="10月1日新建请假"><span class="lc-n">1</span></button>
+        <button class="lc-date cursor-interaction" type="button" data-date="2026-10-02" aria-pressed="false" aria-label="10月2日新建请假"><span class="lc-n">2</span></button>
+        <button class="lc-date cursor-interaction" type="button" data-date="2026-10-03" aria-pressed="false" aria-label="10月3日新建请假"><span class="lc-n">3</span></button>
+        <button class="lc-date cursor-interaction" type="button" data-date="2026-10-04" aria-pressed="false" aria-label="10月4日新建请假"><span class="lc-n">4</span></button>
+      </div>
+      <div class="lc-hint">点击日期新建 · 年假与调休共用一个日历</div>
+    </section>
+    <section class="lc-side" aria-label="请假记录填写框">
+      <h3>新建请假 / 调休</h3>
+      <form data-form>
+        <label class="lc-field">申请人<div class="lc-static"><span class="lc-person"><span class="lc-avatar">我</span>当前登录员工</span></div></label>
+        <label class="lc-field">休假类型<select class="lc-input" name="leaveType"><option>年假</option><option>调休</option><option>事假</option><option>病假</option><option>其他</option></select></label>
+        <label class="lc-field">开始时间<input class="lc-input" name="start" type="datetime-local" value="2026-09-30T09:00" required></label>
+        <label class="lc-field">结束时间<input class="lc-input" name="end" type="datetime-local" value="2026-09-30T18:00" required></label>
+        <label class="lc-field">请假小时<input class="lc-input" name="hours" type="number" min="0.1" step="0.1" placeholder="填写实际工作小时" required></label>
+        <label class="lc-field">@ 你的 Mentor<input class="lc-input" name="mentor" type="search" placeholder="搜索并选择公司人员" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="lc-mentor-results" required></label>
+        <div id="lc-mentor-results" class="lc-search-list" hidden><button type="button" class="lc-person-option cursor-interaction" data-person="示例 Mentor A">示例 Mentor A</button><button type="button" class="lc-person-option cursor-interaction" data-person="示例 Mentor B">示例 Mentor B</button><span data-empty class="lc-muted" hidden>没有匹配的演示人员</span></div>
+        <div class="lc-field">人事<div class="lc-static"><span class="lc-person"><span class="lc-avatar">HR</span>后台设置的人事</span><i data-lucide="lock-keyhole" aria-hidden="true"></i></div></div>
+        <label class="lc-field">交接说明（选填）<input class="lc-input" name="handoff" placeholder="待办事项、交接人"></label>
+        <button class="lc-btn cursor-interaction" type="submit">登记并通知</button>
+        <div class="lc-feedback" aria-live="polite" data-feedback>仅通知所选 Mentor 与固定人事，无审批</div>
+      </form>
+      <div class="lc-note">预览中的人员为示例；实际使用飞书公司人员列表。</div>
+    </section>
+  </div>
+  <script>
+    (()=>{
+      const root=document.getElementById('leave-calendar-preview');
+      const form=root.querySelector('[data-form]');
+      const mentor=form.elements.mentor;
+      const list=root.querySelector('#lc-mentor-results');
+      const feedback=root.querySelector('[data-feedback]');
+      let selectedMentor='';
+      function selectDate(date){
+        form.elements.start.value=date+'T09:00';form.elements.end.value=date+'T18:00';
+        root.querySelectorAll('[data-date]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.date===date)));
+        feedback.textContent='仅通知所选 Mentor 与固定人事，无审批';
+        if(window.openai?.setWidgetState)window.openai.setWidgetState({privateContent:{date},modelContent:null}).catch(()=>{});
+      }
+      const remembered=window.openai?.widgetState?.privateContent?.date;
+      if(typeof remembered==='string' && /^2026-(09|10)-\d{2}$/.test(remembered)){
+        form.elements.start.value=remembered+'T09:00';form.elements.end.value=remembered+'T18:00';
+        root.querySelectorAll('[data-date]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.date===remembered)));
+      }
+      root.querySelectorAll('[data-date]').forEach(b=>b.addEventListener('click',()=>selectDate(b.dataset.date)));
+      root.querySelector('[data-new]').addEventListener('click',()=>{selectDate('2026-09-30');mentor.focus();});
+      function showPeople(){
+        const query=mentor.value.trim().toLowerCase();let count=0;
+        root.querySelectorAll('[data-person]').forEach(b=>{b.hidden=!b.dataset.person.toLowerCase().includes(query);if(!b.hidden)count++;});
+        list.hidden=false;root.querySelector('[data-empty]').hidden=count>0;mentor.setAttribute('aria-expanded','true');
+      }
+      mentor.addEventListener('focus',showPeople);
+      mentor.addEventListener('input',()=>{selectedMentor='';showPeople();});
+      root.querySelectorAll('[data-person]').forEach(b=>b.addEventListener('click',()=>{selectedMentor=b.dataset.person;mentor.value=selectedMentor;list.hidden=true;mentor.setAttribute('aria-expanded','false');}));
+      form.addEventListener('submit',event=>{
+        event.preventDefault();
+        if(!selectedMentor){feedback.textContent='请从人员列表选择 Mentor';mentor.focus();return;}
+        if(form.elements.end.value<=form.elements.start.value){feedback.textContent='结束时间须晚于开始时间';return;}
+        feedback.textContent='预览：登记后将通知 '+selectedMentor+' 和后台固定人事。';
+      });
+      window.addEventListener('openai:set_globals',event=>{
+        const date=event.detail?.globals?.widgetState?.privateContent?.date;
+        if(typeof date==='string' && /^2026-(09|10)-\d{2}$/.test(date)){form.elements.start.value=date+'T09:00';form.elements.end.value=date+'T18:00';root.querySelectorAll('[data-date]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.date===date)));}
+      });
+    })();
+  </script>
+</div>

@@ -1,0 +1,145 @@
+{
+ "rows": [
+  {
+   "hz": 60,
+   "target": 60,
+   "jitterMs": 0,
+   "gate": 60,
+   "naive": 39.9
+  },
+  {
+   "hz": 60,
+   "target": 60,
+   "jitterMs": 0.5,
+   "gate": 60,
+   "naive": 37.2
+  },
+  {
+   "hz": 60,
+   "target": 30,
+   "jitterMs": 0,
+   "gate": 30,
+   "naive": 20.1
+  },
+  {
+   "hz": 60,
+   "target": 30,
+   "jitterMs": 0.5,
+   "gate": 30,
+   "naive": 23.3
+  },
+  {
+   "hz": 90,
+   "target": 60,
+   "jitterMs": 0,
+   "gate": 60,
+   "naive": 45
+  },
+  {
+   "hz": 90,
+   "target": 60,
+   "jitterMs": 0.5,
+   "gate": 60,
+   "naive": 45
+  },
+  {
+   "hz": 90,
+   "target": 30,
+   "jitterMs": 0,
+   "gate": 30,
+   "naive": 25.3
+  },
+  {
+   "hz": 90,
+   "target": 30,
+   "jitterMs": 0.5,
+   "gate": 30,
+   "naive": 25.1
+  },
+  {
+   "hz": 120,
+   "target": 60,
+   "jitterMs": 0,
+   "gate": 60,
+   "naive": 40.1
+  },
+  {
+   "hz": 120,
+   "target": 60,
+   "jitterMs": 0.5,
+   "gate": 60,
+   "naive": 46.5
+  },
+  {
+   "hz": 120,
+   "target": 30,
+   "jitterMs": 0,
+   "gate": 30,
+   "naive": 26.6
+  },
+  {
+   "hz": 120,
+   "target": 30,
+   "jitterMs": 0.5,
+   "gate": 30,
+   "naive": 26.1
+  },
+  {
+   "hz": 144,
+   "target": 60,
+   "jitterMs": 0,
+   "gate": 60,
+   "naive": 48
+  },
+  {
+   "hz": 144,
+   "target": 60,
+   "jitterMs": 0.5,
+   "gate": 60,
+   "naive": 48
+  },
+  {
+   "hz": 144,
+   "target": 30,
+   "jitterMs": 0,
+   "gate": 30,
+   "naive": 28.8
+  },
+  {
+   "hz": 144,
+   "target": 30,
+   "jitterMs": 0.5,
+   "gate": 30,
+   "naive": 28.8
+  },
+  {
+   "hz": 165,
+   "target": 60,
+   "jitterMs": 0,
+   "gate": 60,
+   "naive": 55
+  },
+  {
+   "hz": 165,
+   "target": 60,
+   "jitterMs": 0.5,
+   "gate": 60,
+   "naive": 55
+  },
+  {
+   "hz": 165,
+   "target": 30,
+   "jitterMs": 0,
+   "gate": 30,
+   "naive": 27.5
+  },
+  {
+   "hz": 165,
+   "target": 30,
+   "jitterMs": 0.5,
+   "gate": 30,
+   "naive": 27.5
+  }
+ ],
+ "afterStall5Callbacks": 5
+}
