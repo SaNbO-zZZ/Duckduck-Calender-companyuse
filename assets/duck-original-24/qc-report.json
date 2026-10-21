@@ -1,0 +1,530 @@
+[
+  {
+    "file": "有字版/01_嘎？.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 7161,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/01_嘎？.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 7524,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/02_听我狡辩.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 12177,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/02_听我狡辩.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 11832,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/03_溜了溜了.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 7711,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/03_溜了溜了.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 7253,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/04_当场发疯.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 8,
+    "bytes": 17919,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/04_当场发疯.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 8,
+    "bytes": 18312,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/05_我裂开了.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 5,
+    "bytes": 9815,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/05_我裂开了.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 5,
+    "bytes": 9557,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/06_已读乱回.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 11256,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/06_已读乱回.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 10453,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/07_鸭力山大.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 12049,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/07_鸭力山大.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 11442,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/08_开摆.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 8120,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/08_开摆.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 8874,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/09_拿捏.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 7591,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/09_拿捏.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 7910,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/10_来了.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 11021,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/10_来了.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 11698,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/11_收到.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 7216,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/11_收到.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 7508,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/12_谢谢.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 7480,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/12_谢谢.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 7759,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/13_贴贴.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 7987,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/13_贴贴.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 8537,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/14_对不起.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 7634,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/14_对不起.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 7526,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/15_晚安.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 9081,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/15_晚安.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 9971,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/16_笑不活了.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 12963,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/16_笑不活了.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 13106,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/17_不听不听.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 12690,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/17_不听不听.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 12586,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/18_盯——.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 5,
+    "bytes": 9091,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/18_盯——.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 5,
+    "bytes": 9582,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/19_吃瓜.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 8472,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/19_吃瓜.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 4,
+    "bytes": 9124,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/20_急急急.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 8,
+    "bytes": 16262,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/20_急急急.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 8,
+    "bytes": 17087,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/21_脑子加载中.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 7,
+    "bytes": 14798,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/21_脑子加载中.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 7,
+    "bytes": 13467,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/22_起飞.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 10462,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/22_起飞.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 10918,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/23_给你点赞.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 12971,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/23_给你点赞.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 6,
+    "bytes": 12874,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "有字版/24_下班跑路.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 8,
+    "bytes": 15867,
+    "loop": 0,
+    "transparent": true
+  },
+  {
+    "file": "无字版/24_下班跑路.gif",
+    "size": [
+      128,
+      128
+    ],
+    "frames": 8,
+    "bytes": 15494,
+    "loop": 0,
+    "transparent": true
+  }
+]

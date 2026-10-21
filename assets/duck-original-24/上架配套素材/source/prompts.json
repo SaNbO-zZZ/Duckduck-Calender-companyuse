@@ -1,0 +1,23 @@
+{
+  "tool": "built-in image_gen",
+  "reference": "../source/01/idle-2.png",
+  "prompts": [
+    {
+      "key": "banner",
+      "prompt": "Use case: illustration-story. Create ONE finished WeChat sticker album banner, wide landscape aspect ratio exactly 15:8, intended export 750x400. Reference image is the exact character identity: simplified pixel-art white long-neck duck/goose, tiny black dot eyes, large orange bill and orange webbed feet, dark brown outline and warm pale-gray feather shadows. Preserve that funny vacant face and pixel style. Draw a lively continuous pixel-art pond-bank scene with three instances of this SAME duck: left calmly holding a watermelon slice watching the chaos, middle dramatically flapping and honking with open orange bill, right running away with neck stretched forward. Funny absurd deadpan energy. Bright mint-green grass, turquoise pond, warm peach sky, sparse chunky pixel reeds and little motion strokes. Each character large readable clear silhouette; rich but clean narrative composition, ample separation; all heads feet and wings fully inside frame. Flat limited palette, coarse crisp intentional pixel clusters, no blurry textures or gradients, no antialiasing. OPAQUE colored background filling entire frame, no white background. Absolutely NO text, letters, numbers, logos, borders or watermarks. This is a final artwork, not a mockup or collage sheet."
+    },
+    {
+      "key": "cover",
+      "prompt": "Use case: identity-preserve. Create ONE WeChat sticker album cover, square, intended export240x240 PNG. Use reference as exact identity and pixel-art style. SINGLE white long-neck duck/goose facing nearly forward, tiny separated black dot eyes, broad orange bill, orange webbed feet, dark warm-brown outline, warm pale-gray feather shadows. Full body completely visible and fills about88 percent height of square. Small silly head tilt and one wing raised slightly as if about to honk, funny vacant confident personality. Simplified crisp pixel-art with consistent coarse pixel grid, no blurry texture, no added characters or props. Genuine TRANSPARENT background alpha, no shadow on ground, no white sticker outline, no colored fringe, no square frame, no text, no decorations, no watermark. Preserve white feathers inside silhouette; outside silhouette must be transparent."
+    },
+    {
+      "key": "icon",
+      "prompt": "Use case: identity-preserve. Create ONE tiny WeChat chat-panel icon as a square transparent PNG, intended final export50x50pixels. Use reference as exact character identity. Only HEAD and tiny upper-neck bust of same white duck/goose facing directly forward, tiny black dot eyes far apart, large broad orange bill, dark warm-brown outline and restrained pale-gray shading. Head occupies85 percent width and85 percent height with all outlines contained inside square. Funny vacant stare. It must be an extremely simplified chunky pixel-art icon readable at50pixels. Genuine TRANSPARENT alpha background, white feathers inside silhouette, no ground shadow, NO white outer stroke, no frame, no text, no decorations, no other ducks, no colored fringe. Natural rounded stepped head silhouette, no cut-off rectangular shoulders. Final artwork only."
+    }
+  ],
+  "outputs": [
+    "01_详情页横幅_750x400.png",
+    "02_专辑封面_240x240.png",
+    "03_聊天图标_50x50.png"
+  ]
+}

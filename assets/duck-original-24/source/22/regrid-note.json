@@ -1,0 +1,7 @@
+{
+  "reason": "Original lower-left head crosses mathematical halfway row by a few pixels. Split on the verified empty magenta band instead.",
+  "split_y": 608,
+  "split_x": 627,
+  "new_cell_size": 700,
+  "resampling": "none"
+}

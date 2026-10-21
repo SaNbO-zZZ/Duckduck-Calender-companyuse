@@ -1,0 +1,29 @@
+[
+  {
+    "file": "01_详情页横幅_750x400.png",
+    "size": [
+      750,
+      400
+    ],
+    "bytes": 390853,
+    "transparent": false
+  },
+  {
+    "file": "02_专辑封面_240x240.png",
+    "size": [
+      240,
+      240
+    ],
+    "bytes": 31670,
+    "transparent": true
+  },
+  {
+    "file": "03_聊天图标_50x50.png",
+    "size": [
+      50,
+      50
+    ],
+    "bytes": 3350,
+    "transparent": true
+  }
+]

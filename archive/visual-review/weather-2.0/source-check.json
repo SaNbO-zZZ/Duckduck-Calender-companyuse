@@ -1,0 +1,14 @@
+{
+  "url": "https://wttr.in/31.8696,117.3154?format=j1",
+  "retrieved_at_utc": "2026-10-07T17:44:28.231911+00:00",
+  "elapsed_seconds": 2.3,
+  "current": {
+    "weatherCode": "149",
+    "cloudcover": "2",
+    "windspeedKmph": "8",
+    "winddirDegree": "126",
+    "precipMM": "0.0"
+  },
+  "gust_field_present": false,
+  "precipitation_interval": "not assumed; WWO code used for intensity"
+}

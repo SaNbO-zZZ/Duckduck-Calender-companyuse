@@ -1,0 +1,346 @@
+[
+  {
+    "id": "10",
+    "name": "来了",
+    "category": "日常接话",
+    "scene": "被叫到、上线、加入聊天",
+    "action": "缩着脖子待机 → 长脖子弹出 → 举翅打招呼 → 脖子回弹",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      2,
+      3
+    ],
+    "dur": [
+      200,
+      100,
+      240,
+      130,
+      240,
+      130
+    ],
+    "prompt": "'I'm here!' eager spring-neck greeting. Frame 1 neck tucked down into body with expectant eyes; 2 neck springs tall, wide awake face; 3 one wing raised beside head waving, bill open happily; 4 same wing bent inward as it waves back, neck bobs down slightly. Full body and both feet present in each cell. Lively and welcoming, springy elastic neck."
+  },
+  {
+    "id": "11",
+    "name": "收到",
+    "category": "日常接话",
+    "scene": "确认、答应、回应任务",
+    "action": "一本正经立正 → 翅膀敬礼 → 脖子弹直 → 满脸认真点头",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      180,
+      180,
+      360,
+      240
+    ],
+    "prompt": "'Roger that' absurdly serious little duck salute. 1 standing stiffly at attention bill closed; 2 right wing raised to forehead in salute with serious eyebrows; 3 saluting with neck stretched extra straight like an antenna and chest puffed out; 4 short firm nod while still saluting. Feet together planted on same line. No military uniform, no symbols, just comically disciplined white duck."
+  },
+  {
+    "id": "12",
+    "name": "谢谢",
+    "category": "日常接话",
+    "scene": "接受帮忙、感谢、收礼",
+    "action": "双翅合拢 → 弯脖子鞠躬 → 嘴几乎碰脚 → 抬头再谢",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      180,
+      170,
+      330,
+      220
+    ],
+    "prompt": "'Thank you!' overly enthusiastic polite bow. 1 standing upright with small wings pressed together against chest; 2 long neck and head bending halfway forward in bow, eyes gratefully closed; 3 deep bow, long neck bends down with huge bill almost touching own webbed feet; 4 head lifts halfway, wings still pressed together. Same full body, same feet anchor, charming comic formal gratitude."
+  },
+  {
+    "id": "13",
+    "name": "贴贴",
+    "category": "亲密互动",
+    "scene": "撒娇、亲近、安慰",
+    "action": "张开小翅膀 → 搂住大爱心 → 脖子贴住爱心 → 满足蹭蹭",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      200,
+      200,
+      300,
+      200
+    ],
+    "prompt": "'Cuddle!' affectionate duck hugging one large coral-red pixel heart held close to its torso. 1 wings open around heart in front of chest; 2 both wings wrap around heart; 3 long neck curls down and cheek presses against heart, closed happy eyes; 4 cheek rubs the other side of heart. Heart stays attached to body with wings, full body visible, same scale. Red heart is only prop and secondary color."
+  },
+  {
+    "id": "14",
+    "name": "对不起",
+    "category": "亲密互动",
+    "scene": "道歉、认错、求原谅",
+    "action": "缩头低眉 → 双脚内八 → 翅尖互戳 → 偷偷抬眼",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      240,
+      220,
+      300,
+      400
+    ],
+    "prompt": "'Sorry...' bashful apologetic duck. 1 head bowed slightly eyes looking down; 2 neck retracts into shoulders, feet pigeon-toed, wings held in front; 3 two wing tips poke together shyly at belly while eyes look upward apologetically, one tiny blue sweat drop right beside head; 4 head peeks up with remorseful round eyes and wings separate slightly. Keep body fully visible and same body scale. Cute awkwardness, not sadness meltdown."
+  },
+  {
+    "id": "15",
+    "name": "晚安",
+    "category": "日常接话",
+    "scene": "结束聊天、睡觉",
+    "action": "长脖子盘回身体 → 嘴塞进翅膀 → 身体呼吸起伏 → 睡泡缩放",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      260,
+      240,
+      360,
+      300
+    ],
+    "prompt": "'Good night' long-neck duck sleeps curled up into a compact round loaf on floor. 1 seated white body feet tucked under, long neck curving backward toward wing with drowsy eyes; 2 huge bill tucked into white wing, head resting on body; 3 peacefully sleeping round body rises a tiny amount as breathing, one small pale-blue sleep bubble attached to bill; 4 body settles and sleep bubble shrinks. Same body scale, stable base, no text or letter Z, no pillow or bedding."
+  },
+  {
+    "id": "16",
+    "name": "笑不活了",
+    "category": "情绪反应",
+    "scene": "看到离谱笑话、爆笑",
+    "action": "捧腹仰头 → 笑到后倒 → 蹬脚飙泪 → 侧躺捶地",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      2,
+      3
+    ],
+    "dur": [
+      180,
+      130,
+      170,
+      140,
+      170,
+      180
+    ],
+    "prompt": "'Laughing so hard!' comical duck laughing uncontrollably. 1 seated, both wings holding belly, long neck stretched back, eyes squeezed shut and bill wide open; 2 falling backward into a reclined pose still laughing; 3 on back with webbed feet kicking up and two large blue laugh tears close to cheeks; 4 lying on side, one wing taps floor next to its body, eyes laughing. All poses full-body, consistent actual body scale, everything fits safe area."
+  },
+  {
+    "id": "17",
+    "name": "不听不听",
+    "category": "互动吐槽",
+    "scene": "装听不见、拒绝劝说",
+    "action": "双翅捂耳 → 大嘴闭紧 → 头左甩 → 头右甩",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      2,
+      3
+    ],
+    "dur": [
+      200,
+      150,
+      140,
+      140,
+      140,
+      180
+    ],
+    "prompt": "'Not listening!' stubborn duck covers both sides of its head with its wings. 1 wings rising toward ears as long neck crouches to meet them; 2 wings press firmly on both sides of head and eyes shut, bill clamped tight; 3 head and neck sway left while wings remain covering ears; 4 head sways right while wings remain covering ears. Whole body shown, feet planted, comical refusal. No human hands, no fingers, white feather wings only."
+  },
+  {
+    "id": "18",
+    "name": "盯——",
+    "category": "互动吐槽",
+    "scene": "催回复、审视、默默施压",
+    "action": "面无表情站着 → 脖子向前探 → 大嘴贴近 → 单眼慢眨",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      2
+    ],
+    "dur": [
+      320,
+      240,
+      450,
+      200,
+      250
+    ],
+    "prompt": "'Staring at you' unnerving deadpan duck leaning toward viewer, front-facing. 1 upright neck, tiny black eyes staring directly at camera; 2 neck bends forward with head approaching viewer; 3 huge flat orange bill appears foreshortened and enlarged near viewer, eyes perfectly blank, body still visible behind; 4 same forward lean but one eye slowly half blinks. Deliberate perspective exaggeration in head only; body fixed size and feet fixed baseline. Stay within safe area, never crop head or feet."
+  },
+  {
+    "id": "19",
+    "name": "吃瓜",
+    "category": "互动吐槽",
+    "scene": "围观八卦、等后续",
+    "action": "抱瓜坐好 → 嘴一张吞一角 → 鼓腮咀嚼 → 斜眼等后续",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      260,
+      160,
+      280,
+      360
+    ],
+    "prompt": "'Watching the drama with a snack': duck seated, holding a large triangular watermelon slice with coral red flesh, black seeds and green rind tight to its belly. 1 eagerly peeks to side over slice; 2 opens huge bill to bite upper corner of melon; 3 bill shut chewing, cheek bulges slightly, slice has one bite missing; 4 eyes glance sideways nosily while chewing. Full body, feet visible, same white long-neck duck. Watermelon the only prop, use simple red and green pixel blocks."
+  },
+  {
+    "id": "20",
+    "name": "急急急",
+    "category": "情绪反应",
+    "scene": "催促、等不及、急眼",
+    "action": "急到跺左脚 → 长脖子拧向左 → 跺右脚 → 拧向右",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100
+    ],
+    "prompt": "'Hurry hurry hurry!' impatient duck stamping feet in place, small wings flailing at waist. 1 left webbed foot lifted high bent knee, bill open squawking; 2 left foot stamps down, long neck bends left, eyebrows angry; 3 right webbed foot lifted high and wings tense; 4 right foot stamps down and neck bends right. Forward facing, both feet fully visible, four distinct stamping poses, body stays centered. Compact tiny motion marks near foot permitted, no ground shadow."
+  },
+  {
+    "id": "21",
+    "name": "脑子加载中",
+    "category": "抽象发疯",
+    "scene": "懵了、没反应过来、思考卡住",
+    "action": "呆滞 → 长脖子弯成环 → 眼珠转圈 → 还没加载好",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      300,
+      180,
+      220,
+      180,
+      180,
+      220,
+      300
+    ],
+    "prompt": "'Brain buffering' absurd elastic long-neck duck. 1 neutral standing with vacant dotted eyes; 2 neck bends into a loose open loop with head tilted sideways, body unchanged; 3 long neck twists into one clear pretzel-like cartoon loop, tiny eyes looking opposite directions, huge bill blankly closed; 4 same loose loop neck and head tilts to other side, half-blink. Funny rubber anatomy, no injury, no gore. NO text, no loading icon, no detached UI. All duck parts connected. Full feet/body visible."
+  },
+  {
+    "id": "22",
+    "name": "起飞",
+    "category": "抽象发疯",
+    "scene": "兴奋、得意、事情顺利",
+    "action": "蹲下蓄力 → 蹼脚喷火 → 火箭鸭腾空 → 空中得意",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      2,
+      3
+    ],
+    "dur": [
+      280,
+      150,
+      200,
+      200,
+      200,
+      200
+    ],
+    "prompt": "'Taking off!' ridiculous duck becomes a little rocket by firing small orange/yellow cartoon jet flames from underneath its webbed feet. 1 crouches down neck compressed wings tight to sides; 2 stands straight with tiny orange/yellow flames attached below feet; 3 body hovers above the anchor line, long neck pointed upright, wings tucked aerodynamic, eyes very smug, flames stronger; 4 hover body bob and smaller flames. One connected duck-plus-flame silhouette, NO injury, NO burning feathers, just fanciful propulsion. Do not clip flame; full shape central 65%."
+  },
+  {
+    "id": "23",
+    "name": "给你点赞",
+    "category": "亲密互动",
+    "scene": "夸人、赞同、给鼓励",
+    "action": "认真端详 → 翅膀举到胸前 → 巨大羽毛拇指 → 连点两下",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      2,
+      3
+    ],
+    "dur": [
+      220,
+      140,
+      260,
+      130,
+      260,
+      180
+    ],
+    "prompt": "'Big thumbs up!' duck makes comically large approving thumbs-up gesture with a stylized white FEATHERED WING, not a human hand. 1 standing proudly with both wings down; 2 one wing raises close to chest curling feathers; 3 one big rounded wing feather points upward like a thumb, other feather lobes tucked, oversized thumbs-up wing close to body, eyes happy; 4 gesture pumps slightly forward and head nods approvingly. Orange bill and feet, white body, same character, wing is white outlined charcoal, no skin-colored fingers."
+  },
+  {
+    "id": "24",
+    "name": "下班跑路",
+    "category": "日常接话",
+    "scene": "下班、告辞、急着走",
+    "action": "夹包起步 → 长脖子前伸 → 双脚风火轮 → 一路狂奔",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100
+    ],
+    "prompt": "'Clocked out, escaping!' side view of same white long-neck duck sprinting to the right while clutching one small plain dark brown briefcase under wing. Four distinct fast run-cycle poses: 1 right foot stretches forward left foot back; 2 feet passing under body; 3 left foot forward right foot back; 4 feet passing again with little airborne hop. Neck stretches forward horizontally with large orange bill, wildly determined eyes, body leans forward, bag bounces a little but kept tight to body. Character runs IN PLACE at same scale, full body and briefcase inside each safe cell. No text, no logo on briefcase."
+  }
+]

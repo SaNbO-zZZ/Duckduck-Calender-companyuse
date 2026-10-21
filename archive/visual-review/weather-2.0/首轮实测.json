@@ -1,0 +1,19 @@
+{
+  "status": "needs_repair_not_ready_for_user_review",
+  "published": false,
+  "actual_preview_host": "*.sandbox.basevibepage.com",
+  "renderer_reported": "WebGL",
+  "canvas_reported": [
+    487,
+    823
+  ],
+  "fps_reported": 60,
+  "metrics_limit": "页面采样报告，非独立性能基准；Mac Edge手机宽度预览，非手机真机",
+  "observed_issues": [
+    "手机审查栏固定定位遮住问候和人数",
+    "浅色卡片标题白字对比不足",
+    "晴天白天和大雨点击后场景差异不明确，图标仍未知",
+    "点击PNG导出后未发现下载文件或反馈"
+  ],
+  "repair_submitted": true
+}

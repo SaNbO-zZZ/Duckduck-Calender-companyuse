@@ -1,0 +1,114 @@
+[
+  {
+    "file": "候选-大雨-白天.png",
+    "bytes": 171687,
+    "sha256": "3ed9e5edf6e7edb313bdf6ded1b3f19ea9cb40cdbd42ff80a09171bb97a10c2b",
+    "dimensions": [
+      485,
+      1053
+    ]
+  },
+  {
+    "file": "候选-大雨-白天.webm",
+    "bytes": 2232808,
+    "sha256": "7b3aee658477e5cc23941bad604a33af5f54d4acaa39dd36705befdb3454b9f7"
+  },
+  {
+    "file": "候选-大雨＋强风-白天.png",
+    "bytes": 163736,
+    "sha256": "1a5cac3b9c777696115c4d196a59f355a37a432ac997124a95c09bf5adeafd0c",
+    "dimensions": [
+      485,
+      1053
+    ]
+  },
+  {
+    "file": "候选-大雨＋强风-白天.webm",
+    "bytes": 2406807,
+    "sha256": "32ed5c824d5dd194656d3d2f075c9b15785c689fa08a44bb55b66051cbfda9bb"
+  },
+  {
+    "file": "候选-小雨-白天.png",
+    "bytes": 141793,
+    "sha256": "9af2e596b6a0e6e8c67fca7752f7a57d1d071d60c6e8130c64c0c43338277e4a",
+    "dimensions": [
+      485,
+      1053
+    ]
+  },
+  {
+    "file": "候选-小雨-白天.webm",
+    "bytes": 1193529,
+    "sha256": "767a8286a34557034000c6bda561b8513a3baf9e78cd870feee0fab9c0d6abcd"
+  },
+  {
+    "file": "候选-强风-白天.png",
+    "bytes": 148553,
+    "sha256": "8f2d76e649f04f4e2811b5fc18a102000af0cc7dddfe5c4b3bfa19555e5a913d",
+    "dimensions": [
+      485,
+      1053
+    ]
+  },
+  {
+    "file": "候选-强风-白天.webm",
+    "bytes": 504183,
+    "sha256": "66f3a5d2a9fd517b6b94ea60c5316fa6071917ccfffd1b3ae6e18914fad054f4"
+  },
+  {
+    "file": "候选-晴天-夜晚.png",
+    "bytes": 61397,
+    "sha256": "135b5dbe6cf48f7ec414fc522e049b60c0d06cc5f1599a90e7c4db3589b215cf",
+    "dimensions": [
+      485,
+      1053
+    ]
+  },
+  {
+    "file": "候选-晴天-夜晚.webm",
+    "bytes": 105127,
+    "sha256": "c9642bb778865b2ecb8016e7e8728957b4dad8a0d062cb741c46cebcda2eb9d0"
+  },
+  {
+    "file": "候选-晴天-白天.png",
+    "bytes": 95181,
+    "sha256": "21c821b6d3f332854ec4bedde6400d32253a62f671c452ac84b6b63ea10690c9",
+    "dimensions": [
+      485,
+      1053
+    ]
+  },
+  {
+    "file": "候选-晴天-白天.webm",
+    "bytes": 174112,
+    "sha256": "2284b513ec97f6a6cbb2e509a846eea4fe0d9d4ae280c786cd15a8b54927e459"
+  },
+  {
+    "file": "候选-阴天-白天.png",
+    "bytes": 120138,
+    "sha256": "27fae7dc5b5ae6648b417755b42b48cdad1325009db001d453e4e0cad14d0e2e",
+    "dimensions": [
+      485,
+      1053
+    ]
+  },
+  {
+    "file": "候选-阴天-白天.webm",
+    "bytes": 385176,
+    "sha256": "41d694a9bb7a247e4a54e2f6d6524748effcbd8be90e0ad81100887ef9238bfe"
+  },
+  {
+    "file": "候选-雪天-白天.png",
+    "bytes": 157695,
+    "sha256": "0664690794f41f1e049379005a2238d8379286114fd41b57448d1b9df2fb8d40",
+    "dimensions": [
+      485,
+      1053
+    ]
+  },
+  {
+    "file": "候选-雪天-白天.webm",
+    "bytes": 1663642,
+    "sha256": "225542f23c7717aa43eabd468ae849cd67b179077eeb4baf5cd0be21fd8e08f4"
+  }
+]

@@ -1,0 +1,41 @@
+{
+  "status": "review_ready_local",
+  "formal_version": "v10/1791393770838",
+  "formal_updated": false,
+  "feishu_draft": "WebGL 天气背景可运行，末轮云层、水珠、风雨参数及帧率修订仍待同步",
+  "editing_blocker": "飞书 AI 额度已用尽；当前页面未提供已确认可用的手动源码编辑入口",
+  "candidate_purpose": "可运行的本地视觉候选，用于上线前审查，不连接员工记录",
+  "deliverables": [
+    "gallery.html",
+    "review.html",
+    "天气效果对照.png",
+    "8 个实际 canvas PNG",
+    "8 个约 8 秒实际 canvas WebM"
+  ],
+  "measured_in_desktop_browser": {
+    "desktop_fps": 60,
+    "phone_width_fps": 30,
+    "phone_css_size": [
+      390,
+      844
+    ],
+    "phone_canvas_size": [
+      485,
+      1053
+    ]
+  },
+  "verified": [
+    "8 个视频可解码且时长约 8 秒",
+    "八种场景真实 WebGL 绘制",
+    "静态审查模式停止动画",
+    "桌面与窄屏布局可读"
+  ],
+  "pending": [
+    "同步末轮修订到飞书草稿",
+    "飞书桌面与手机真机性能",
+    "系统减少动态偏好在飞书内的传递",
+    "持续运行耗电发热",
+    "设备降级与上下文丢失恢复"
+  ],
+  "release_gate": "用户审查通过且飞书端修正与验证完成后再正式发布"
+}

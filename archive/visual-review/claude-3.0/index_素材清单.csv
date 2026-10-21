@@ -1,0 +1,58 @@
+﻿文件名,布局,尺寸×DPR,天气,风,时间,种子,类型,时长秒
+desktop_clear-heavyRain-heavySnow-clear_normal+_noon_seed20261010_transition.mp4,desktop,1440×900（DPR2 渲染，CSS 尺寸输出）,clear-heavyRain-heavySnow-clear,normal+,noon,20261010,录像,16
+desktop_clear_normal+-vs-strong+_noon_seed20261010_side-by-side.mp4,desktop,1920×664（两路 1440×900 DPR2 各缩至 960×600 + 标题条）,clear,normal+ vs strong+,noon,20261010,对比录像,10
+desktop_clear_normal+_dawn-noon-dusk-night_seed20261010_time-phases.mp4,desktop,1440×900（DPR2 渲染，CSS 尺寸输出）,clear,normal+,dawn-noon-dusk-night,20261010,录像,12
+desktop_clear_normal+_dawn_seed20261010.png,desktop,1440×900×DPR2,clear,normal+,dawn,20261010,静态截图,
+desktop_clear_normal+_night_seed20261010.png,desktop,1440×900×DPR2,clear,normal+,night,20261010,静态截图,
+desktop_clear_normal+_night_seed20261010_ducks-zoom.png,desktop,裁剪4096×500（DPR2×2 NEAREST）,clear,normal+,night,20261010,鸭鸭区域放大,
+desktop_clear_normal+_noon_seed20261010.mp4,desktop,1440×900（DPR2 渲染，CSS 尺寸输出）,clear,normal+,noon,20261010,录像,10
+desktop_clear_normal+_noon_seed20261010.png,desktop,1440×900×DPR2,clear,normal+,noon,20261010,静态截图,
+desktop_clear_normal+_noon_seed20261010_duck-dom.png,desktop,1440×900×DPR2,clear,normal+,noon,20261010,降级态,
+desktop_clear_normal+_noon_seed20261010_ducks-zoom.png,desktop,裁剪4096×500（DPR2×2 NEAREST）,clear,normal+,noon,20261010,鸭鸭区域放大,
+desktop_clear_strong+_noon_seed20261010.mp4,desktop,1440×900（DPR2 渲染，CSS 尺寸输出）,clear,strong+,noon,20261010,录像,10
+desktop_heavyRain_normal+_noon_seed20261010.png,desktop,1440×900×DPR2,heavyRain,normal+,noon,20261010,静态截图,
+desktop_heavyRain_normal+_noon_seed20261010_ducks-zoom.png,desktop,裁剪4096×500（DPR2×2 NEAREST）,heavyRain,normal+,noon,20261010,鸭鸭区域放大,
+desktop_heavyRain_normal+_noon_seed20261010_reduced.png,desktop,1440×900×DPR2,heavyRain,normal+,noon,20261010,降级态,
+desktop_heavyRain_strong-_noon_seed20261010.mp4,desktop,1440×900（DPR2 渲染，CSS 尺寸输出）,heavyRain,strong-,noon,20261010,录像,10
+desktop_heavySnow_normal+_noon_seed20261010.png,desktop,1440×900×DPR2,heavySnow,normal+,noon,20261010,静态截图,
+desktop_heavySnow_normal+_noon_seed20261010_ducks-zoom.png,desktop,裁剪4096×500（DPR2×2 NEAREST）,heavySnow,normal+,noon,20261010,鸭鸭区域放大,
+desktop_heavySnow_strong+_noon_seed20261010.mp4,desktop,1440×900（DPR2 渲染，CSS 尺寸输出）,heavySnow,strong+,noon,20261010,录像,12
+desktop_lightRain_normal+_night_seed20261010.png,desktop,1440×900×DPR2,lightRain,normal+,night,20261010,静态截图,
+desktop_lightRain_normal+_noon_seed20261010.png,desktop,1440×900×DPR2,lightRain,normal+,noon,20261010,静态截图,
+desktop_overcast_normal+_noon_seed20261010.png,desktop,1440×900×DPR2,overcast,normal+,noon,20261010,静态截图,
+desktop_partly_normal+_dusk_seed20261010.png,desktop,1440×900×DPR2,partly,normal+,dusk,20261010,静态截图,
+desktop_partly_normal+_noon_seed20261010.png,desktop,1440×900×DPR2,partly,normal+,noon,20261010,静态截图,
+desktop_partly_normal+_noon_seed20261010_hero-occlusion.mp4,desktop,1440×900（DPR2 渲染，CSS 尺寸输出）,partly,normal+,noon,20261010,录像,22
+desktop_partly_normal+_noon_seed20261010_static-sky-sim.png,desktop,1440×900×DPR2,partly,normal+,noon,20261010,降级态,
+desktop_storm_normal+_noon_seed20261010.png,desktop,1440×900×DPR2,storm,normal+,noon,20261010,静态截图,
+narrow_clear_normal+_noon_seed20261010.png,narrow,360×780×DPR3,clear,normal+,noon,20261010,静态截图,
+narrow_heavyRain_normal+_noon_seed20261010.png,narrow,360×780×DPR3,heavyRain,normal+,noon,20261010,静态截图,
+narrow_heavySnow_normal+_noon_seed20261010.png,narrow,360×780×DPR3,heavySnow,normal+,noon,20261010,静态截图,
+narrow_lightRain_normal+_noon_seed20261010.png,narrow,360×780×DPR3,lightRain,normal+,noon,20261010,静态截图,
+perf_ducks-on-vs-off_seed20261010.csv,desktop/phone,1440×900×DPR2 / 390×844×DPR3,partly/heavyRain/heavySnow,normal+/strong-/strong+,noon,20261010,性能数据,
+perf_ducks-on-vs-off_seed20261010.png,desktop/phone,表格图,partly/heavyRain/heavySnow,normal+/strong-/strong+,noon,20261010,性能表格图,
+phone_clear_normal+_dawn_seed20261010.png,phone,390×844×DPR3,clear,normal+,dawn,20261010,静态截图,
+phone_clear_normal+_night_seed20261010.png,phone,390×844×DPR3,clear,normal+,night,20261010,静态截图,
+phone_clear_normal+_night_seed20261010_ducks-zoom.png,phone,裁剪2220×602（DPR3×2 NEAREST）,clear,normal+,night,20261010,鸭鸭区域放大,
+phone_clear_normal+_noon_seed20261010.png,phone,390×844×DPR3,clear,normal+,noon,20261010,静态截图,
+phone_clear_normal+_noon_seed20261010_duck-dom.png,phone,390×844×DPR3,clear,normal+,noon,20261010,降级态,
+phone_clear_normal+_noon_seed20261010_ducks-zoom.png,phone,裁剪2220×602（DPR3×2 NEAREST）,clear,normal+,noon,20261010,鸭鸭区域放大,
+phone_clear_normal+_noon_seed20261010_scroll2.png,phone,390×844×DPR3,clear,normal+,noon,20261010,静态截图,
+phone_heavyRain_normal+_noon_seed20261010.png,phone,390×844×DPR3,heavyRain,normal+,noon,20261010,静态截图,
+phone_heavyRain_normal+_noon_seed20261010_ducks-zoom.png,phone,裁剪2220×602（DPR3×2 NEAREST）,heavyRain,normal+,noon,20261010,鸭鸭区域放大,
+phone_heavyRain_normal+_noon_seed20261010_reduced.png,phone,390×844×DPR3,heavyRain,normal+,noon,20261010,降级态,
+phone_heavyRain_normal+_noon_seed20261010_scroll2.png,phone,390×844×DPR3,heavyRain,normal+,noon,20261010,静态截图,
+phone_heavyRain_strong-_noon_seed20261010.mp4,phone,780×1688（390×844 视口 DPR2）,heavyRain,strong-,noon,20261010,录像,10
+phone_heavySnow_normal+_noon_seed20261010.png,phone,390×844×DPR3,heavySnow,normal+,noon,20261010,静态截图,
+phone_heavySnow_normal+_noon_seed20261010_ducks-zoom.png,phone,裁剪2220×602（DPR3×2 NEAREST）,heavySnow,normal+,noon,20261010,鸭鸭区域放大,
+phone_heavySnow_strong+_noon_seed20261010.mp4,phone,780×1688（390×844 视口 DPR2）,heavySnow,strong+,noon,20261010,录像,12
+phone_lightRain_normal+_night_seed20261010.png,phone,390×844×DPR3,lightRain,normal+,night,20261010,静态截图,
+phone_lightRain_normal+_noon_seed20261010.png,phone,390×844×DPR3,lightRain,normal+,noon,20261010,静态截图,
+phone_overcast_normal+_noon_seed20261010.png,phone,390×844×DPR3,overcast,normal+,noon,20261010,静态截图,
+phone_partly_normal+_dusk_seed20261010.png,phone,390×844×DPR3,partly,normal+,dusk,20261010,静态截图,
+phone_partly_normal+_noon_seed20261010.png,phone,390×844×DPR3,partly,normal+,noon,20261010,静态截图,
+phone_partly_normal+_noon_seed20261010_hero-occlusion.mp4,phone,780×1688（390×844 视口 DPR2）,partly,normal+,noon,20261010,录像,26
+phone_partly_normal+_noon_seed20261010_scroll.mp4,phone,780×1688（390×844 视口 DPR2）,partly,normal+,noon,20261010,录像,10
+phone_partly_normal+_noon_seed20261010_static-sky-sim.png,phone,390×844×DPR3,partly,normal+,noon,20261010,降级态,
+phone_storm_normal+_noon_seed20261010.png,phone,390×844×DPR3,storm,normal+,noon,20261010,静态截图,
+style_compare_orig-vs-3.0_seed20261010.png,desktop,拼图,clear,normal+,noon,20261010,风格对照图,

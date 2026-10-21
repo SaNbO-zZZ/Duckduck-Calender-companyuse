@@ -1,0 +1,574 @@
+[
+  {
+    "id": "01",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-e95b71d0-77d6-4db5-a311-b328bc2b2609.png",
+    "prompt": "Create a production pixel-art animation spritesheet, exactly 2 rows x 2 columns (4 equal invisible square cells), square image. Use the photograph just shown as subject reference only: a hilariously self-confident white long-necked duck with a very large flat orange bill, tiny black beady eyes, pear shaped white body and orange webbed feet. Ignore all photo text and background. Simplify into a memorable cute-but-stupid meme character, front three-quarter view, large head, unusually stretchy long neck, dark warm charcoal thick pixel outlines, white and pale grey feathers, orange bill/feet, 8-12 flat colors. Very chunky genuine low-resolution pixel sprite designed to read on a 64x64 grid, large square pixel clusters, NO smooth or antialiased edges, NO dithering, no tiny details.\nOne continuous animation: bewildered head tilt. Reading order: 1 standing blankly, head tilted 20 degrees left; 2 head upright with one raised eyebrow; 3 head tilted 25 degrees right and wide incredulous eyes; 4 upright half-blink deadpan. Keep same body/feet in every frame. Keep character centered in each cell at consistent scale, full body fully inside central 65% safe area, stable feet anchor line. Nothing crosses cell boundaries. Empty padding on all sides. Solid pure #FF00FF magenta background, no shadows or ground, no text, no symbols, no panels, no grid lines. Output only the four-frame sprite sheet.",
+    "name": "嘎？",
+    "category": "互动吐槽",
+    "scene": "没听懂、疑惑",
+    "action": "歪头左看右看 → 眼睛瞪圆 → 死鱼眼",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      320,
+      160,
+      400,
+      320
+    ]
+  },
+  {
+    "id": "02",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-4b81ac35-a1cc-43b3-b84e-38f36853af73.png",
+    "prompt": "Create exactly one 2x2 pixel art animation spritesheet, four equal invisible square cells, reading order across rows. Use the image just shown as the visual reference. Preserve EXACT SAME white long-neck duck character design, huge orange bill, black beady eyes, orange webbed feet, thick charcoal pixel outline, chunky low resolution sprite style, pear body. Same limited white/cream/grey/orange palette. Each frame must look designed on a 64px grid, no smooth lines, no gradients, no dithering. Solid pure #FF00FF background. No text, no captions, no labels, no visible grid. Full character centered in each cell and inside central 65-70% safe area, generous padding, consistent body scale and stable bottom anchor. No part crosses a cell boundary. One continuous animation as follows: Meme 'let me explain': duck honks with absolute confidence. Frame 1 closed bill stern expression neck pulled back; 2 bill opening and neck leaning forwards; 3 absurdly huge wide open bill with dark mouth and pink tongue, eyes angry, wings lifted close to body; 4 mouth partly closing, neck returning. Comedic vocal squash and stretch, strong distinct mouth poses.",
+    "name": "听我狡辩",
+    "category": "互动吐槽",
+    "scene": "嘴硬、解释",
+    "action": "伸脖子争辩 → 大嘴张到最大 → 翅膀补充说明",
+    "seq": [
+      0,
+      1,
+      2,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      300,
+      100,
+      160,
+      100,
+      220,
+      180
+    ]
+  },
+  {
+    "id": "03",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-775109b8-d88a-4995-a1a7-ad918db7083d.png",
+    "prompt": "Create exactly one 2x2 pixel art animation spritesheet, four equal invisible square cells, reading order across rows. Use the image just shown as the visual reference. Preserve EXACT SAME white long-neck duck character design, huge orange bill, black beady eyes, orange webbed feet, thick charcoal pixel outline, chunky low resolution sprite style, pear body. Same limited white/cream/grey/orange palette. Each frame must look designed on a 64px grid, no smooth lines, no gradients, no dithering. Solid pure #FF00FF background. No text, no captions, no labels, no visible grid. Full character centered in each cell and inside central 65-70% safe area, generous padding, consistent body scale and stable bottom anchor. No part crosses a cell boundary. One continuous animation as follows: Meme 'I'm out': REAR VIEW of same duck waddling away, white round butt and tall neck, tiny orange bill visible at side. 1 left webbed foot raised and butt swayed left; 2 both feet passing, head glances over shoulder; 3 right webbed foot raised butt swayed right; 4 feet passing and head forward. Four rhythmic rear walking poses. Same scale, NO perspective shrinking.",
+    "name": "溜了溜了",
+    "category": "日常接话",
+    "scene": "告辞、退出话题",
+    "action": "背身摇屁股 → 交替迈脚 → 回头偷看",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      140,
+      140,
+      140,
+      140
+    ]
+  },
+  {
+    "id": "04",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-480719b9-29ef-4788-9e3b-8b20217c438d.png",
+    "prompt": "Create exactly one 2x2 pixel art animation spritesheet, four equal invisible square cells, reading order across rows. Use the image just shown as the visual reference. Preserve EXACT SAME white long-neck duck character design, huge orange bill, black beady eyes, orange webbed feet, thick charcoal pixel outline, chunky low resolution sprite style, pear body. Same limited white/cream/grey/orange palette. Each frame must look designed on a 64px grid, no smooth lines, no gradients, no dithering. Solid pure #FF00FF background. No text, no captions, no labels, no visible grid. Full character centered in each cell and inside central 65-70% safe area, generous padding, consistent body scale and stable bottom anchor. No part crosses a cell boundary. One continuous animation as follows: Meme 'going feral': same duck full body flapping wings wildly, giant open honking orange bill. 1 crouched knees bent wings lowered; 2 wings raised in V neck stretched, feet planted; 3 wings out horizontally and body slightly squashed; 4 wings half raised, head absurdly tilted. Wings remain in central 70% width. Large clear different flapping silhouettes, chaotic but adorable.",
+    "name": "当场发疯",
+    "category": "抽象发疯",
+    "scene": "情绪爆发",
+    "action": "翅膀乱拍 → 脖子歪掉 → 大嘴嚎叫",
+    "seq": [
+      0,
+      1,
+      2,
+      1,
+      3,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90,
+      90
+    ]
+  },
+  {
+    "id": "05",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-d9d65de9-488f-4758-80d7-4d12614e6165.png",
+    "prompt": "Create exactly one 2x2 pixel art animation spritesheet, four equal invisible square cells, reading order across rows. Use the image just shown as the visual reference. Preserve EXACT SAME white long-neck duck character design, huge orange bill, black beady eyes, orange webbed feet, thick charcoal pixel outline, chunky low resolution sprite style, pear body. Same limited white/cream/grey/orange palette. Each frame must look designed on a 64px grid, no smooth lines, no gradients, no dithering. Solid pure #FF00FF background. No text, no captions, no labels, no visible grid. Full character centered in each cell and inside central 65-70% safe area, generous padding, consistent body scale and stable bottom anchor. No part crosses a cell boundary. One continuous animation as follows: Meme 'I am falling apart': same duck makes an elastic emotional meltdown. 1 standing dazed with crooked eyes; 2 long neck folds into S shape, body begins sagging; 3 body comically pancaked with neck bent low and orange bill resting near floor, exhausted eyes; 4 semi-recovered body with neck still bent. This is cartoon elastic squash, NOT injury, no cracks, no gore. Keep feet on fixed baseline and all shapes connected.",
+    "name": "我裂开了",
+    "category": "情绪反应",
+    "scene": "崩溃、被打击",
+    "action": "长脖子失去支撑 → 身体下沉 → 瘫成鸭饼",
+    "seq": [
+      0,
+      1,
+      2,
+      2,
+      3,
+      1
+    ],
+    "dur": [
+      260,
+      160,
+      300,
+      240,
+      180,
+      160
+    ]
+  },
+  {
+    "id": "06",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-2a1e406f-dfba-4c44-a691-6f8ae82e2e0c.png",
+    "prompt": "Create exactly one 2x2 pixel art animation spritesheet, four equal invisible square cells, reading order across rows. Use the image just shown as the visual reference. Preserve EXACT SAME white long-neck duck character design, huge orange bill, black beady eyes, orange webbed feet, thick charcoal pixel outline, chunky low resolution sprite style, pear body. Same limited white/cream/grey/orange palette. Each frame must look designed on a 64px grid, no smooth lines, no gradients, no dithering. Solid pure #FF00FF background. No text, no captions, no labels, no visible grid. Full character centered in each cell and inside central 65-70% safe area, generous padding, consistent body scale and stable bottom anchor. No part crosses a cell boundary. One continuous animation as follows: Meme 'read it, replied nonsense': duck deliberately nods with hilariously empty eyes, bill moving as if saying gibberish. 1 tall neck blank stare bill closed; 2 neck squashed down head nod low bill slightly open; 3 neck tall head tilted back bill open eyes looking in opposite directions; 4 neck normal, exaggerated closed-eye satisfied smile. Wings close to torso. Same fixed feet baseline. No symbols or text.",
+    "name": "已读乱回",
+    "category": "互动吐槽",
+    "scene": "敷衍接话",
+    "action": "认真点头 → 仰头乱嘎 → 闭眼满意",
+    "seq": [
+      0,
+      1,
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      250,
+      120,
+      120,
+      120,
+      200,
+      450
+    ]
+  },
+  {
+    "id": "07",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-242decd7-8622-409c-9f54-af20b77ca2ff.png",
+    "prompt": "Create exactly one 2x2 pixel art animation spritesheet, four equal invisible square cells, reading order across rows. Use the image just shown as the visual reference. Preserve EXACT SAME white long-neck duck character design, huge orange bill, black beady eyes, orange webbed feet, thick charcoal pixel outline, chunky low resolution sprite style, pear body. Same limited white/cream/grey/orange palette. Each frame must look designed on a 64px grid, no smooth lines, no gradients, no dithering. Solid pure #FF00FF background. No text, no captions, no labels, no visible grid. Full character centered in each cell and inside central 65-70% safe area, generous padding, consistent body scale and stable bottom anchor. No part crosses a cell boundary. One continuous animation as follows: Meme 'under duck pressure': duck stressed, neck retracts into shoulders. 1 standing with anxious huge round eyes; 2 shoulders hunched, head pushed halfway down neck, two blue sweat drops close to head; 3 head fully tucked against body, eyes bulging and small wings holding cheeks, three blue sweat drops; 4 shoulders release a little head halfway up. Maintain same body scale; neck height is allowed to compress.",
+    "name": "鸭力山大",
+    "category": "情绪反应",
+    "scene": "焦虑、工作压力",
+    "action": "脖子缩短 → 捧脸冒汗 → 缓一口气",
+    "seq": [
+      0,
+      1,
+      2,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      260,
+      160,
+      170,
+      160,
+      250,
+      200
+    ]
+  },
+  {
+    "id": "08",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-e5c67124-532f-4df5-8191-6590213a46e7.png",
+    "prompt": "Create exactly one 2x2 pixel art animation spritesheet, four equal invisible square cells, reading order across rows. Use the image just shown as the visual reference. Preserve EXACT SAME white long-neck duck character design, huge orange bill, black beady eyes, orange webbed feet, thick charcoal pixel outline, chunky low resolution sprite style, pear body. Same limited white/cream/grey/orange palette. Each frame must look designed on a 64px grid, no smooth lines, no gradients, no dithering. Solid pure #FF00FF background. No text, no captions, no labels, no visible grid. Full character centered in each cell and inside central 65-70% safe area, generous padding, consistent body scale and stable bottom anchor. No part crosses a cell boundary. One continuous animation as follows: Meme 'giving up': same duck reclines on its back, big bill pointing up, round white belly up, long neck curled comfortably, orange webbed feet in the air. Four frames of a continuous lazy rocking-on-back loop. 1 reclined angled left feet up; 2 flat on back feet folded; 3 reclined angled right one foot casually waving; 4 flat on back feet up again. Half-lidded deadpan eyes all frames. No furniture, no objects, no text, just the duck.",
+    "name": "开摆",
+    "category": "抽象发疯",
+    "scene": "躺平、懒得动",
+    "action": "肚子朝上躺倒 → 双脚翘起 → 悠闲左右摇",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      260,
+      180,
+      260,
+      180
+    ]
+  },
+  {
+    "id": "09",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-e4dd4aa0-6951-42a9-b72a-0438ed75a485.png",
+    "prompt": "Create exactly one 2x2 pixel art animation spritesheet, four equal invisible square cells, reading order across rows. Use the image just shown as the visual reference. Preserve EXACT SAME white long-neck duck character design, huge orange bill, black beady eyes, orange webbed feet, thick charcoal pixel outline, chunky low resolution sprite style, pear body. Same limited white/cream/grey/orange palette. Each frame must look designed on a 64px grid, no smooth lines, no gradients, no dithering. Solid pure #FF00FF background. No text, no captions, no labels, no visible grid. Full character centered in each cell and inside central 65-70% safe area, generous padding, consistent body scale and stable bottom anchor. No part crosses a cell boundary. One continuous animation as follows: Meme 'nailed it': same duck is excessively smug, performs a confident wink and wing gesture. 1 upright half-lidded eyes and bill smirking; 2 head tilts left and small wing raised next to bill; 3 winks one eye, raised wing tips pinch together in tiny triumphant gesture, chest puffed out; 4 eyes open half-lidded, wing lowered partway, head returns. No hands or fingers, use feathered wings only. Feet fixed baseline.",
+    "name": "拿捏",
+    "category": "亲密互动",
+    "scene": "得意、胜券在握",
+    "action": "半眯眼挑眉 → 翅尖一捏 → 装淡定",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      300,
+      180,
+      420,
+      240
+    ]
+  },
+  {
+    "id": "10",
+    "name": "来了",
+    "category": "日常接话",
+    "scene": "被叫到、上线、加入聊天",
+    "action": "缩着脖子待机 → 长脖子弹出 → 举翅打招呼 → 脖子回弹",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      2,
+      3
+    ],
+    "dur": [
+      200,
+      100,
+      240,
+      130,
+      240,
+      130
+    ],
+    "prompt": "Create ONE pixel art animation spritesheet of exactly 4 equal square cells in a 2 rows x 2 columns invisible grid, frames in reading order. Use the image just shown as the visual reference, preserving EXACTLY the same meme duck: pear-shaped white body, long elastic white neck, huge orange flat bill, tiny black eyes, orange webbed feet, charcoal-brown pixel outlines, pale cream/grey shading. Same chunky low-resolution pixel style, designed to read at 64px, simple large square clusters, no antialiasing, no dithering, no gradients. Strongly readable exaggerated poses suitable for a tiny 128px chat GIF. Solid pure #FF00FF magenta backdrop. NO text, NO letters, NO labels, NO grid lines, NO panels, NO ground shadow. Entire character and props fully visible and centered inside the central 70% safe area of every cell, generous empty magenta margins, same body scale across all four frames, no part crosses any cell edge. Preserve a consistent feet/bottom anchor, changing neck length only when specified. One coherent four-frame action: 'I'm here!' eager spring-neck greeting. Frame 1 neck tucked down into body with expectant eyes; 2 neck springs tall, wide awake face; 3 one wing raised beside head waving, bill open happily; 4 same wing bent inward as it waves back, neck bobs down slightly. Full body and both feet present in each cell. Lively and welcoming, springy elastic neck.",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-e6b423e3-95d0-4a03-ad7e-e6e18125efb3.png"
+  },
+  {
+    "id": "11",
+    "name": "收到",
+    "category": "日常接话",
+    "scene": "确认、答应、回应任务",
+    "action": "一本正经立正 → 翅膀敬礼 → 脖子弹直 → 满脸认真点头",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      180,
+      180,
+      360,
+      240
+    ],
+    "prompt": "Create ONE pixel art animation spritesheet of exactly 4 equal square cells in a 2 rows x 2 columns invisible grid, frames in reading order. Use the image just shown as the visual reference, preserving EXACTLY the same meme duck: pear-shaped white body, long elastic white neck, huge orange flat bill, tiny black eyes, orange webbed feet, charcoal-brown pixel outlines, pale cream/grey shading. Same chunky low-resolution pixel style, designed to read at 64px, simple large square clusters, no antialiasing, no dithering, no gradients. Strongly readable exaggerated poses suitable for a tiny 128px chat GIF. Solid pure #FF00FF magenta backdrop. NO text, NO letters, NO labels, NO grid lines, NO panels, NO ground shadow. Entire character and props fully visible and centered inside the central 70% safe area of every cell, generous empty magenta margins, same body scale across all four frames, no part crosses any cell edge. Preserve a consistent feet/bottom anchor, changing neck length only when specified. One coherent four-frame action: 'Roger that' absurdly serious little duck salute. 1 standing stiffly at attention bill closed; 2 right wing raised to forehead in salute with serious eyebrows; 3 saluting with neck stretched extra straight like an antenna and chest puffed out; 4 short firm nod while still saluting. Feet together planted on same line. No military uniform, no symbols, just comically disciplined white duck.",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-0acc8a4f-a9e8-4e1a-a079-9e624a5da9e2.png"
+  },
+  {
+    "id": "12",
+    "name": "谢谢",
+    "category": "日常接话",
+    "scene": "接受帮忙、感谢、收礼",
+    "action": "双翅合拢 → 弯脖子鞠躬 → 嘴几乎碰脚 → 抬头再谢",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      180,
+      170,
+      330,
+      220
+    ],
+    "prompt": "Create ONE pixel art animation spritesheet of exactly 4 equal square cells in a 2 rows x 2 columns invisible grid, frames in reading order. Use the image just shown as the visual reference, preserving EXACTLY the same meme duck: pear-shaped white body, long elastic white neck, huge orange flat bill, tiny black eyes, orange webbed feet, charcoal-brown pixel outlines, pale cream/grey shading. Same chunky low-resolution pixel style, designed to read at 64px, simple large square clusters, no antialiasing, no dithering, no gradients. Strongly readable exaggerated poses suitable for a tiny 128px chat GIF. Solid pure #FF00FF magenta backdrop. NO text, NO letters, NO labels, NO grid lines, NO panels, NO ground shadow. Entire character and props fully visible and centered inside the central 70% safe area of every cell, generous empty magenta margins, same body scale across all four frames, no part crosses any cell edge. Preserve a consistent feet/bottom anchor, changing neck length only when specified. One coherent four-frame action: 'Thank you!' overly enthusiastic polite bow. 1 standing upright with small wings pressed together against chest; 2 long neck and head bending halfway forward in bow, eyes gratefully closed; 3 deep bow, long neck bends down with huge bill almost touching own webbed feet; 4 head lifts halfway, wings still pressed together. Same full body, same feet anchor, charming comic formal gratitude.",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-e7e73ec0-73f2-4c9c-9093-391a0bd15beb.png"
+  },
+  {
+    "id": "13",
+    "name": "贴贴",
+    "category": "亲密互动",
+    "scene": "撒娇、亲近、安慰",
+    "action": "张开小翅膀 → 搂住大爱心 → 脖子贴住爱心 → 满足蹭蹭",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      200,
+      200,
+      300,
+      200
+    ],
+    "prompt": "Create ONE pixel art animation spritesheet of exactly 4 equal square cells in a 2 rows x 2 columns invisible grid, frames in reading order. Use the image just shown as the visual reference, preserving EXACTLY the same meme duck: pear-shaped white body, long elastic white neck, huge orange flat bill, tiny black eyes, orange webbed feet, charcoal-brown pixel outlines, pale cream/grey shading. Same chunky low-resolution pixel style, designed to read at 64px, simple large square clusters, no antialiasing, no dithering, no gradients. Strongly readable exaggerated poses suitable for a tiny 128px chat GIF. Solid pure #FF00FF magenta backdrop. NO text, NO letters, NO labels, NO grid lines, NO panels, NO ground shadow. Entire character and props fully visible and centered inside the central 70% safe area of every cell, generous empty magenta margins, same body scale across all four frames, no part crosses any cell edge. Preserve a consistent feet/bottom anchor, changing neck length only when specified. One coherent four-frame action: 'Cuddle!' affectionate duck hugging one large coral-red pixel heart held close to its torso. 1 wings open around heart in front of chest; 2 both wings wrap around heart; 3 long neck curls down and cheek presses against heart, closed happy eyes; 4 cheek rubs the other side of heart. Heart stays attached to body with wings, full body visible, same scale. Red heart is only prop and secondary color.",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-8b830d99-b34e-4393-aef5-410077a35e32.png"
+  },
+  {
+    "id": "14",
+    "name": "对不起",
+    "category": "亲密互动",
+    "scene": "道歉、认错、求原谅",
+    "action": "缩头低眉 → 双脚内八 → 翅尖互戳 → 偷偷抬眼",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      240,
+      220,
+      300,
+      400
+    ],
+    "prompt": "Create ONE pixel art animation spritesheet of exactly 4 equal square cells in a 2 rows x 2 columns invisible grid, frames in reading order. Use the image just shown as the visual reference, preserving EXACTLY the same meme duck: pear-shaped white body, long elastic white neck, huge orange flat bill, tiny black eyes, orange webbed feet, charcoal-brown pixel outlines, pale cream/grey shading. Same chunky low-resolution pixel style, designed to read at 64px, simple large square clusters, no antialiasing, no dithering, no gradients. Strongly readable exaggerated poses suitable for a tiny 128px chat GIF. Solid pure #FF00FF magenta backdrop. NO text, NO letters, NO labels, NO grid lines, NO panels, NO ground shadow. Entire character and props fully visible and centered inside the central 70% safe area of every cell, generous empty magenta margins, same body scale across all four frames, no part crosses any cell edge. Preserve a consistent feet/bottom anchor, changing neck length only when specified. One coherent four-frame action: 'Sorry...' bashful apologetic duck. 1 head bowed slightly eyes looking down; 2 neck retracts into shoulders, feet pigeon-toed, wings held in front; 3 two wing tips poke together shyly at belly while eyes look upward apologetically, one tiny blue sweat drop right beside head; 4 head peeks up with remorseful round eyes and wings separate slightly. Keep body fully visible and same body scale. Cute awkwardness, not sadness meltdown.",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-82a727ec-a98c-41de-b544-3791c8b29119.png"
+  },
+  {
+    "id": "15",
+    "name": "晚安",
+    "category": "日常接话",
+    "scene": "结束聊天、睡觉",
+    "action": "长脖子盘回身体 → 嘴塞进翅膀 → 身体呼吸起伏 → 睡泡缩放",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      260,
+      240,
+      360,
+      300
+    ],
+    "prompt": "Create ONE pixel art animation spritesheet of exactly 4 equal square cells in a 2 rows x 2 columns invisible grid, frames in reading order. Use the image just shown as the visual reference, preserving EXACTLY the same meme duck: pear-shaped white body, long elastic white neck, huge orange flat bill, tiny black eyes, orange webbed feet, charcoal-brown pixel outlines, pale cream/grey shading. Same chunky low-resolution pixel style, designed to read at 64px, simple large square clusters, no antialiasing, no dithering, no gradients. Strongly readable exaggerated poses suitable for a tiny 128px chat GIF. Solid pure #FF00FF magenta backdrop. NO text, NO letters, NO labels, NO grid lines, NO panels, NO ground shadow. Entire character and props fully visible and centered inside the central 70% safe area of every cell, generous empty magenta margins, same body scale across all four frames, no part crosses any cell edge. Preserve a consistent feet/bottom anchor, changing neck length only when specified. One coherent four-frame action: 'Good night' long-neck duck sleeps curled up into a compact round loaf on floor. 1 seated white body feet tucked under, long neck curving backward toward wing with drowsy eyes; 2 huge bill tucked into white wing, head resting on body; 3 peacefully sleeping round body rises a tiny amount as breathing, one small pale-blue sleep bubble attached to bill; 4 body settles and sleep bubble shrinks. Same body scale, stable base, no text or letter Z, no pillow or bedding.",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-dab63b38-bc82-4312-b49b-91d0ab5cc321.png"
+  },
+  {
+    "id": "16",
+    "name": "笑不活了",
+    "category": "情绪反应",
+    "scene": "看到离谱笑话、爆笑",
+    "action": "捧腹仰头 → 笑到后倒 → 蹬脚飙泪 → 侧躺捶地",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      2,
+      3
+    ],
+    "dur": [
+      180,
+      130,
+      170,
+      140,
+      170,
+      180
+    ],
+    "prompt": "Create ONE pixel art animation spritesheet of exactly 4 equal square cells in a 2 rows x 2 columns invisible grid, frames in reading order. Use the image just shown as the visual reference, preserving EXACTLY the same meme duck: pear-shaped white body, long elastic white neck, huge orange flat bill, tiny black eyes, orange webbed feet, charcoal-brown pixel outlines, pale cream/grey shading. Same chunky low-resolution pixel style, designed to read at 64px, simple large square clusters, no antialiasing, no dithering, no gradients. Strongly readable exaggerated poses suitable for a tiny 128px chat GIF. Solid pure #FF00FF magenta backdrop. NO text, NO letters, NO labels, NO grid lines, NO panels, NO ground shadow. Entire character and props fully visible and centered inside the central 70% safe area of every cell, generous empty magenta margins, same body scale across all four frames, no part crosses any cell edge. Preserve a consistent feet/bottom anchor, changing neck length only when specified. One coherent four-frame action: 'Laughing so hard!' comical duck laughing uncontrollably. 1 seated, both wings holding belly, long neck stretched back, eyes squeezed shut and bill wide open; 2 falling backward into a reclined pose still laughing; 3 on back with webbed feet kicking up and two large blue laugh tears close to cheeks; 4 lying on side, one wing taps floor next to its body, eyes laughing. All poses full-body, consistent actual body scale, everything fits safe area.",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-95f5ba5f-3853-426d-8269-4d1198eeec5a.png"
+  },
+  {
+    "id": "17",
+    "name": "不听不听",
+    "category": "互动吐槽",
+    "scene": "装听不见、拒绝劝说",
+    "action": "双翅捂耳 → 大嘴闭紧 → 头左甩 → 头右甩",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      2,
+      3
+    ],
+    "dur": [
+      200,
+      150,
+      140,
+      140,
+      140,
+      180
+    ],
+    "prompt": "Create ONE pixel art animation spritesheet of exactly 4 equal square cells in a 2 rows x 2 columns invisible grid, frames in reading order. Use the image just shown as the visual reference, preserving EXACTLY the same meme duck: pear-shaped white body, long elastic white neck, huge orange flat bill, tiny black eyes, orange webbed feet, charcoal-brown pixel outlines, pale cream/grey shading. Same chunky low-resolution pixel style, designed to read at 64px, simple large square clusters, no antialiasing, no dithering, no gradients. Strongly readable exaggerated poses suitable for a tiny 128px chat GIF. Solid pure #FF00FF magenta backdrop. NO text, NO letters, NO labels, NO grid lines, NO panels, NO ground shadow. Entire character and props fully visible and centered inside the central 70% safe area of every cell, generous empty magenta margins, same body scale across all four frames, no part crosses any cell edge. Preserve a consistent feet/bottom anchor, changing neck length only when specified. One coherent four-frame action: 'Not listening!' stubborn duck covers both sides of its head with its wings. 1 wings rising toward ears as long neck crouches to meet them; 2 wings press firmly on both sides of head and eyes shut, bill clamped tight; 3 head and neck sway left while wings remain covering ears; 4 head sways right while wings remain covering ears. Whole body shown, feet planted, comical refusal. No human hands, no fingers, white feather wings only.",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-6183fa24-dd64-4d26-8668-902e55e37b4e.png"
+  },
+  {
+    "id": "18",
+    "name": "盯——",
+    "category": "互动吐槽",
+    "scene": "催回复、审视、默默施压",
+    "action": "面无表情站着 → 脖子向前探 → 大嘴贴近 → 单眼慢眨",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      2
+    ],
+    "dur": [
+      320,
+      240,
+      450,
+      200,
+      250
+    ],
+    "prompt": "Create ONE pixel art animation spritesheet of exactly 4 equal square cells in a 2 rows x 2 columns invisible grid, frames in reading order. Use the image just shown as the visual reference, preserving EXACTLY the same meme duck: pear-shaped white body, long elastic white neck, huge orange flat bill, tiny black eyes, orange webbed feet, charcoal-brown pixel outlines, pale cream/grey shading. Same chunky low-resolution pixel style, designed to read at 64px, simple large square clusters, no antialiasing, no dithering, no gradients. Strongly readable exaggerated poses suitable for a tiny 128px chat GIF. Solid pure #FF00FF magenta backdrop. NO text, NO letters, NO labels, NO grid lines, NO panels, NO ground shadow. Entire character and props fully visible and centered inside the central 70% safe area of every cell, generous empty magenta margins, same body scale across all four frames, no part crosses any cell edge. Preserve a consistent feet/bottom anchor, changing neck length only when specified. One coherent four-frame action: 'Staring at you' unnerving deadpan duck leaning toward viewer, front-facing. 1 upright neck, tiny black eyes staring directly at camera; 2 neck bends forward with head approaching viewer; 3 huge flat orange bill appears foreshortened and enlarged near viewer, eyes perfectly blank, body still visible behind; 4 same forward lean but one eye slowly half blinks. Deliberate perspective exaggeration in head only; body fixed size and feet fixed baseline. Stay within safe area, never crop head or feet.",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-f04a25c6-cf85-4611-a7bd-e98bc6bda6d8.png"
+  },
+  {
+    "id": "19",
+    "name": "吃瓜",
+    "category": "互动吐槽",
+    "scene": "围观八卦、等后续",
+    "action": "抱瓜坐好 → 嘴一张吞一角 → 鼓腮咀嚼 → 斜眼等后续",
+    "seq": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      260,
+      160,
+      280,
+      360
+    ],
+    "prompt": "Create ONE pixel art animation spritesheet of exactly 4 equal square cells in a 2 rows x 2 columns invisible grid, frames in reading order. Use the image just shown as the visual reference, preserving EXACTLY the same meme duck: pear-shaped white body, long elastic white neck, huge orange flat bill, tiny black eyes, orange webbed feet, charcoal-brown pixel outlines, pale cream/grey shading. Same chunky low-resolution pixel style, designed to read at 64px, simple large square clusters, no antialiasing, no dithering, no gradients. Strongly readable exaggerated poses suitable for a tiny 128px chat GIF. Solid pure #FF00FF magenta backdrop. NO text, NO letters, NO labels, NO grid lines, NO panels, NO ground shadow. Entire character and props fully visible and centered inside the central 70% safe area of every cell, generous empty magenta margins, same body scale across all four frames, no part crosses any cell edge. Preserve a consistent feet/bottom anchor, changing neck length only when specified. One coherent four-frame action: 'Watching the drama with a snack': duck seated, holding a large triangular watermelon slice with coral red flesh, black seeds and green rind tight to its belly. 1 eagerly peeks to side over slice; 2 opens huge bill to bite upper corner of melon; 3 bill shut chewing, cheek bulges slightly, slice has one bite missing; 4 eyes glance sideways nosily while chewing. Full body, feet visible, same white long-neck duck. Watermelon the only prop, use simple red and green pixel blocks.",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-c82d0a48-84e4-448a-bfcf-40e2ff7eab17.png"
+  },
+  {
+    "id": "20",
+    "name": "急急急",
+    "category": "情绪反应",
+    "scene": "催促、等不及、急眼",
+    "action": "急到跺左脚 → 长脖子拧向左 → 跺右脚 → 拧向右",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100
+    ],
+    "prompt": "Create ONE pixel art animation spritesheet of exactly 4 equal square cells in a 2 rows x 2 columns invisible grid, frames in reading order. Use the image just shown as the visual reference, preserving EXACTLY the same meme duck: pear-shaped white body, long elastic white neck, huge orange flat bill, tiny black eyes, orange webbed feet, charcoal-brown pixel outlines, pale cream/grey shading. Same chunky low-resolution pixel style, designed to read at 64px, simple large square clusters, no antialiasing, no dithering, no gradients. Strongly readable exaggerated poses suitable for a tiny 128px chat GIF. Solid pure #FF00FF magenta backdrop. NO text, NO letters, NO labels, NO grid lines, NO panels, NO ground shadow. Entire character and props fully visible and centered inside the central 70% safe area of every cell, generous empty magenta margins, same body scale across all four frames, no part crosses any cell edge. Preserve a consistent feet/bottom anchor, changing neck length only when specified. One coherent four-frame action: 'Hurry hurry hurry!' impatient duck stamping feet in place, small wings flailing at waist. 1 left webbed foot lifted high bent knee, bill open squawking; 2 left foot stamps down, long neck bends left, eyebrows angry; 3 right webbed foot lifted high and wings tense; 4 right foot stamps down and neck bends right. Forward facing, both feet fully visible, four distinct stamping poses, body stays centered. Compact tiny motion marks near foot permitted, no ground shadow.",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-02cc3c5e-04a2-442f-82ed-f90d48135b25.png"
+  },
+  {
+    "id": "21",
+    "name": "脑子加载中",
+    "category": "抽象发疯",
+    "scene": "懵了、没反应过来、思考卡住",
+    "action": "呆滞 → 长脖子弯成环 → 眼珠转圈 → 还没加载好",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      300,
+      180,
+      220,
+      180,
+      180,
+      220,
+      300
+    ],
+    "prompt": "Create ONE pixel art animation spritesheet of exactly 4 equal square cells in a 2 rows x 2 columns invisible grid, frames in reading order. Use the image just shown as the visual reference, preserving EXACTLY the same meme duck: pear-shaped white body, long elastic white neck, huge orange flat bill, tiny black eyes, orange webbed feet, charcoal-brown pixel outlines, pale cream/grey shading. Same chunky low-resolution pixel style, designed to read at 64px, simple large square clusters, no antialiasing, no dithering, no gradients. Strongly readable exaggerated poses suitable for a tiny 128px chat GIF. Solid pure #FF00FF magenta backdrop. NO text, NO letters, NO labels, NO grid lines, NO panels, NO ground shadow. Entire character and props fully visible and centered inside the central 70% safe area of every cell, generous empty magenta margins, same body scale across all four frames, no part crosses any cell edge. Preserve a consistent feet/bottom anchor, changing neck length only when specified. One coherent four-frame action: 'Brain buffering' absurd elastic long-neck duck. 1 neutral standing with vacant dotted eyes; 2 neck bends into a loose open loop with head tilted sideways, body unchanged; 3 long neck twists into one clear pretzel-like cartoon loop, tiny eyes looking opposite directions, huge bill blankly closed; 4 same loose loop neck and head tilts to other side, half-blink. Funny rubber anatomy, no injury, no gore. NO text, no loading icon, no detached UI. All duck parts connected. Full feet/body visible.",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-f420064f-69fa-4471-8057-651ea200e5fa.png"
+  },
+  {
+    "id": "22",
+    "name": "起飞",
+    "category": "抽象发疯",
+    "scene": "兴奋、得意、事情顺利",
+    "action": "蹲下蓄力 → 蹼脚喷火 → 火箭鸭腾空 → 空中得意",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      2,
+      3
+    ],
+    "dur": [
+      280,
+      150,
+      200,
+      200,
+      200,
+      200
+    ],
+    "prompt": "Create ONE pixel art animation spritesheet of exactly 4 equal square cells in a 2 rows x 2 columns invisible grid, frames in reading order. Use the image just shown as the visual reference, preserving EXACTLY the same meme duck: pear-shaped white body, long elastic white neck, huge orange flat bill, tiny black eyes, orange webbed feet, charcoal-brown pixel outlines, pale cream/grey shading. Same chunky low-resolution pixel style, designed to read at 64px, simple large square clusters, no antialiasing, no dithering, no gradients. Strongly readable exaggerated poses suitable for a tiny 128px chat GIF. Solid pure #FF00FF magenta backdrop. NO text, NO letters, NO labels, NO grid lines, NO panels, NO ground shadow. Entire character and props fully visible and centered inside the central 70% safe area of every cell, generous empty magenta margins, same body scale across all four frames, no part crosses any cell edge. Preserve a consistent feet/bottom anchor, changing neck length only when specified. One coherent four-frame action: 'Taking off!' ridiculous duck becomes a little rocket by firing small orange/yellow cartoon jet flames from underneath its webbed feet. 1 crouches down neck compressed wings tight to sides; 2 stands straight with tiny orange/yellow flames attached below feet; 3 body hovers above the anchor line, long neck pointed upright, wings tucked aerodynamic, eyes very smug, flames stronger; 4 hover body bob and smaller flames. One connected duck-plus-flame silhouette, NO injury, NO burning feathers, just fanciful propulsion. Do not clip flame; full shape central 65%.",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-4e4ccbe3-f8a3-4c44-86a2-b746338b126a.png"
+  },
+  {
+    "id": "23",
+    "name": "给你点赞",
+    "category": "亲密互动",
+    "scene": "夸人、赞同、给鼓励",
+    "action": "认真端详 → 翅膀举到胸前 → 巨大羽毛拇指 → 连点两下",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      2,
+      3
+    ],
+    "dur": [
+      220,
+      140,
+      260,
+      130,
+      260,
+      180
+    ],
+    "prompt": "Create ONE pixel art animation spritesheet of exactly 4 equal square cells in a 2 rows x 2 columns invisible grid, frames in reading order. Use the image just shown as the visual reference, preserving EXACTLY the same meme duck: pear-shaped white body, long elastic white neck, huge orange flat bill, tiny black eyes, orange webbed feet, charcoal-brown pixel outlines, pale cream/grey shading. Same chunky low-resolution pixel style, designed to read at 64px, simple large square clusters, no antialiasing, no dithering, no gradients. Strongly readable exaggerated poses suitable for a tiny 128px chat GIF. Solid pure #FF00FF magenta backdrop. NO text, NO letters, NO labels, NO grid lines, NO panels, NO ground shadow. Entire character and props fully visible and centered inside the central 70% safe area of every cell, generous empty magenta margins, same body scale across all four frames, no part crosses any cell edge. Preserve a consistent feet/bottom anchor, changing neck length only when specified. One coherent four-frame action: 'Big thumbs up!' duck makes comically large approving thumbs-up gesture with a stylized white FEATHERED WING, not a human hand. 1 standing proudly with both wings down; 2 one wing raises close to chest curling feathers; 3 one big rounded wing feather points upward like a thumb, other feather lobes tucked, oversized thumbs-up wing close to body, eyes happy; 4 gesture pumps slightly forward and head nods approvingly. Orange bill and feet, white body, same character, wing is white outlined charcoal, no skin-colored fingers.",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-6a0da5a5-5326-4435-9c86-b5535fcbe7b5.png"
+  },
+  {
+    "id": "24",
+    "name": "下班跑路",
+    "category": "日常接话",
+    "scene": "下班、告辞、急着走",
+    "action": "夹包起步 → 长脖子前伸 → 双脚风火轮 → 一路狂奔",
+    "seq": [
+      0,
+      1,
+      2,
+      3,
+      0,
+      1,
+      2,
+      3
+    ],
+    "dur": [
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100,
+      100
+    ],
+    "prompt": "Create ONE pixel art animation spritesheet of exactly 4 equal square cells in a 2 rows x 2 columns invisible grid, frames in reading order. Use the image just shown as the visual reference, preserving EXACTLY the same meme duck: pear-shaped white body, long elastic white neck, huge orange flat bill, tiny black eyes, orange webbed feet, charcoal-brown pixel outlines, pale cream/grey shading. Same chunky low-resolution pixel style, designed to read at 64px, simple large square clusters, no antialiasing, no dithering, no gradients. Strongly readable exaggerated poses suitable for a tiny 128px chat GIF. Solid pure #FF00FF magenta backdrop. NO text, NO letters, NO labels, NO grid lines, NO panels, NO ground shadow. Entire character and props fully visible and centered inside the central 70% safe area of every cell, generous empty magenta margins, same body scale across all four frames, no part crosses any cell edge. Preserve a consistent feet/bottom anchor, changing neck length only when specified. One coherent four-frame action: 'Clocked out, escaping!' side view of same white long-neck duck sprinting to the right while clutching one small plain dark brown briefcase under wing. Four distinct fast run-cycle poses: 1 right foot stretches forward left foot back; 2 feet passing under body; 3 left foot forward right foot back; 4 feet passing again with little airborne hop. Neck stretches forward horizontally with large orange bill, wildly determined eyes, body leans forward, bag bounces a little but kept tight to body. Character runs IN PLACE at same scale, full body and briefcase inside each safe cell. No text, no logo on briefcase.",
+    "path": "/Users/mia/.codex/generated_images/01a08a3e-9f14-73e1-902f-d1fe92cc0402/exec-37c970cf-6313-47ae-ac67-0dd3de93f712.png"
+  }
+]

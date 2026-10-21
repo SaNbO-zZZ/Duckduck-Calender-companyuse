@@ -1,0 +1,154 @@
+[
+  {
+    "name": "候选-大雨-白天.webm",
+    "metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "width": 485,
+          "height": 1053,
+          "avg_frame_rate": "30/1",
+          "nb_read_frames": "239"
+        }
+      ],
+      "format": {
+        "duration": "7.933889"
+      }
+    }
+  },
+  {
+    "name": "候选-大雨＋强风-白天.webm",
+    "metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "width": 485,
+          "height": 1053,
+          "avg_frame_rate": "30/1",
+          "nb_read_frames": "240"
+        }
+      ],
+      "format": {
+        "duration": "7.967113"
+      }
+    }
+  },
+  {
+    "name": "候选-小雨-白天.webm",
+    "metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "width": 485,
+          "height": 1053,
+          "avg_frame_rate": "30/1",
+          "nb_read_frames": "239"
+        }
+      ],
+      "format": {
+        "duration": "7.933830"
+      }
+    }
+  },
+  {
+    "name": "候选-强风-白天.webm",
+    "metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "width": 485,
+          "height": 1053,
+          "avg_frame_rate": "30/1",
+          "nb_read_frames": "240"
+        }
+      ],
+      "format": {
+        "duration": "7.966250"
+      }
+    }
+  },
+  {
+    "name": "候选-晴天-夜晚.webm",
+    "metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "width": 485,
+          "height": 1053,
+          "avg_frame_rate": "30/1",
+          "nb_read_frames": "240"
+        }
+      ],
+      "format": {
+        "duration": "7.968068"
+      }
+    }
+  },
+  {
+    "name": "候选-晴天-白天.webm",
+    "metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "width": 485,
+          "height": 1053,
+          "avg_frame_rate": "30/1",
+          "nb_read_frames": "240"
+        }
+      ],
+      "format": {
+        "duration": "7.967643"
+      }
+    }
+  },
+  {
+    "name": "候选-阴天-白天.webm",
+    "metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "width": 485,
+          "height": 1053,
+          "avg_frame_rate": "30/1",
+          "nb_read_frames": "236"
+        }
+      ],
+      "format": {
+        "duration": "7.966164"
+      }
+    }
+  },
+  {
+    "name": "候选-雪天-白天.webm",
+    "metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "vp9",
+          "width": 485,
+          "height": 1053,
+          "avg_frame_rate": "30/1",
+          "nb_read_frames": "240"
+        }
+      ],
+      "format": {
+        "duration": "7.967169"
+      }
+    }
+  }
+]
