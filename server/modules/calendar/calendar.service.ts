@@ -98,17 +98,18 @@ export class CalendarService {
    ()=>this.records('duck-leave',{filter:this.overlap(today,today+86400000),fieldNames:['申请人','类型','开始时间','结束时间','状态']}),
    ()=>this.records('duck-attendance',{filter:this.overlap(today,today+86400000),fieldNames:['申请人','登记类型','开始时间','结束时间','状态']})
   ]);
-  const a=activeLeaves.flatMap(r=>userIds(r.record['申请人'])),b=activeAttendance.flatMap(r=>userIds(r.record['申请人']));
-  const events:CalendarEvent[]=[...leaves,...attendance].map(r=>({id:r.id,userIds:userIds(r.record['申请人']),type:workLabel(z.string().parse(r.record['类型'] ?? r.record['登记类型'])),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])}));
-  const activeEvents:CalendarEvent[]=[...activeLeaves,...activeAttendance].map(r=>({id:r.id,userIds:userIds(r.record['申请人']),type:workLabel(z.string().parse(r.record['类型'] ?? r.record['登记类型'])),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])})).filter(e=>e.start<=now&&e.end>now);
+  const toEvent=(r:z.infer<typeof recordSchema>):CalendarEvent=>({id:r.id,userIds:userIds(r.record['申请人']),type:workLabel(z.string().parse(r.record['类型'] ?? r.record['登记类型'])),start:z.number().parse(r.record['开始时间']),end:z.number().parse(r.record['结束时间'])});
+  const events:CalendarEvent[]=[...leaves,...attendance].map(toEvent);
+  const todayEvents:CalendarEvent[]=[...activeLeaves,...activeAttendance].map(toEvent);
+  const activeEvents:CalendarEvent[]=todayEvents.filter(e=>e.start<=now&&e.end>now);
   const holidayData:Holiday[]=holidays.map(r=>({date:dayText(z.number().parse(r.record['日期'])),name:textValue(r.record['节日名']),type:z.string().parse(r.record['类型'])}));
-  const ids=[...new Set([...events,...activeEvents].flatMap(e=>e.userIds).concat(a,b))];
+  const ids=[...new Set([...events,...todayEvents].flatMap(e=>e.userIds))];
   const people:CalendarData['people']=[];
   for(let i=0;i<ids.length;i+=100) {
    const batch=ids.slice(i,i+100),users=await this.authn.listUsersByIds(batch);
    users.forEach((u,j)=>people.push({id:batch[j],name:u?.name?.zh_cn||u?.name?.en_us||'帐号暂不可用',avatar:u?.avatar?.image?.large}));
   }
-  return {events,activeEvents,people,holidays:holidayData,todayUserIds:[...new Set([...a,...b])],serverTime:now};
+  return {events,todayEvents,activeEvents,people,holidays:holidayData,todayUserIds:[...new Set(todayEvents.flatMap(e=>e.userIds))],serverTime:Date.now()};
  }
  private result(row:typeof calendarSubmission.$inferSelect):RegistrationResult {
   const recorded=!!row.recordId&&row.recordState==='created';
