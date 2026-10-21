@@ -92,6 +92,23 @@ def miaoda_ids(open_ids):
     return sorted(converted)
 
 
+def operator_miaoda_id():
+    result = subprocess.run(['lark-cli', 'auth', 'status', '--json'],
+                            text=True, capture_output=True)
+    if result.returncode:
+        raise RuntimeError('lark-cli user authorization is unavailable')
+    try:
+        open_id = json.loads(result.stdout)['identities']['user']['openId']
+    except (KeyError, TypeError, json.JSONDecodeError) as error:
+        raise RuntimeError('could not resolve the operator account') from error
+    data = cli('apps', '+user-id-convert', '--as', 'user',
+               '--convert-type', 'open-id-to-miaoda', '--ids', open_id)
+    items = data.get('items', [])
+    if len(items) != 1 or items[0].get('source_id') != open_id or not re.fullmatch(r'\d+', items[0].get('target_id', '')):
+        raise RuntimeError('could not map the operator to a Miaoda user')
+    return items[0]['target_id']
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('version', help='published product version, e.g. v3.2.1')
@@ -101,6 +118,7 @@ def main():
         parser.error('invalid version')
     open_ids, department_count = company_open_ids()
     user_ids = miaoda_ids(open_ids)
+    operator = operator_miaoda_id()
     digest = hashlib.sha256(','.join(user_ids).encode()).hexdigest()[:12]
     print(f'version={args.version} departments={department_count} employees={len(user_ids)} digest={digest}')
     if not args.apply:
@@ -115,11 +133,12 @@ DO $$ BEGIN
     RAISE EXCEPTION 'announcement already exists for this version';
   END IF;
 END $$;
-INSERT INTO calendar_release_roster (version, recipient_ids, recipient_count, verified_at, source)
-VALUES ('{args.version}', '{values}'::jsonb, {len(user_ids)}, CURRENT_TIMESTAMP, 'feishu-contact-v3')
+INSERT INTO calendar_release_roster (version, recipient_ids, recipient_count, verified_at, source, _created_by, _updated_by)
+VALUES ('{args.version}', '{values}'::jsonb, {len(user_ids)}, CURRENT_TIMESTAMP, 'feishu-contact-v3', ROW('{operator}')::user_profile, ROW('{operator}')::user_profile)
 ON CONFLICT (version) DO UPDATE SET recipient_ids = EXCLUDED.recipient_ids,
   recipient_count = EXCLUDED.recipient_count, verified_at = EXCLUDED.verified_at,
-  source = EXCLUDED.source;
+  source = EXCLUDED.source, _created_by = EXCLUDED._created_by,
+  _updated_by = EXCLUDED._updated_by;
 COMMIT;"""
     cli('apps', '+db-execute', '--as', 'user', '--app-id', APP_ID,
         '--environment', 'online', '--sql', '-', '--yes', input_text=sql)
