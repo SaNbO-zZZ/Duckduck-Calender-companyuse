@@ -1,0 +1,21 @@
+{
+  "app_id": "app_17fstqsqv1c",
+  "uploaded_at": "2026-10-26",
+  "files": {
+    "day-desktop.webp": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1880096947501259.webp",
+    "day-mobile.webp": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1880096943474699.webp",
+    "night-desktop.webp": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1880096954064986.webp",
+    "night-mobile.webp": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1880096951526459.webp",
+    "ducks/vampire.webp": "/1880106408565001.webp",
+    "night-desktop-v2.webp": "/1880106408206442.webp",
+    "ducks/witch-cauldron.webp": "/1880106406246426.webp",
+    "day-desktop-v2.webp": "/1880106408565017.webp",
+    "ducks/mummy.webp": "/1880106410951065.webp",
+    "ducks/pumpkin-reader.webp": "/1880106410951097.webp",
+    "ducks/broom-witch.webp": "/1880106410995801.webp",
+    "ducks/ghost.webp": "/1880106410952729.webp",
+    "ducks/coffee.webp": "/1880106413733067.webp",
+    "ducks/detective.webp": "/1880106407658571.webp",
+    "ducks/skeleton.webp": "/1880106410954185.webp"
+  }
+}
