@@ -68,7 +68,8 @@
       z-index: 0;
       display: none;
     }
-    #festivalFrame { object-fit: fill; }
+    /* 宽屏素材按原始宽高比裁切，避免把旧图非等比拉满大屏。 */
+    #festivalFrame { object-fit: cover; image-rendering: -webkit-optimize-contrast; }
     #fx {
       z-index: 2;
     }
@@ -90,6 +91,47 @@
       image-rendering: pixelated;
       pointer-events: none;
     }
+    /* 万圣节九只精细鸭鸭是独立透明素材，脚底沿主卡片顶边对齐。
+       加载失败时不启用 halloween-detailed，原有程序鸭鸭继续兜底。 */
+    #festivalDucks {
+      display: none;
+      position: absolute;
+      top: -112px;
+      left: 24px;
+      right: 24px;
+      height: 112px;
+      z-index: 3;
+      pointer-events: none;
+      user-select: none;
+      grid-template-columns: repeat(9, minmax(0, 1fr));
+      align-items: end;
+    }
+    body.halloween-detailed #festivalDucks { display: grid; }
+    body.halloween-detailed #ducks,
+    body.halloween-detailed #duckDom { visibility: hidden !important; }
+    #festivalDucks img {
+      display: block;
+      width: 100%;
+      height: 110px;
+      object-fit: contain;
+      object-position: center bottom;
+      image-rendering: -webkit-optimize-contrast;
+      filter: drop-shadow(0 2px 1px #30281970);
+      animation: festival-bob 3.2s ease-in-out infinite alternate;
+      animation-delay: var(--duck-delay);
+      transform-origin: 50% 92%;
+    }
+    #festivalDucks img:nth-child(2n) { animation-duration: 3.8s; }
+    #festivalDucks img:nth-child(3n) { animation-name: festival-sway; animation-duration: 4.4s; }
+    #festivalDucks img[data-role="broom-witch"] { animation-name: festival-fly; animation-duration: 3.5s; }
+    #festivalDucks img[data-role="ghost"] { animation-name: festival-float; animation-duration: 4.8s; }
+    body.halloween-night #festivalDucks img { filter: brightness(.94) drop-shadow(0 2px 4px #090d27a6); }
+    body.festival-still #festivalDucks img { animation: none !important; }
+    @keyframes festival-bob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+    @keyframes festival-sway { from { transform: rotate(-2deg) translateY(0); } to { transform: rotate(2deg) translateY(-2px); } }
+    @keyframes festival-fly { from { transform: translate(-3px, -2px) rotate(-2deg); } to { transform: translate(5px, -9px) rotate(2deg); } }
+    @keyframes festival-float { from { transform: translateY(0); } to { transform: translateY(-9px); } }
+    @media (prefers-reduced-motion: reduce) { #festivalDucks img { animation: none !important; } }
     .fallback {
       position: fixed;
       inset: 0;
@@ -395,6 +437,28 @@
     body.clean main {
       margin-top: calc(clamp(24px, 12vh, 124px) + 78px);
     }
+    /* 真正的大显示器扩展正文与鸭鸭的视觉尺度，不让 1060px 画面缩在 4K 中央。 */
+    @media (min-width: 2200px) {
+      main { max-width: min(2100px, 82vw); margin-top: 180px; padding: 0 32px 64px; }
+      body.clean main { margin-top: clamp(220px, 18vh, 390px); }
+      #festivalDucks { top: -170px; left: 32px; right: 32px; height: 170px; }
+      #festivalDucks img { height: 168px; }
+      .hero { padding: 42px 52px; }
+      .greeting { font-size: 24px; }
+      .hero h1 { font-size: clamp(56px, 2.2vw, 84px); }
+      .subtitle { font-size: 24px; }
+      .pills { gap: 16px; }
+      .pill, .action-secondary, .cta { font-size: 22px; padding: 17px 26px; }
+      .pill small { font-size: 16px; }
+      .cards { grid-template-columns: 420px 1fr; gap: 32px; margin-top: 32px; }
+      .card { padding: 40px; }
+      .card h2 { font-size: 30px; }
+      .month h2 { font-size: 42px; }
+      .weekday { font-size: 20px; }
+      .date { min-height: 100px; padding: 13px; font-size: 24px; }
+      .empty { font-size: 22px; }
+      .note { font-size: 16px; }
+    }
     .exporting .toolbar button {
       pointer-events: none;
     }
@@ -428,6 +492,15 @@
       body.clean main {
         margin-top: calc(clamp(24px, 12vh, 124px) + 54px);
       }
+      #festivalDucks {
+        top: -88px;
+        left: 16px;
+        right: 16px;
+        height: 88px;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-rows: repeat(2, 44px);
+      }
+      #festivalDucks img { height: 44px; }
       .hero {
         padding: 24px 22px;
         border-radius: 28px;
@@ -586,6 +659,7 @@
     <div class="meta" id="stats">初始化实际渲染器…</div>
   </div>
   <main>
+    <div id="festivalDucks" aria-hidden="true"></div>
     <section class="hero">
       <p class="greeting"><span id="greeting">正在读取北京时间…</span><span class="festival-label" id="festivalLabel" hidden>🎃 万圣节主题</span></p>
       <h1>Alpha Pulse 一定会更大更强</h1>
@@ -2579,8 +2653,32 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
       // 万圣节主题按北京时间的日期启停：10 月 31 日所在的周一至周日。
       // 装饰只叠在天气天空上，不改天气实况、法定节假日或知会数据。
       const festivalFrame = $("festivalFrame"), festivalFx = $("festivalFx"), festivalLabel = $("festivalLabel"),
+        festivalDucks = $("festivalDucks"),
         HALLOWEEN_ASSET_BASE = "materials/halloween_2026/";
-      let festivalCtx = null, festivalMode = "", festivalAsset = "", festivalClock = 0;
+      const festivalUrl = (asset) => HALLOWEEN_ASSET_BASE + asset;
+      const FESTIVAL_DUCKS = ["witch-cauldron", "vampire", "mummy", "pumpkin-reader", "broom-witch", "ghost", "detective", "coffee", "skeleton"];
+      let festivalCtx = null, festivalMode = "", festivalAsset = "", festivalClock = 0,
+        festivalDucksReady = false, festivalDucksLoading = false, festivalDucksFailed = false;
+      function ensureFestivalDucks() {
+        if (festivalDucksReady || festivalDucksLoading || festivalDucksFailed) return;
+        festivalDucksLoading = true;
+        Promise.all(FESTIVAL_DUCKS.map((name, i) => new Promise((resolve, reject) => {
+          const img = new Image();
+          img.alt = "";
+          img.decoding = "async";
+          img.dataset.role = name;
+          img.style.setProperty("--duck-delay", (-i * .41) + "s");
+          img.onload = () => resolve(img);
+          img.onerror = () => reject(Error("festival duck image unavailable"));
+          img.src = festivalUrl("ducks/" + name + ".webp");
+        }))).then((images) => {
+          festivalDucks.replaceChildren(...images);
+          festivalDucksReady = true;
+          document.body.classList.toggle("halloween-detailed", !!festivalMode && ducksOn);
+          duckLastSig = "";
+          duckRefresh();
+        }).catch(() => { festivalDucksFailed = true; }).finally(() => { festivalDucksLoading = false; });
+      }
       try { festivalCtx = festivalFx.getContext("2d"); } catch (_) { /* 图片仍可静态显示 */ }
       festivalFx.addEventListener("contextlost", () => { festivalCtx = null; festivalFx.style.display = "none"; });
       festivalFx.addEventListener("contextrestored", () => {
@@ -2589,6 +2687,7 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
       });
       festivalFrame.onerror = () => { festivalFrame.style.display = "none"; };
       function isHalloweenWeek(date) {
+        if (date.y !== 2026) return false;
         const day = 86400000, halloween = Date.UTC(date.y, 9, 31) / day,
           monday = halloween - (new Date(halloween * day).getUTCDay() + 6) % 7,
           current = Date.UTC(date.y, date.m - 1, date.d) / day;
@@ -2599,19 +2698,26 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
         if (next !== festivalMode) { festivalMode = next; festivalClock = 0; duckLastSig = ""; }
         document.body.classList.toggle("halloween-day", next === "day");
         document.body.classList.toggle("halloween-night", next === "night");
+        document.body.classList.toggle("halloween-detailed", !!next && festivalDucksReady && ducksOn);
+        document.body.classList.toggle("festival-still", isStill());
         festivalLabel.hidden = !next;
         if (!next) {
           festivalFrame.style.display = festivalFx.style.display = "none";
           festivalAsset = "";
           return;
         }
-        const asset = next + (small.matches ? "-mobile.webp" : "-desktop.webp");
-        if (asset !== festivalAsset) { festivalAsset = asset; festivalFrame.src = HALLOWEEN_ASSET_BASE + asset; }
+        const asset = next + (small.matches ? "-mobile.webp" : "-desktop-v2.webp");
+        if (asset !== festivalAsset) { festivalAsset = asset; festivalFrame.src = festivalUrl(asset); }
         festivalFrame.style.display = festivalFrame.complete && !festivalFrame.naturalWidth ? "none" : "block";
         festivalFx.style.display = festivalCtx ? "block" : "none";
+        if (!festivalDucksReady && !festivalDucksLoading && !festivalDucksFailed) {
+          // 先发起素材请求，避免高分辨率画布持续占用主线程时旧鸭鸭停留过久。
+          ensureFestivalDucks();
+        }
       }
       function renderFestival(dt, animate) {
         if (!festivalMode || !festivalCtx) return;
+        document.body.classList.toggle("festival-still", !animate);
         const w = innerWidth, h = innerHeight, scale = Math.min(devicePixelRatio || 1, small.matches ? 1 : 1.5),
           bw = Math.max(1, Math.round(w * scale)), bh = Math.max(1, Math.round(h * scale));
         if (festivalFx.width !== bw || festivalFx.height !== bh) {
@@ -4415,6 +4521,13 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
           duckSnowSpans = [];
           return;
         }
+        // 九张高精度节日素材加载成功后，停掉不可见的旧鸭画布重绘；
+        // 图片失败则保留旧鸭，节日结束后的第一帧自动恢复日常鸭鸭。
+        if (festivalMode && typeof festivalDucksReady !== "undefined" && festivalDucksReady) {
+          duckCanvas.style.display = duckDomBox.style.display = "none";
+          duckSnowSpans = [];
+          return;
+        }
         const paintStarted = performance.now();
         const fam = DUCK_FAMILY[WEATHERS[weatherIndex].key];
         duckPhase = duckPhaseNow();
@@ -4544,6 +4657,7 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
       function duckRefresh() {
         duckLastSig = "";
         duckGeomDirty = true;
+        document.body?.classList?.toggle("halloween-detailed", !!festivalMode && typeof festivalDucksReady !== "undefined" && festivalDucksReady && ducksOn);
         if (!ducksOn) {
           duckCanvas.style.display = duckDomBox.style.display = "none";
           duckSnowSpans = [];
