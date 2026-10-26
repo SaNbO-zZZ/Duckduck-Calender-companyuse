@@ -5,7 +5,7 @@
 随天气家族与时间相位换活动、随风改道具姿态、随日照调明暗冷暖；可复现种子，减少动态/降级时保留静态姿态。
 鸭鸭像素美术沿用内部表情包风格：部分帧由原素材 08/15/19 降采样，其余为同风格新绘；美术模块（DuckArt）以纯 JS 内嵌在本文件。
 鸭鸭为装饰插画，不代表具体同事，不与不在岗人数绑定。
-所有 UI、CSS、JS、GLSL 与演示数据都在本 HTML 内；无需构建、无外部脚本或资源，可直接用浏览器打开。
+所有 UI、CSS、JS、GLSL 与演示数据都在本 HTML 内；万圣节边框引用本项目 materials/halloween_2026 的本地图片，无外部脚本。
 ?phone=1 使用本文件自身在 390 × 844 的框内模拟窄屏（不等于手机真机测试）。
 直接在浏览器打开此文件时使用演示数据，不连接员工记录或发送通知；本文件下方的 data-runtime-source 块是飞书妙搭运行时的唯一手工维护源码。
 运行 python3 tools/export_runtime.py 后导出到 deployment/duck-calendar-runtime，再由飞书妙搭发布；演示日历与实际运行时的真实数据读取须分别核验。
@@ -46,6 +46,8 @@
     /* 天空背景（WebGL）与前景效果层（2D：雨打卡片、积雪）都不接收点击 */
     #sky,
     #skyStatic,
+    #festivalFrame,
+    #festivalFx,
     #fx {
       position: fixed;
       inset: 0;
@@ -61,6 +63,12 @@
       z-index: 0;
       display: none;
     }
+    #festivalFrame,
+    #festivalFx {
+      z-index: 0;
+      display: none;
+    }
+    #festivalFrame { object-fit: fill; }
     #fx {
       z-index: 2;
     }
@@ -334,6 +342,39 @@
       padding: 12px 16px;
       line-height: 1.6;
     }
+    .festival-label {
+      display: inline-block;
+      margin-left: 10px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 650;
+      vertical-align: middle;
+    }
+    .festival-label[hidden] { display: none; }
+    body.halloween-day .hero {
+      background: linear-gradient(115deg, #fff8eaf2, #fffdf4ed);
+      border-color: #ffd9a6;
+      box-shadow: 0 12px 38px #93530c24;
+    }
+    body.halloween-day .card { background: #fffaf2f2; border-color: #ffe2b8; }
+    body.halloween-day .festival-label { background: #ffe4b6; color: #663600; }
+    body.halloween-day .number { color: #ec742e; }
+    body.halloween-night .hero {
+      background: linear-gradient(115deg, #e8e6f5f2, #f8f4faef);
+      border-color: #d9cff4;
+      color: #25263b;
+      box-shadow: 0 12px 42px #100e392f;
+    }
+    body.halloween-night .card { background: #f7f4fbf2; border-color: #d9d2eb; }
+    body.halloween-night .greeting,
+    body.halloween-night .subtitle { color: #616176; }
+    body.halloween-night .card h2 { color: #29283d; }
+    body.halloween-night .empty { color: #66647a; }
+    body.halloween-night .festival-label { background: #d9cff1; color: #433362; }
+    body.halloween-night .number { color: #e98543; }
+    body.halloween-day .today { background: #fff0d5; border-color: #e6b365; color: #8c5418; }
+    body.halloween-night .today { background: #ede4fd; border-color: #ab93d7; color: #4f3b7e; }
     .night .hero {
       background: linear-gradient(115deg, #131f32ed, #17263bd0);
       color: #f4f6fa;
@@ -490,6 +531,8 @@
   <!-- 02 · 页面结构：背景与前景效果层都不可阻挡正文点击 -->
   <canvas id="sky" aria-hidden="true"></canvas>
   <canvas id="skyStatic" aria-hidden="true"></canvas>
+  <img id="festivalFrame" alt="" aria-hidden="true" decoding="async" />
+  <canvas id="festivalFx" aria-hidden="true"></canvas>
   <canvas id="fx" aria-hidden="true"></canvas>
   <div class="fallback" aria-hidden="true"></div>
   <div class="toolbar" id="toolbar">
@@ -544,7 +587,7 @@
   </div>
   <main>
     <section class="hero">
-      <p class="greeting" id="greeting">正在读取北京时间…</p>
+      <p class="greeting"><span id="greeting">正在读取北京时间…</span><span class="festival-label" id="festivalLabel" hidden>🎃 万圣节主题</span></p>
       <h1>Alpha Pulse 一定会更大更强</h1>
       <p class="subtitle">一切安好～</p>
       <div class="pills">
@@ -628,6 +671,7 @@
     uniform float uWarmth;      // 低太阳暖色强度
     uniform float uTwilight;    // 民用晨昏蒙影
     uniform vec3 uMoon;         // xy 示意位置，z 可见度（示意，不代表真实月相）
+    uniform float uMoonScale;   // 万圣节夜景的舞台月亮尺寸；仍受云层遮挡
 
     // —— 云与风 ——
     uniform float uCloudCover;  // 0..1
@@ -942,9 +986,9 @@
       }
       vec2 d = (uv - uMoon.xy) * vec2(uAspect, 1.0);
       float r = length(d);
-      float disc = 1.0 - smoothstep(0.0125, 0.0155, r);
-      float lit = 1.0 - smoothstep(0.011, 0.016, length(d - vec2(-0.0055, 0.002))) * 0.82;
-      float halo = exp(-r * r / 0.004) * 0.09 + exp(-r * r / 0.05) * 0.035;
+      float disc = 1.0 - smoothstep(0.0125 * uMoonScale, 0.0155 * uMoonScale, r);
+      float lit = 1.0 - smoothstep(0.011 * uMoonScale, 0.016 * uMoonScale, length(d - vec2(-0.0055, 0.002) * uMoonScale)) * 0.82;
+      float halo = exp(-r * r / (0.004 * uMoonScale * uMoonScale)) * 0.09 + exp(-r * r / (0.05 * uMoonScale * uMoonScale)) * 0.035;
       sky += vec3(0.72, 0.80, 0.94) * halo * vis * uMoon.z;
       return mix(sky, vec3(0.88, 0.91, 0.95) * (0.30 + 0.70 * lit), disc * vis * uMoon.z);
     }
@@ -2532,6 +2576,89 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
         );
         return { y: +parts.year, m: +parts.month, d: +parts.day, minutes: +parts.hour * 60 + +parts.minute };
       }
+      // 万圣节主题按北京时间的日期启停：10 月 31 日所在的周一至周日。
+      // 装饰只叠在天气天空上，不改天气实况、法定节假日或知会数据。
+      const festivalFrame = $("festivalFrame"), festivalFx = $("festivalFx"), festivalLabel = $("festivalLabel"),
+        HALLOWEEN_ASSET_BASE = "materials/halloween_2026/";
+      let festivalCtx = null, festivalMode = "", festivalAsset = "", festivalClock = 0;
+      try { festivalCtx = festivalFx.getContext("2d"); } catch (_) { /* 图片仍可静态显示 */ }
+      festivalFx.addEventListener("contextlost", () => { festivalCtx = null; festivalFx.style.display = "none"; });
+      festivalFx.addEventListener("contextrestored", () => {
+        try { festivalCtx = festivalFx.getContext("2d"); } catch (_) { festivalCtx = null; }
+        if (isStill()) renderFestival(0, false);
+      });
+      festivalFrame.onerror = () => { festivalFrame.style.display = "none"; };
+      function isHalloweenWeek(date) {
+        const day = 86400000, halloween = Date.UTC(date.y, 9, 31) / day,
+          monday = halloween - (new Date(halloween * day).getUTCDay() + 6) % 7,
+          current = Date.UTC(date.y, date.m - 1, date.d) / day;
+        return current >= monday && current < monday + 7;
+      }
+      function syncFestival(date) {
+        const next = isHalloweenWeek(date) ? (sunTarget.daylight < 0.3 ? "night" : "day") : "";
+        if (next !== festivalMode) { festivalMode = next; festivalClock = 0; duckLastSig = ""; }
+        document.body.classList.toggle("halloween-day", next === "day");
+        document.body.classList.toggle("halloween-night", next === "night");
+        festivalLabel.hidden = !next;
+        if (!next) {
+          festivalFrame.style.display = festivalFx.style.display = "none";
+          festivalAsset = "";
+          return;
+        }
+        const asset = next + (small.matches ? "-mobile.webp" : "-desktop.webp");
+        if (asset !== festivalAsset) { festivalAsset = asset; festivalFrame.src = HALLOWEEN_ASSET_BASE + asset; }
+        festivalFrame.style.display = festivalFrame.complete && !festivalFrame.naturalWidth ? "none" : "block";
+        festivalFx.style.display = festivalCtx ? "block" : "none";
+      }
+      function renderFestival(dt, animate) {
+        if (!festivalMode || !festivalCtx) return;
+        const w = innerWidth, h = innerHeight, scale = Math.min(devicePixelRatio || 1, small.matches ? 1 : 1.5),
+          bw = Math.max(1, Math.round(w * scale)), bh = Math.max(1, Math.round(h * scale));
+        if (festivalFx.width !== bw || festivalFx.height !== bh) {
+          festivalFx.width = bw; festivalFx.height = bh;
+        }
+        if (animate) festivalClock += dt;
+        const ctx = festivalCtx, t = festivalClock,
+          wind = clamp((animate ? sim.windSigned : cur.windSigned) / 60, -1.4, 1.4);
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+        if (festivalMode === "day") {
+          // 落叶随真实风向飘移。数量与视口相关，低性能/减少动态时停在固定位置。
+          const count = small.matches ? 7 : 15;
+          for (let i = 0; i < count; i++) {
+            const phase = ((i * 0.618 + t * (0.021 + i % 3 * 0.005)) % 1 + 1) % 1,
+              x0 = ((i * 0.383) % 1) * w,
+              x = (x0 + Math.sin(t * 0.8 + i * 2.7) * 18 + wind * phase * 105 + w * 2) % w,
+              y = phase * h, size = (small.matches ? 4 : 6) + (i % 3) * 2;
+            ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(t * 1.2 + i) * 0.55);
+            ctx.fillStyle = ["#e87925", "#f4a63b", "#b9512a"][i % 3];
+            ctx.globalAlpha = 0.72;
+            ctx.beginPath(); ctx.moveTo(0, -size); ctx.quadraticCurveTo(size * 1.1, 0, 0, size);
+            ctx.quadraticCurveTo(-size * 1.1, 0, 0, -size); ctx.fill(); ctx.restore();
+          }
+        } else {
+          // 远景蝙蝠只在卡片后方活动；明暗天气仍由原天空渲染器负责。
+          const count = small.matches ? 3 : 6;
+          for (let i = 0; i < count; i++) {
+            const span = w + 100, speed = 15 + i * 3 + Math.max(0, wind) * 13,
+              x = ((i * 0.27 * span + t * speed) % span) - 45,
+              y = h * (0.035 + (i % 3) * 0.055) + Math.sin(t * 0.6 + i * 2) * 8,
+              size = (small.matches ? 5 : 7) + i % 3,
+              flap = animate ? Math.sin(t * 9 + i * 2) * size * 0.35 : size * 0.16;
+            ctx.save(); ctx.translate(x, y); ctx.fillStyle = "rgba(28,22,55,.68)";
+            ctx.beginPath(); ctx.moveTo(-size * 1.8, -flap); ctx.quadraticCurveTo(-size, size * .45, 0, 0);
+            ctx.quadraticCurveTo(size, size * .45, size * 1.8, -flap);
+            ctx.lineTo(size * .9, size * .7); ctx.lineTo(0, size * .25);
+            ctx.lineTo(-size * .9, size * .7); ctx.closePath(); ctx.fill(); ctx.restore();
+          }
+          for (let i = 0; i < (small.matches ? 3 : 7); i++) {
+            const x = ((i * 0.357 + 0.07) % 1) * w, y = h * (0.18 + (i % 3) * .17),
+              glow = animate ? .3 + .2 * Math.sin(t * 2.4 + i * 1.7) : .34;
+            ctx.fillStyle = `rgba(255,185,85,${glow})`;
+            ctx.beginPath(); ctx.arc(x, y, 1.5 + i % 2, 0, Math.PI * 2); ctx.fill();
+          }
+        }
+      }
       function greetingFor(minutes) {
         if (minutes >= 300 && minutes < 660) return "早上好";
         if (minutes >= 660 && minutes < 780) return "中午好";
@@ -2549,6 +2676,10 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
         if (timePreset === "night") demoMinutes = 21 * 60 + 30;
         const minutes = timeMode === "live" ? now.minutes : demoMinutes;
         Object.assign(sunTarget, skyStateFor(date, minutes));
+        if (isHalloweenWeek(date) && sunTarget.daylight < 0.3) {
+          sunTarget.moonX = 0.5;
+          sunTarget.moonY = small.matches ? 0.94 : 0.91;
+        }
         if (instant || isStill() || sunNow.x === undefined) for (const k of SUN_KEYS) sunNow[k] = sunTarget[k];
         $("clock").value = minutes;
         $("dateInput").value =
@@ -2572,6 +2703,7 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
         renderCalendar(date, now);
         updateAttendanceClock();
         document.body.classList.toggle("night", sunTarget.daylight < 0.3);
+        syncFestival(date);
         document
           .querySelectorAll("#times button")
           .forEach((b) => b.classList.toggle("active", b.dataset.key === timePreset));
@@ -2659,7 +2791,7 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
       // ================= 6. WebGL 背景 =================
       const UNIFORM_NAMES = [
         "uResolution", "uPxScale", "uAspect", "uTime",
-        "uSunPos", "uSunVis", "uDaylight", "uWarmth", "uTwilight", "uMoon",
+        "uSunPos", "uSunVis", "uDaylight", "uWarmth", "uTwilight", "uMoon", "uMoonScale",
         "uCloudCover", "uWindStretch", "uScud", "uCloudFar", "uCloudNear", "uScudShift", "uHeroCloud",
         "uRain", "uRainSlope", "uRainFall", "uSnow", "uSnowFall", "uSnowDrift", "uGlass",
       ];
@@ -2762,6 +2894,7 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
         gl.uniform1f(U.uWarmth, sunNow.warmth);
         gl.uniform1f(U.uTwilight, sunNow.twilight);
         gl.uniform3f(U.uMoon, sunNow.moonX, sunNow.moonY, sunNow.moonVis);
+        gl.uniform1f(U.uMoonScale, festivalMode === "night" ? (small.matches ? 1.5 : 3.1) : 1);
         gl.uniform1f(U.uCloudCover, cur.cloud);
         gl.uniform1f(U.uWindStretch, windStretch());
         gl.uniform1f(U.uScud, windScud());
@@ -3081,7 +3214,7 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
           if (mv > 0.01) {
             const mx = sun.moonX * W,
               my = (1 - sun.moonY) * H,
-              R = 0.014 * H,
+              R = 0.014 * H * (festivalMode === "night" ? (small.matches ? 1.5 : 3.1) : 1),
               hg = c.createRadialGradient(mx, my, 0, mx, my, R * 9);
             hg.addColorStop(0, rgba([0.72, 0.8, 0.94], 0.14 * mv));
             hg.addColorStop(1, rgba([0.72, 0.8, 0.94], 0));
@@ -3096,7 +3229,7 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
             c.clip();
             // 月相示意：左上偏移的暗圆
             c.beginPath();
-            c.arc(mx - 0.0055 * H, my - 0.002 * H, R * 0.95, 0, Math.PI * 2);
+            c.arc(mx - 0.0055 * H * (festivalMode === "night" ? (small.matches ? 1.5 : 3.1) : 1), my - 0.002 * H * (festivalMode === "night" ? (small.matches ? 1.5 : 3.1) : 1), R * 0.95, 0, Math.PI * 2);
             c.fillStyle = rgba([0.26, 0.27, 0.29], 0.82 * mv);
             c.fill();
             c.restore();
@@ -3713,7 +3846,10 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
       }
       // 有约束的随机：兼容候选按种子洗牌；先填宽位（优先真正需要宽位的动作），再按洗牌顺序填窄位
       function duckChoose(fam, ph) {
-        const pool = DuckArt.ACTIONS.filter((a) => a.families.includes(fam) && a.phases.includes(ph)).map((a) => a.id),
+        const eligible = DuckArt.ACTIONS.filter((a) => a.families.includes(fam) && a.phases.includes(ph)),
+          // 节日服装依附鸭鸭本体绘制：优先选择可定位头身的动作，保留天气对应的动作池。
+          dressed = eligible.filter((a) => a.source !== "original"),
+          pool = (festivalMode && dressed.length >= duckSlots.length ? dressed : eligible).map((a) => a.id),
           r = duckRand(duckSeed, "pick", fam, ph);
         for (let i = pool.length - 1; i > 0; i--) {
           const j = Math.floor(r() * (i + 1));
@@ -3751,7 +3887,8 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
         const picks = duckChoose(fam, ph);
         duckSceneVer++;
         duckSlots.forEach((s, i) => {
-          const next = { ...picks[i], ver: duckSceneVer, fam, ph };
+          const next = { ...picks[i], ver: duckSceneVer, fam, ph,
+            costume: festivalMode ? (i + duckSeed % 9) % 9 : -1 };
           if (animate && s.cur) {
             // 每槽最多新旧两个：过渡中途再切换时，保留当前更显眼的那个作为旧精灵
             if (!s.old || clamp((duckClock - s.fadeAt) / DUCK_FADE, 0, 1) > 0.5) s.old = s.cur;
@@ -3765,7 +3902,7 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
           duckCan.fadeAt = duckClock + 0.2;
         } else duckCan.old = null;
         duckCan.cur = { ver: duckSceneVer, fam, ph, cov: picks.map((p) => !!p.covered), halves: picks.map((p) => p.half), segs: [], segKey: "" };
-        duckScene = { family: fam, phase: ph, seed: duckSeed };
+        duckScene = { family: fam, phase: ph, seed: duckSeed, festival: !!festivalMode };
         duckGeomDirty = true;
       }
       // 光照档：亮度 8 档 × 暖色 3 档；夜间偏冷、清晨傍晚偏暖、降水略暗
@@ -3786,9 +3923,95 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
           shadow: 0.1 + 0.12 * b,
         };
       }
+      // 给现有九只像素鸭鸭绘制九套互不重复的装扮。服装与动作同帧合成，
+      // 保留原表情包的轮廓、嘴与脚；不会额外启动动画循环或请求图片。
+      function halloweenDress(r, role) {
+        if (role < 0) return;
+        const w = r.w, h = r.h, px = r.px, tags = r.tags;
+        const put = (x, y, color) => {
+          x = Math.round(x); y = Math.round(y);
+          if (x < 0 || y < 0 || x >= w || y >= h) return;
+          px[y * w + x] = color; tags[y * w + x] = 6;
+        };
+        const line = (x0, y0, x1, y1, color) => {
+          const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+          for (let i = 0; i <= steps; i++) put(x0 + (x1 - x0) * i / Math.max(1, steps), y0 + (y1 - y0) * i / Math.max(1, steps), color);
+        };
+        const box = (x0, y0, x1, y1, color) => {
+          for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) put(x, y, color);
+        };
+        let hx0 = w, hx1 = -1, hy0 = h, bx0 = w, bx1 = -1, by0 = h;
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const tag = tags[y * w + x];
+          if (tag === 3) { hx0 = Math.min(hx0, x); hx1 = Math.max(hx1, x); hy0 = Math.min(hy0, y); }
+          if (tag === 2 && y >= 44) { bx0 = Math.min(bx0, x); bx1 = Math.max(bx1, x); by0 = Math.min(by0, y); }
+        }
+        const hx = hx1 >= hx0 ? Math.round((hx0 + hx1) / 2) : r.ax,
+          top = hy0 < h ? hy0 : 30,
+          bx = bx1 >= bx0 ? Math.round((bx0 + bx1) / 2) : r.ax,
+          by = by0 < h ? by0 : 53;
+        if (role === 0) { // 吸血鬼：猩红领口与紫黑披风
+          for (let y = by + 1; y < by + 21; y++) {
+            put(bx - 16 - Math.floor((y - by) / 5), y, 31);
+            put(bx + 16 + Math.floor((y - by) / 5), y, 31);
+          }
+          line(bx - 11, by, bx - 3, by + 7, 10); line(bx + 11, by, bx + 3, by + 7, 10);
+        } else if (role === 1) { // 女巫帽
+          box(hx - 12, top - 2, hx + 12, top, 31);
+          for (let y = 0; y < 10; y++) box(hx - Math.floor((10 - y) * .55), top - 3 - y, hx + Math.floor((10 - y) * .55), top - 3 - y, 30);
+          line(hx - 6, top - 4, hx + 7, top - 4, 22);
+        } else if (role === 2) { // 小幽灵床单，鸭头仍露在外面
+          for (let y = by + 2; y < by + 19; y++) {
+            const width = 10 + Math.floor((y - by) / 4);
+            put(bx - width, y, 26); put(bx + width, y, 26);
+          }
+          box(bx - 10, by + 17, bx + 10, by + 19, 2);
+          put(bx - 5, by + 10, 1); put(bx + 5, by + 10, 1);
+        } else if (role === 3) { // 木乃伊绑带
+          for (let y = by + 4; y < by + 20; y += 5) {
+            line(bx - 12, y, bx + 12, y + 2, 26);
+            line(bx - 10, y + 1, bx + 10, y + 3, 3);
+          }
+        } else if (role === 4) { // 蜘蛛装：身体两侧的四对小脚
+          box(bx - 7, by + 8, bx + 7, by + 15, 31);
+          for (let i = 0; i < 4; i++) {
+            line(bx - 7, by + 9 + i * 2, bx - 18, by + 4 + i * 5, 1);
+            line(bx + 7, by + 9 + i * 2, bx + 18, by + 4 + i * 5, 1);
+          }
+          put(bx - 2, by + 10, 22); put(bx + 2, by + 10, 22);
+        } else if (role === 5) { // 南瓜装：暖橙轮廓与俏皮表情
+          for (let y = by + 3; y < by + 21; y++) {
+            const span = Math.round(8 + 7 * Math.sin(Math.PI * (y - by - 2) / 20));
+            box(bx - span, y, bx + span, y, y % 4 === 0 ? 6 : 5);
+          }
+          box(bx - 5, by + 10, bx - 3, by + 11, 1); box(bx + 3, by + 10, bx + 5, by + 11, 1);
+          line(bx - 4, by + 16, bx + 4, by + 16, 1);
+          box(hx - 2, top - 6, hx + 2, top - 3, 13);
+        } else if (role === 6) { // 骷髅衫，轻巧可爱而非恐怖
+          box(bx - 12, by + 5, bx + 12, by + 19, 25);
+          line(bx, by + 7, bx, by + 18, 2);
+          for (let y = by + 9; y < by + 17; y += 3) {
+            line(bx - 9, y, bx - 2, y + 1, 2); line(bx + 2, y + 1, bx + 9, y, 2);
+          }
+          box(hx - 5, top - 5, hx + 5, top - 2, 26);
+          put(hx - 3, top - 4, 1); put(hx + 3, top - 4, 1);
+        } else if (role === 7) { // 糖果桶与派对小帽
+          box(hx - 7, top - 2, hx + 7, top, 30);
+          line(hx - 5, top - 3, hx, top - 10, 30); line(hx, top - 10, hx + 5, top - 3, 30);
+          box(bx + 12, by + 12, bx + 22, by + 21, 5);
+          box(bx + 14, by + 14, bx + 16, by + 16, 22); box(bx + 19, by + 17, bx + 20, by + 19, 10);
+        } else { // 睡衣披风与夜帽
+          for (let y = by + 4; y < by + 21; y++) {
+            put(bx - 14, y, 20); put(bx + 14, y, 20);
+          }
+          box(hx - 8, top - 2, hx + 8, top, 20);
+          line(hx - 6, top - 3, hx + 3, top - 11, 19);
+          put(hx + 4, top - 11, 22);
+        }
+      }
       // 精灵（1 格 = 1 px，下方多 2 行像素化接触阴影）：返回 RGBA、可见包围盒；按需生成 canvas 或 PNG
       function duckSprite(c, frame, windQ, facing, tier, dom) {
-        const key = [dom ? "img" : "cv", c.id, frame, c.okey, c.fam, c.ph, windQ, facing, tier, c.covered ? "S" : ""].join("|");
+        const key = [dom ? "img" : "cv", c.id, frame, c.okey, c.fam, c.ph, windQ, facing, tier, c.covered ? "S" : "", c.costume].join("|");
         let s = duckSprites.get(key);
         if (s) return s;
         if (duckSprites.size >= DUCK_CACHE_MAX) duckSprites.clear();
@@ -3798,6 +4021,7 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
           rgba = new Uint8ClampedArray(W * H * 4),
           t = duckTint(tier),
           pal = DuckArt.PALETTE;
+        halloweenDress(r, c.costume ?? -1);
         let x0 = W,
           x1 = -1,
           y0 = H,
@@ -4194,7 +4418,7 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
         const paintStarted = performance.now();
         const fam = DUCK_FAMILY[WEATHERS[weatherIndex].key];
         duckPhase = duckPhaseNow();
-        if (!duckScene || duckScene.family !== fam || duckScene.phase !== duckPhase || duckScene.seed !== duckSeed)
+        if (!duckScene || duckScene.family !== fam || duckScene.phase !== duckPhase || duckScene.seed !== duckSeed || duckScene.festival !== !!festivalMode)
           duckSetScene(fam, duckPhase, animate);
         const dom = duckDomMode();
         // DOM 兜底只显示静态代表姿态
@@ -4414,6 +4638,7 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
       function frame(dt) {
         simulate(dt);
         draw();
+        renderFestival(dt, true);
         // 兜底：每 0.3 秒复核一次卡片位置（只测 4 个元素），防止漏掉的布局变化让水花/积雪错位
         geometryCheckAt += dt;
         if (geometryCheckAt > 0.3) (geometryCheckAt = 0), (geometryDirty = true);
@@ -4427,6 +4652,7 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
         settleToTarget();
         draw();
         updateStaticSky();
+        renderFestival(0, false);
         if (geometryDirty) measureSurfaces();
         updateDucks(0, false);
         renderFx(0, false);
@@ -4511,6 +4737,7 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
         } else {
           updateStaticSky();
           draw();
+          renderFestival(0, true);
           renderFx(0, true);
           updateDucks(0, duckAnimating());
           updateStats();
@@ -4803,6 +5030,7 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
       // ================= 10. 生命周期 =================
       motion.addEventListener("change", restart);
       small.addEventListener("change", () => {
+        syncFestival(demoDate || shanghaiNow());
         resize();
         restart();
       });
@@ -5226,6 +5454,13 @@ export interface RegistrationRequest { requestKey: string; kind: RegistrationKin
 export interface RegistrationResult { recorded: boolean; recordId: string | null; notifications: 'sent' | 'sending' | 'pending_review'; processing: boolean; message: string; }
 export interface WeatherData { available: boolean; scene: string; windSpeed: number; windFrom: number; cloud: number; validTime: string; updatedAt: string; source: string; }
 export interface RegistrationStatus { result: RegistrationResult | null; }
+export interface CompanyNoticePreview { recipientCount: number; title: string; content: string; }
+export interface CompanyNoticeResult {
+  expected: number;
+  accepted: number;
+  needsReview: number;
+  message: string;
+}
 </script>
 <script type="text/plain" data-runtime-source="server/modules/calendar/calendar.service.ts">
 import { Inject, Injectable, BadGatewayException, BadRequestException, ConflictException, ForbiddenException, Logger } from '@nestjs/common';
@@ -5450,6 +5685,9 @@ export class CalendarController {
  @Get('release-announcement/preview') @CanRole(['release_announcer']) previewAnnouncement(@Query('version') version:string) {return this.announcements.preview(version);}
  @Get('release-announcement/status') @CanRole(['release_announcer']) announcementStatus(@Query('version') version:string) {return this.announcements.summary(version);}
  @Post('release-announcement/publish') @CanRole(['release_announcer']) publishAnnouncement(@Body() body:unknown,@Req() req:Request) {const userId=req.userContext?.userId;if(!userId)throw new UnauthorizedException('请使用公司飞书帐号登录。');return this.announcements.publish(body,userId);}
+ @Get('entry-notice/preview') @CanRole(['release_announcer']) entryNoticePreview() {return this.announcements.entryNoticePreview();}
+ @Get('entry-notice/status') @CanRole(['release_announcer']) entryNoticeStatus() {return this.announcements.entryNoticeSummary();}
+ @Post('entry-notice/publish') @CanRole(['release_announcer']) publishEntryNotice(@Req() req:Request) {const userId=req.userContext?.userId;if(!userId)throw new UnauthorizedException('请使用公司飞书帐号登录。');return this.announcements.publishEntryNotice(userId);}
 }
 </script>
 <script type="text/plain" data-runtime-source="server/modules/calendar/calendar.module.ts">
@@ -6203,6 +6441,17 @@ import { userProfile } from '../../database/schema';
 
 const WIKI_URL = 'https://ycn3zdw6f1p7.feishu.cn/wiki/I6uzwNwd7izfPCkQHJDcoxdRnRb';
 const title = '鸭鸭日历发布新版本-更新说明';
+const ENTRY_NOTICE_KEY = 'notice-entry-20261025';
+const ENTRY_NOTICE_TITLE = '鸭鸭日历｜两个入口，一份日历';
+const ENTRY_NOTICE_CONTENT = [
+  '大家好！有同事在手机飞书的“最近使用”里看到了两个“鸭鸭日历”。这是飞书将妙搭直达入口（蓝色图标）和公司应用入口（灰底头像图标）分别记录，并不是程序故障，也不是两个不同版本。',
+  '',
+  '- **两个都能点**：它们最终打开同一套鸭鸭日历，日历展示和知会登记使用同一份数据，**无需重复登记**。',
+  '- **日常建议**：优先使用灰底头像图标的“鸭鸭日历”，这是公司面向全员开放的应用入口。习惯蓝色图标的同事继续使用也没问题。',
+  '- 电脑端左侧的“鸭鸭日历”是单独配置的快捷入口，也通往同一页面。',
+  '',
+  '如果发现两边内容确实不一致，请把截图反馈给日历维护者，我们会核查。',
+].join('\n');
 const payloadSchema = z.object({
   version: z.string().regex(/^v\d+\.\d+\.\d+$/),
   highlights: z.array(z.string().trim().min(2).max(90)).min(1).max(5),
@@ -6242,9 +6491,8 @@ export class ReleaseAnnouncementService {
     @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
   ) {}
 
-  private async recipients(version: string): Promise&lt;string[]&gt; {
-    if (!/^v\d+\.\d+\.\d+$/.test(version)) throw new BadRequestException('版本号无效。');
-    const [snapshot] = await this.db.select().from(roster).where(eq(roster.version, version)).limit(1);
+  private async recipients(key: string): Promise&lt;string[]&gt; {
+    const [snapshot] = await this.db.select().from(roster).where(eq(roster.version, key)).limit(1);
     if (!snapshot) throw new BadGatewayException('尚未核对该版本的企业员工名单，已停止发送。');
     const parsed = z.array(z.string().regex(/^\d+$/)).min(1).safeParse(snapshot.recipientIds);
     if (!parsed.success) throw new BadGatewayException('员工名单格式异常，已停止发送。');
@@ -6260,68 +6508,95 @@ export class ReleaseAnnouncementService {
   }
 
   async preview(version: string) {
+    if (!/^v\d+\.\d+\.\d+$/.test(version)) throw new BadRequestException('版本号无效。');
     const ids = await this.recipients(version);
     return {recipientCount: ids.length, wikiUrl: WIKI_URL};
+  }
+
+  async entryNoticePreview() {
+    const ids = await this.recipients(ENTRY_NOTICE_KEY);
+    return {recipientCount: ids.length, title: ENTRY_NOTICE_TITLE, content: ENTRY_NOTICE_CONTENT};
   }
 
   async publish(raw: unknown, actorId: string) {
     const parsed = payloadSchema.safeParse(raw);
     if (!parsed.success) throw new BadRequestException('请填写有效版本号和 1 至 5 条简短更新内容。');
     const input = parsed.data;
-    const hash = createHash('sha256').update(JSON.stringify(input)).digest('hex');
-    const [existing] = await this.db.select().from(announcement).where(eq(announcement.version, input.version)).limit(1);
+    return this.publishPrepared(
+      input.version, title, content(input), actorId,
+      createHash('sha256').update(JSON.stringify(input)).digest('hex'),
+    );
+  }
+
+  async publishEntryNotice(actorId: string) {
+    return this.publishPrepared(ENTRY_NOTICE_KEY, ENTRY_NOTICE_TITLE, ENTRY_NOTICE_CONTENT, actorId);
+  }
+
+  private async publishPrepared(
+    key: string, messageTitle: string, messageContent: string, actorId: string,
+    payloadHash = createHash('sha256').update(JSON.stringify({messageTitle, messageContent})).digest('hex'),
+  ) {
+    const [existing] = await this.db.select().from(announcement).where(eq(announcement.version, key)).limit(1);
     if (existing) {
-      if (existing.payloadHash !== hash) throw new ConflictException('该版本已创建通知，请勿改写同一版本的通知内容。');
-      return this.summary(input.version);
+      if (existing.payloadHash !== payloadHash) throw new ConflictException('该批通知已创建，请勿改写同一批次的内容。');
+      return this.campaignSummary(key);
     }
-    const ids = await this.recipients(input.version);
+    const ids = await this.recipients(key);
     const created = await this.db.transaction(async tx =&gt; {
       const [row] = await tx.insert(announcement).values({
-        version: input.version, payloadHash: hash, expectedCount: ids.length, status: 'sending', createdBy: actorId,
+        version: key, payloadHash, expectedCount: ids.length, status: 'sending', createdBy: actorId,
       }).onConflictDoNothing({target: announcement.version}).returning();
       if (!row) return false;
-      await tx.insert(delivery).values(ids.map(recipient =&gt; ({version: input.version, recipient, state: 'pending', createdBy: actorId})));
+      await tx.insert(delivery).values(ids.map(recipient =&gt; ({version: key, recipient, state: 'pending', createdBy: actorId})));
       return true;
     });
-    if (!created) return this.summary(input.version);
+    if (!created) return this.campaignSummary(key);
 
     // Batches stay well under the plugin's 200-user limit. A failed or uncertain
     // batch is never retried automatically: the platform may have accepted it.
     for (let offset = 0; offset &lt; ids.length; offset += 50) {
       const candidateIds = ids.slice(offset, offset + 50);
       const claimed = await this.db.update(delivery).set({state: 'sending'}).where(and(
-        eq(delivery.version, input.version), inArray(delivery.recipient, candidateIds), eq(delivery.state, 'pending'),
+        eq(delivery.version, key), inArray(delivery.recipient, candidateIds), eq(delivery.state, 'pending'),
       )).returning();
       const recipientIds = claimed.map(item =&gt; item.recipient);
       if (recipientIds.length === 0) continue;
       try {
         const result = z.object({success: z.boolean()}).parse(await this.capability.load('duck-notify').call('send_feishu_message', {
-          recipients: recipientIds, title, content: content(input),
+          recipients: recipientIds, title: messageTitle, content: messageContent,
         }));
         await this.db.update(delivery).set({state: result.success ? 'accepted' : 'needs_review'}).where(and(
-          eq(delivery.version, input.version), inArray(delivery.recipient, recipientIds),
+          eq(delivery.version, key), inArray(delivery.recipient, recipientIds),
         ));
       } catch (error) {
         await this.db.update(delivery).set({state: 'needs_review'}).where(and(
-          eq(delivery.version, input.version), inArray(delivery.recipient, recipientIds),
+          eq(delivery.version, key), inArray(delivery.recipient, recipientIds),
         ));
-        this.logger.warn({event: 'release_notice_requires_review', version: input.version, batchSize: recipientIds.length, error: error instanceof Error ? error.message : 'unknown'});
+        this.logger.warn({event: 'company_notice_requires_review', key, batchSize: recipientIds.length, error: error instanceof Error ? error.message : 'unknown'});
       }
     }
-    const result = await this.summary(input.version);
-    await this.db.update(announcement).set({status: result.needsReview === 0 ? 'accepted' : 'needs_review'}).where(eq(announcement.version, input.version));
+    const result = await this.campaignSummary(key);
+    await this.db.update(announcement).set({status: result.needsReview === 0 ? 'accepted' : 'needs_review'}).where(eq(announcement.version, key));
     return result;
   }
 
   async summary(version: string) {
     if (!/^v\d+\.\d+\.\d+$/.test(version)) throw new BadRequestException('版本号无效。');
-    const [row] = await this.db.select().from(announcement).where(eq(announcement.version, version)).limit(1);
-    if (!row) throw new BadRequestException('该版本尚未创建通知。');
-    const rows = await this.db.select().from(delivery).where(eq(delivery.version, version));
+    return this.campaignSummary(version);
+  }
+
+  async entryNoticeSummary() {
+    return this.campaignSummary(ENTRY_NOTICE_KEY);
+  }
+
+  private async campaignSummary(key: string) {
+    const [row] = await this.db.select().from(announcement).where(eq(announcement.version, key)).limit(1);
+    if (!row) throw new BadRequestException('该批通知尚未创建。');
+    const rows = await this.db.select().from(delivery).where(eq(delivery.version, key));
     const accepted = rows.filter(item =&gt; item.state === 'accepted').length;
-    return {version, expected: row.expectedCount, accepted, needsReview: row.expectedCount - accepted,
+    return {expected: row.expectedCount, accepted, needsReview: row.expectedCount - accepted,
       message: rows.length === row.expectedCount &amp;&amp; accepted === row.expectedCount ? '全部通知请求已被平台受理。' : '部分通知需人工核对，请勿重复发送。',
-      wikiUrl: WIKI_URL};
+      ...(key.startsWith('v') ? {version: key, wikiUrl: WIKI_URL} : {})};
   }
 }
 </script>
@@ -6333,6 +6608,8 @@ import { isAxiosError } from 'axios';
 
 type Preview = {recipientCount: number; wikiUrl: string};
 type Result = {version: string; expected: number; accepted: number; needsReview: number; message: string; wikiUrl: string};
+type EntryPreview = {recipientCount: number; title: string; content: string};
+type EntryResult = {expected: number; accepted: number; needsReview: number; message: string};
 const wikiUrl = 'https://ycn3zdw6f1p7.feishu.cn/wiki/I6uzwNwd7izfPCkQHJDcoxdRnRb';
 const explain = (error: unknown) =&gt; isAxiosError(error)
   ? String(error.response?.data?.message || error.message)
@@ -6345,6 +6622,10 @@ export default function ReleaseAnnouncement() {
   const [result, setResult] = useState&lt;Result | null&gt;(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [entryPreview, setEntryPreview] = useState&lt;EntryPreview | null&gt;(null);
+  const [entryResult, setEntryResult] = useState&lt;EntryResult | null&gt;(null);
+  const [entryBusy, setEntryBusy] = useState(false);
+  const [entryError, setEntryError] = useState('');
   const highlights = lines.split('\n').map(line =&gt; line.trim()).filter(Boolean);
   const canSend = !!preview &amp;&amp; !busy &amp;&amp; /^v\d+\.\d+\.\d+$/.test(version) &amp;&amp; highlights.length &gt;= 1 &amp;&amp; highlights.length &lt;= 5;
 
@@ -6376,6 +6657,32 @@ export default function ReleaseAnnouncement() {
     finally { setBusy(false); }
   };
 
+  const checkEntryNotice = async () =&gt; {
+    setEntryBusy(true); setEntryError('');
+    try {
+      const response = await axiosForBackend&lt;EntryResult&gt;({url: '/api/calendar/entry-notice/status', method: 'GET'});
+      setEntryResult(response.data);
+    } catch (reason) { setEntryError(explain(reason)); }
+    finally { setEntryBusy(false); }
+  };
+  const previewEntryNotice = async () =&gt; {
+    setEntryBusy(true); setEntryError(''); setEntryPreview(null);
+    try {
+      const response = await axiosForBackend&lt;EntryPreview&gt;({url: '/api/calendar/entry-notice/preview', method: 'GET'});
+      setEntryPreview(response.data);
+    } catch (reason) { setEntryError(explain(reason)); }
+    finally { setEntryBusy(false); }
+  };
+  const publishEntryNotice = async () =&gt; {
+    if (!entryPreview || entryBusy) return;
+    setEntryBusy(true); setEntryError('');
+    try {
+      const response = await axiosForBackend&lt;EntryResult&gt;({url: '/api/calendar/entry-notice/publish', method: 'POST', timeout: 120000});
+      setEntryResult(response.data);
+    } catch (reason) { setEntryError(explain(reason)); }
+    finally { setEntryBusy(false); }
+  };
+
   return &lt;main className="min-h-dvh bg-[#f4f6fa] px-4 py-8 text-[#27303d]"&gt;
     &lt;section className="mx-auto max-w-2xl rounded-3xl border border-white bg-white p-6 shadow-xl shadow-slate-200/60 sm:p-9"&gt;
       &lt;NavLink className="text-sm text-blue-600 hover:underline" to="/"&gt;← 返回鸭鸭日历&lt;/NavLink&gt;
@@ -6400,6 +6707,22 @@ export default function ReleaseAnnouncement() {
       {result &amp;&amp; &lt;p role="status" className="mt-5 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900"&gt;{result.message} {result.accepted}/{result.expected} 个请求获平台受理；{result.needsReview} 个需核对。&lt;/p&gt;}
       &lt;button type="button" disabled={!canSend} onClick={publish} className="mt-8 w-full rounded-full bg-gradient-to-r from-[#ff7a56] to-[#fb4f7d] px-5 py-3 font-bold text-white shadow-lg shadow-rose-200 disabled:cursor-not-allowed disabled:opacity-40"&gt;{busy ? '处理中…' : '发布版本更新知会'}&lt;/button&gt;
       &lt;p className="mt-3 text-xs leading-5 text-slate-400"&gt;同一版本只建一次批次；平台受理不等于员工已读。请求状态不明时先核对，避免重复通知。&lt;/p&gt;
+      &lt;section className="mt-12 border-t border-slate-200 pt-8"&gt;
+        &lt;h2 className="text-xl font-bold"&gt;鸭鸭日历两个入口的情况说明&lt;/h2&gt;
+        &lt;p className="mt-2 text-sm leading-6 text-slate-500"&gt;仅发送一次的全员说明，由妙搭助手私聊发送。先核对员工名单与消息全文。&lt;/p&gt;
+        &lt;div className="mt-5 rounded-2xl bg-blue-50 p-4 text-sm text-blue-950"&gt;
+          &lt;strong&gt;消息预览｜{entryPreview?.title || '鸭鸭日历｜两个入口，一份日历'}&lt;/strong&gt;
+          &lt;p className="mt-3 whitespace-pre-line leading-7"&gt;{entryPreview?.content || '请先核对全员名单，加载待发送的说明全文。'}&lt;/p&gt;
+        &lt;/div&gt;
+        &lt;div className="mt-5 flex flex-wrap gap-3"&gt;
+          &lt;button type="button" disabled={entryBusy} onClick={previewEntryNotice} className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold disabled:opacity-50"&gt;核对名单和全文&lt;/button&gt;
+          &lt;button type="button" disabled={entryBusy} onClick={checkEntryNotice} className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold disabled:opacity-50"&gt;核对发送状态&lt;/button&gt;
+        &lt;/div&gt;
+        {entryPreview &amp;&amp; &lt;p className="mt-4 text-sm"&gt;已核对 &lt;strong&gt;{entryPreview.recipientCount}&lt;/strong&gt; 位公司内部员工。&lt;/p&gt;}
+        {entryError &amp;&amp; &lt;p role="alert" className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"&gt;{entryError}&lt;/p&gt;}
+        {entryResult &amp;&amp; &lt;p role="status" className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900"&gt;{entryResult.message} {entryResult.accepted}/{entryResult.expected} 个请求获平台受理；{entryResult.needsReview} 个需核对。&lt;/p&gt;}
+        &lt;button type="button" disabled={!entryPreview || entryBusy || !!entryResult} onClick={publishEntryNotice} className="mt-6 w-full rounded-full bg-gradient-to-r from-[#ff7a56] to-[#fb4f7d] px-5 py-3 font-bold text-white shadow-lg shadow-rose-200 disabled:cursor-not-allowed disabled:opacity-40"&gt;{entryBusy ? '处理中…' : '向全员发送情况说明'}&lt;/button&gt;
+      &lt;/section&gt;
     &lt;/section&gt;
   &lt;/main&gt;;
 }
@@ -6547,11 +6870,11 @@ def operator_miaoda_id():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('version', help='published product version, e.g. v3.2.1')
+    parser.add_argument('version', help='published product version, or notice-entry-20261025')
     parser.add_argument('--apply', action='store_true', help='write verified roster to the online app database')
     args = parser.parse_args()
-    if not re.fullmatch(r'v\d+\.\d+\.\d+', args.version):
-        parser.error('invalid version')
+    if not re.fullmatch(r'(?:v\d+\.\d+\.\d+|notice-entry-20261025)', args.version):
+        parser.error('invalid campaign key')
     open_ids, department_count = company_open_ids()
     user_ids = miaoda_ids(open_ids)
     operator = operator_miaoda_id()
@@ -6665,6 +6988,16 @@ test('invalid release details are rejected before directory lookup or notificati
   const f = fixture(good());
   await assert.rejects(f.service.publish({version: 'v3.2.1', highlights: []}, '123'), /请填写有效版本号/);
   assert.equal(f.reads(), 0);
+});
+
+test('entry notice previews the verified roster and exact employee guidance', async () =&gt; {
+  const preview = await fixture(good()).service.entryNoticePreview();
+  assert.equal(preview.recipientCount, 3);
+  assert.match(preview.title, /两个入口，一份日历/);
+  assert.match(preview.content, /不是程序故障/);
+  assert.match(preview.content, /同一份数据/);
+  assert.match(preview.content, /灰底头像图标/);
+  assert.match(preview.content, /无需重复登记/);
 });
 </script>
 <script type="text/plain" data-runtime-source="package.json">
