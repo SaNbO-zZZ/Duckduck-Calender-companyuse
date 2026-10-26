@@ -1,0 +1,10 @@
+{
+  "app_id": "app_17fstqsqv1c",
+  "uploaded_at": "2026-10-26",
+  "files": {
+    "day-desktop.webp": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1880096947501259.webp",
+    "day-mobile.webp": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1880096943474699.webp",
+    "night-desktop.webp": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1880096954064986.webp",
+    "night-mobile.webp": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1880096951526459.webp"
+  }
+}
