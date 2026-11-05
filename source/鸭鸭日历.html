@@ -3889,8 +3889,12 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
         duckSprites.clear();
         duckRefresh();
       });
-      // 循环在跑才播放动画/淡入淡出；审查暂停、静态、降级时直接显示 0 帧终态
-      const duckAnimating = () => !isStill() && !reviewPaused;
+      // 天气降级只停用高开销的背景特效；鸭鸭画布仍保持轻量动画，避免“天气不可用/浏览器不支持 WebGL”
+      // 把整排鸭鸭误变成静态图片。系统减少动态、业务静态预览和审查暂停仍会停住鸭鸭。
+      const duckAnimating = () =>
+        !(typeof forceStatic !== "undefined" && forceStatic) &&
+        !(typeof motion !== "undefined" && motion.matches) &&
+        !reviewPaused;
       // 种子决定的槽位个性（与天气无关，换天气不变）：朝向、帧率抖动、相位、休息节奏、过渡错开
       function duckSlotTraits() {
         const r = duckRand(duckSeed, "traits");
@@ -4758,8 +4762,8 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
         if (geometryCheckAt > 0.3) (geometryCheckAt = 0), (geometryDirty = true);
         // 先量几何，再定鸭鸭（给出落脚雪面），最后画前景层：同一帧内积雪压平与鸭鸭抬高一致
         if (geometryDirty) measureSurfaces();
-        updateDucks(dt, true);
-        renderFx(dt, true);
+        updateDucks(dt, duckAnimating());
+        renderFx(dt, !isStill());
       }
       function redrawStill() {
         geometryDirty = true;
@@ -4802,7 +4806,8 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
         raf = 0;
         if (hidden || reviewPaused || pageSuspended) return;
         // 个别环境不派发 matchMedia change 事件：在帧循环里兜底切换为静态画面（restart 会清零 FPS 统计）
-        if (isStill()) return restart();
+        // fallback 只代表背景特效降级，仍允许低成本鸭鸭画布继续跑；真正的静态条件才停止帧循环。
+        if (forceStatic || motion.matches) return restart();
         const target = small.matches ? 30 : 60;
         if (!gate || gate.targetFps !== target) (gate = createFrameGate(target)), (lastDraw = 0);
         if (!lastDraw) lastDraw = now;
@@ -4845,7 +4850,7 @@ return { PALETTE, FAMILIES, PHASES, ACTIONS, outfit, render, support, canopy, in
         lastDraw = sampleAt = ticks = 0;
         if (gate) gate.reset();
         frames = fps = 0;
-        if (isStill()) {
+        if (forceStatic || motion.matches) {
           stopRecording(true, "已切换为静态画面，录制提前结束（已保存已录部分）");
           redrawStill();
         } else {
@@ -5772,7 +5777,12 @@ export class CalendarService {
    else if(/多云|少云/.test(info))scene='partly';
    else if(/阴|雾|霾|沙尘/.test(info))scene='overcast';
    else if(/晴/.test(info))scene='clear';
-   else throw new Error('weather-condition-unknown');
+   else {
+    // 中国气象局偶尔会在实况有效时返回 info:"-" / img:"9999"。
+    // 此时实况时间、雨量和风速仍可用；不要把单个缺失的天气描述升级成整块天气不可用，
+    // 采用保守的阴天场景，同时保留风速、风向和时间，让页面继续显示并保持动画运行。
+    scene=rain>0?'lightRain':'overcast';
+   }
    const cloud={clear:0.12,partly:0.5,overcast:0.9,lightRain:0.9,heavyRain:0.97,storm:1,lightSnow:0.82,snow:0.9,heavySnow:0.98}[scene];
    const speed=real.wind.speed,degree=real.wind.degree;
    return {available:true,scene,windSpeed:Number.isFinite(speed)&amp;&amp;speed&gt;=0&amp;&amp;speed&lt;100?speed*3.6:0,windFrom:Number.isFinite(degree)&amp;&amp;degree&gt;=0&amp;&amp;degree&lt;360?degree:0,cloud,validTime:new Date(published).toISOString(),updatedAt:new Date(published).toISOString(),source:'合肥天气'};
