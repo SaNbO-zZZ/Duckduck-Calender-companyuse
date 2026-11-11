@@ -1,0 +1,12 @@
+<h1>工作区迁移与持续同步规则</h1>
+<p>2026-11-11（北京时间）已将“设计飞书请假调休多维表格”会话产生的鸭鸭日历项目资料迁入本地工作区：<a type="url-preview" href="https://github.com/SaNbO-zZZ/Duckduck-Calender-companyuse">GitHub Duckduck-Calender-companyuse</a>。当前工作目录为 /Volumes/张三波个人硬盘/Codex/DuckyCalendar，今后鸭鸭日历的设计、开发、测试和发布均以该目录为唯一开发入口。</p>
+<p>先前工作目录 /Users/xz/Sanbo/Codex/Company/company_use_calendar 已复制到当前目录的 session-archive/company_use_calendar/，包含会话记录、提示词、部署回执、飞书配置记录、视觉审查、素材、测试和历史快照。为避免把本机依赖和生成物带入公开仓库，归档复制时未包含 node_modules、构建产物、日志、Agent 缓存和嵌套 Git 元数据。</p>
+<h2>固定同步关系</h2>
+<ul>
+<li>本地长期索引：docs/鸭鸭日历工作主文档.md；同内容 DOCX：docs/鸭鸭日历工作主文档.docx。</li>
+<li>GitHub：<a type="url-preview" href="https://github.com/SaNbO-zZZ/Duckduck-Calender-companyuse">SaNbO-zZZ/Duckduck-Calender-companyuse</a>，当前 main 基线 v3.3.2，最近提交 26a00a7。</li>
+<li>飞书妙搭应用：<a type="url-preview" href="https://ycn3zdw6f1p7.feishu.link/app/app_17fstqsqv1c">打开鸭鸭日历</a>。</li>
+</ul>
+<h2>后续执行约定</h2>
+<p>每次工作先读取本地工作主文档；完成后同步更新 Markdown、DOCX 和本页，记录版本号、GitHub 提交或 Tag、妙搭 release、测试与线上核验结果，再提交并推送 origin。不得把飞书 token、员工名单、环境变量、真实登记数据或 node_modules 推送到 GitHub。</p>
+<p>本次迁移验证：calendar-export-syntax.cjs 通过；归档中的 duck_calendar_verify.cjs 通过（15 个布局、320/360/390/720/1440 视口及 DPR 1/2/3）；业务测试需要先生成 dist，当前未运行。</p>

@@ -65,3 +65,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Migrated local session archive (kept in the workspace, excluded from public GitHub)
+session-archive/
