@@ -37,3 +37,13 @@ test('invalid release details are rejected before directory lookup or notificati
   await assert.rejects(f.service.publish({version: 'v3.2.1', highlights: []}, '123'), /请填写有效版本号/);
   assert.equal(f.reads(), 0);
 });
+
+test('entry notice previews the verified roster and exact employee guidance', async () => {
+  const preview = await fixture(good()).service.entryNoticePreview();
+  assert.equal(preview.recipientCount, 3);
+  assert.match(preview.title, /两个入口，一份日历/);
+  assert.match(preview.content, /不是程序故障/);
+  assert.match(preview.content, /同一份数据/);
+  assert.match(preview.content, /灰底头像图标/);
+  assert.match(preview.content, /无需重复登记/);
+});

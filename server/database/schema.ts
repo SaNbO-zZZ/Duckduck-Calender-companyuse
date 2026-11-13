@@ -1,7 +1,7 @@
 /* eslint-disable */
 /** auto generated, do not edit */
 import { sql } from 'drizzle-orm';
-import { bigint, index, pgTable, uniqueIndex, uuid, varchar, customType } from "drizzle-orm/pg-core"
+import { bigint, index, integer, pgTable, uniqueIndex, uuid, varchar, customType } from "drizzle-orm/pg-core"
 
 export const customTimestamptz = customType<{
   data: Date;
@@ -147,3 +147,28 @@ export const calendarSubmission = pgTable("calendar_submission", {
 
 // table aliases
 export const calendarSubmissionTable = calendarSubmission;
+
+export const dutyWeeklyRule = pgTable('duty_weekly_rule', {
+  id: uuid('id').primaryKey().defaultRandom(), weekday: integer('weekday').notNull(), personId: userProfile('person_id').notNull(), duckKey: varchar('duck_key', { length: 40 }).notNull(), validFrom: varchar('valid_from', { length: 10 }).notNull(), validTo: varchar('valid_to', { length: 10 }), status: varchar('status', { length: 16 }).notNull().default('active'),
+  createdAt: customTimestamptz('_created_at', { precision: 3 }).notNull().default(sql`CURRENT_TIMESTAMP`), createdBy: userProfile('_created_by'), updatedAt: customTimestamptz('_updated_at', { precision: 3 }).notNull().default(sql`CURRENT_TIMESTAMP`), updatedBy: userProfile('_updated_by'),
+}, table => [index('duty_weekly_rule_weekday_idx').on(table.weekday)]);
+
+export const dutyOverride = pgTable('duty_override', {
+  id: uuid('id').primaryKey().defaultRandom(), dutyDate: varchar('duty_date', { length: 10 }).notNull(), originalPersonId: userProfile('original_person_id').notNull(), replacementPersonId: userProfile('replacement_person_id').notNull(), replacementDuckKey: varchar('replacement_duck_key', { length: 40 }), requestId: uuid('request_id'), status: varchar('status', { length: 16 }).notNull().default('active'),
+  createdAt: customTimestamptz('_created_at', { precision: 3 }).notNull().default(sql`CURRENT_TIMESTAMP`), createdBy: userProfile('_created_by'), updatedAt: customTimestamptz('_updated_at', { precision: 3 }).notNull().default(sql`CURRENT_TIMESTAMP`), updatedBy: userProfile('_updated_by'),
+}, table => [uniqueIndex('duty_override_date_active_key').on(table.dutyDate)]);
+
+export const dutyAvatarBinding = pgTable('duty_avatar_binding', {
+  id: uuid('id').primaryKey().defaultRandom(), personId: userProfile('person_id').notNull(), duckKey: varchar('duck_key', { length: 40 }).notNull(), manifestVersion: varchar('manifest_version', { length: 40 }).notNull(), status: varchar('status', { length: 16 }).notNull().default('active'),
+  createdAt: customTimestamptz('_created_at', { precision: 3 }).notNull().default(sql`CURRENT_TIMESTAMP`), createdBy: userProfile('_created_by'), updatedAt: customTimestamptz('_updated_at', { precision: 3 }).notNull().default(sql`CURRENT_TIMESTAMP`), updatedBy: userProfile('_updated_by'),
+}, table => [uniqueIndex('duty_avatar_binding_person_key').on(table.personId)]);
+
+export const dutyExchangeRequest = pgTable('duty_exchange_request', {
+  id: uuid('id').primaryKey().defaultRandom(), dutyDate: varchar('duty_date', { length: 10 }).notNull(), initiatorId: userProfile('initiator_id').notNull(), inviteeId: userProfile('invitee_id').notNull(), originalPersonId: userProfile('original_person_id').notNull(), replacementPersonId: userProfile('replacement_person_id').notNull(), state: varchar('state', { length: 32 }).notNull().default('draft'), expiresAt: customTimestamptz('_expires_at', { precision: 3 }).notNull(), confirmedAt: customTimestamptz('_confirmed_at', { precision: 3 }),
+  createdAt: customTimestamptz('_created_at', { precision: 3 }).notNull().default(sql`CURRENT_TIMESTAMP`), createdBy: userProfile('_created_by'), updatedAt: customTimestamptz('_updated_at', { precision: 3 }).notNull().default(sql`CURRENT_TIMESTAMP`), updatedBy: userProfile('_updated_by'),
+}, table => [index('duty_exchange_request_date_idx').on(table.dutyDate)]);
+
+export const dutyNotificationDelivery = pgTable('duty_notification_delivery', {
+  id: uuid('id').primaryKey().defaultRandom(), idempotencyKey: varchar('idempotency_key', { length: 160 }).notNull(), dutyDate: varchar('duty_date', { length: 10 }).notNull(), finalPersonId: userProfile('final_person_id').notNull(), state: varchar('state', { length: 24 }).notNull().default('pending'), errorCode: varchar('error_code', { length: 120 }), attemptCount: integer('attempt_count').notNull().default(0), acceptedAt: customTimestamptz('_accepted_at', { precision: 3 }),
+  createdAt: customTimestamptz('_created_at', { precision: 3 }).notNull().default(sql`CURRENT_TIMESTAMP`), createdBy: userProfile('_created_by'), updatedAt: customTimestamptz('_updated_at', { precision: 3 }).notNull().default(sql`CURRENT_TIMESTAMP`), updatedBy: userProfile('_updated_by'),
+}, table => [uniqueIndex('duty_notification_delivery_idempotency_key').on(table.idempotencyKey)]);

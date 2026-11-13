@@ -39,6 +39,7 @@ window.duckWeatherUnavailable = true;
    if(date.getUTCMonth()+1!==m)cell.classList.add('muted');if(key===today){cell.classList.add('today');cell.setAttribute('aria-current','date');}
    const holiday=data?.holidays.find(h=>h.date===key);if(holiday){cell.classList.add(holiday.type==='休'?'holiday':'work');cell.append(txt('span',holiday.type,'mark'));cell.title=holiday.name;}
    const start=Date.parse(key+'T00:00:00+08:00'),end=start+86400000,items=data?.events.filter(e=>e.start<end&&e.end>start)||[];
+   cell.tabIndex=0;cell.setAttribute('role','button');cell.setAttribute('aria-label',`选择 ${key}`);cell.addEventListener('click',()=>send({action:'date-select',date:key}));cell.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();send({action:'date-select',date:key});}});
    for(const e of items.slice(0,3)) {const names=e.userIds.map(id=>data.people.find(p=>p.id===id)?.name||'同事').join('、'),chip=txt('div',names+' · '+e.type,'live-event');chip.style.borderLeftColor=colors[e.type]||'#8993a5';chip.title=names+' · '+e.type;cell.append(chip);}
    if(items.length>3)cell.append(txt('small',`另 ${items.length-3} 条`,'live-overflow'));
    cal.append(cell);

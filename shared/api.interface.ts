@@ -18,3 +18,10 @@ export interface RegistrationRequest { requestKey: string; kind: RegistrationKin
 export interface RegistrationResult { recorded: boolean; recordId: string | null; notifications: 'sent' | 'sending' | 'pending_review'; processing: boolean; message: string; }
 export interface WeatherData { available: boolean; scene: string; windSpeed: number; windFrom: number; cloud: number; validTime: string; updatedAt: string; source: string; }
 export interface RegistrationStatus { result: RegistrationResult | null; }
+export interface CompanyNoticePreview { recipientCount: number; title: string; content: string; }
+export interface CompanyNoticeResult {
+  expected: number;
+  accepted: number;
+  needsReview: number;
+  message: string;
+}

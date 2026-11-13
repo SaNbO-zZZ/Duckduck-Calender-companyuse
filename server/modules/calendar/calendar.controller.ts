@@ -16,4 +16,7 @@ export class CalendarController {
  @Get('release-announcement/preview') @CanRole(['release_announcer']) previewAnnouncement(@Query('version') version:string) {return this.announcements.preview(version);}
  @Get('release-announcement/status') @CanRole(['release_announcer']) announcementStatus(@Query('version') version:string) {return this.announcements.summary(version);}
  @Post('release-announcement/publish') @CanRole(['release_announcer']) publishAnnouncement(@Body() body:unknown,@Req() req:Request) {const userId=req.userContext?.userId;if(!userId)throw new UnauthorizedException('请使用公司飞书帐号登录。');return this.announcements.publish(body,userId);}
+ @Get('entry-notice/preview') @CanRole(['release_announcer']) entryNoticePreview() {return this.announcements.entryNoticePreview();}
+ @Get('entry-notice/status') @CanRole(['release_announcer']) entryNoticeStatus() {return this.announcements.entryNoticeSummary();}
+ @Post('entry-notice/publish') @CanRole(['release_announcer']) publishEntryNotice(@Req() req:Request) {const userId=req.userContext?.userId;if(!userId)throw new UnauthorizedException('请使用公司飞书帐号登录。');return this.announcements.publishEntryNotice(userId);}
 }

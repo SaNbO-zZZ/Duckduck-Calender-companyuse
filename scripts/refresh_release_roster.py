@@ -111,11 +111,11 @@ def operator_miaoda_id():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('version', help='published product version, e.g. v3.2.1')
+    parser.add_argument('version', help='published product version, or notice-entry-20261025')
     parser.add_argument('--apply', action='store_true', help='write verified roster to the online app database')
     args = parser.parse_args()
-    if not re.fullmatch(r'v\d+\.\d+\.\d+', args.version):
-        parser.error('invalid version')
+    if not re.fullmatch(r'(?:v\d+\.\d+\.\d+|notice-entry-20261025)', args.version):
+        parser.error('invalid campaign key')
     open_ids, department_count = company_open_ids()
     user_ids = miaoda_ids(open_ids)
     operator = operator_miaoda_id()

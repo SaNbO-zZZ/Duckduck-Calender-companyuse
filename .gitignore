@@ -68,3 +68,5 @@ Thumbs.db
 
 # Migrated local session archive (kept in the workspace, excluded from public GitHub)
 session-archive/
+# Local Miaoda dev mirror of uploaded file-storage assets
+client/public/runtime-assets/

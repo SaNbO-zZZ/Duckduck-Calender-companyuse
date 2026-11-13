@@ -5,6 +5,8 @@ import { isAxiosError } from 'axios';
 
 type Preview = {recipientCount: number; wikiUrl: string};
 type Result = {version: string; expected: number; accepted: number; needsReview: number; message: string; wikiUrl: string};
+type EntryPreview = {recipientCount: number; title: string; content: string};
+type EntryResult = {expected: number; accepted: number; needsReview: number; message: string};
 const wikiUrl = 'https://ycn3zdw6f1p7.feishu.cn/wiki/I6uzwNwd7izfPCkQHJDcoxdRnRb';
 const explain = (error: unknown) => isAxiosError(error)
   ? String(error.response?.data?.message || error.message)
@@ -17,6 +19,10 @@ export default function ReleaseAnnouncement() {
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [entryPreview, setEntryPreview] = useState<EntryPreview | null>(null);
+  const [entryResult, setEntryResult] = useState<EntryResult | null>(null);
+  const [entryBusy, setEntryBusy] = useState(false);
+  const [entryError, setEntryError] = useState('');
   const highlights = lines.split('\n').map(line => line.trim()).filter(Boolean);
   const canSend = !!preview && !busy && /^v\d+\.\d+\.\d+$/.test(version) && highlights.length >= 1 && highlights.length <= 5;
 
@@ -48,6 +54,32 @@ export default function ReleaseAnnouncement() {
     finally { setBusy(false); }
   };
 
+  const checkEntryNotice = async () => {
+    setEntryBusy(true); setEntryError('');
+    try {
+      const response = await axiosForBackend<EntryResult>({url: '/api/calendar/entry-notice/status', method: 'GET'});
+      setEntryResult(response.data);
+    } catch (reason) { setEntryError(explain(reason)); }
+    finally { setEntryBusy(false); }
+  };
+  const previewEntryNotice = async () => {
+    setEntryBusy(true); setEntryError(''); setEntryPreview(null);
+    try {
+      const response = await axiosForBackend<EntryPreview>({url: '/api/calendar/entry-notice/preview', method: 'GET'});
+      setEntryPreview(response.data);
+    } catch (reason) { setEntryError(explain(reason)); }
+    finally { setEntryBusy(false); }
+  };
+  const publishEntryNotice = async () => {
+    if (!entryPreview || entryBusy) return;
+    setEntryBusy(true); setEntryError('');
+    try {
+      const response = await axiosForBackend<EntryResult>({url: '/api/calendar/entry-notice/publish', method: 'POST', timeout: 120000});
+      setEntryResult(response.data);
+    } catch (reason) { setEntryError(explain(reason)); }
+    finally { setEntryBusy(false); }
+  };
+
   return <main className="min-h-dvh bg-[#f4f6fa] px-4 py-8 text-[#27303d]">
     <section className="mx-auto max-w-2xl rounded-3xl border border-white bg-white p-6 shadow-xl shadow-slate-200/60 sm:p-9">
       <NavLink className="text-sm text-blue-600 hover:underline" to="/">← 返回鸭鸭日历</NavLink>
@@ -72,6 +104,22 @@ export default function ReleaseAnnouncement() {
       {result && <p role="status" className="mt-5 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{result.message} {result.accepted}/{result.expected} 个请求获平台受理；{result.needsReview} 个需核对。</p>}
       <button type="button" disabled={!canSend} onClick={publish} className="mt-8 w-full rounded-full bg-gradient-to-r from-[#ff7a56] to-[#fb4f7d] px-5 py-3 font-bold text-white shadow-lg shadow-rose-200 disabled:cursor-not-allowed disabled:opacity-40">{busy ? '处理中…' : '发布版本更新知会'}</button>
       <p className="mt-3 text-xs leading-5 text-slate-400">同一版本只建一次批次；平台受理不等于员工已读。请求状态不明时先核对，避免重复通知。</p>
+      <section className="mt-12 border-t border-slate-200 pt-8">
+        <h2 className="text-xl font-bold">鸭鸭日历两个入口的情况说明</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-500">仅发送一次的全员说明，由妙搭助手私聊发送。先核对员工名单与消息全文。</p>
+        <div className="mt-5 rounded-2xl bg-blue-50 p-4 text-sm text-blue-950">
+          <strong>消息预览｜{entryPreview?.title || '鸭鸭日历｜两个入口，一份日历'}</strong>
+          <p className="mt-3 whitespace-pre-line leading-7">{entryPreview?.content || '请先核对全员名单，加载待发送的说明全文。'}</p>
+        </div>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button type="button" disabled={entryBusy} onClick={previewEntryNotice} className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold disabled:opacity-50">核对名单和全文</button>
+          <button type="button" disabled={entryBusy} onClick={checkEntryNotice} className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold disabled:opacity-50">核对发送状态</button>
+        </div>
+        {entryPreview && <p className="mt-4 text-sm">已核对 <strong>{entryPreview.recipientCount}</strong> 位公司内部员工。</p>}
+        {entryError && <p role="alert" className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{entryError}</p>}
+        {entryResult && <p role="status" className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{entryResult.message} {entryResult.accepted}/{entryResult.expected} 个请求获平台受理；{entryResult.needsReview} 个需核对。</p>}
+        <button type="button" disabled={!entryPreview || entryBusy || !!entryResult} onClick={publishEntryNotice} className="mt-6 w-full rounded-full bg-gradient-to-r from-[#ff7a56] to-[#fb4f7d] px-5 py-3 font-bold text-white shadow-lg shadow-rose-200 disabled:cursor-not-allowed disabled:opacity-40">{entryBusy ? '处理中…' : '向全员发送情况说明'}</button>
+      </section>
     </section>
   </main>;
 }

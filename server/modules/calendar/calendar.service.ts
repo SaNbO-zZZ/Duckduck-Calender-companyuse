@@ -193,7 +193,12 @@ export class CalendarService {
    else if(/多云|少云/.test(info))scene='partly';
    else if(/阴|雾|霾|沙尘/.test(info))scene='overcast';
    else if(/晴/.test(info))scene='clear';
-   else throw new Error('weather-condition-unknown');
+   else {
+    // 中国气象局偶尔会在实况有效时返回 info:"-" / img:"9999"。
+    // 此时实况时间、雨量和风速仍可用；不要把单个缺失的天气描述升级成整块天气不可用，
+    // 采用保守的阴天场景，同时保留风速、风向和时间，让页面继续显示并保持动画运行。
+    scene=rain>0?'lightRain':'overcast';
+   }
    const cloud={clear:0.12,partly:0.5,overcast:0.9,lightRain:0.9,heavyRain:0.97,storm:1,lightSnow:0.82,snow:0.9,heavySnow:0.98}[scene];
    const speed=real.wind.speed,degree=real.wind.degree;
    return {available:true,scene,windSpeed:Number.isFinite(speed)&&speed>=0&&speed<100?speed*3.6:0,windFrom:Number.isFinite(degree)&&degree>=0&&degree<360?degree:0,cloud,validTime:new Date(published).toISOString(),updatedAt:new Date(published).toISOString(),source:'合肥天气'};

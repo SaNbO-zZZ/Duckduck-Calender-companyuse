@@ -8,6 +8,17 @@ import { userProfile } from '../../database/schema';
 
 const WIKI_URL = 'https://ycn3zdw6f1p7.feishu.cn/wiki/I6uzwNwd7izfPCkQHJDcoxdRnRb';
 const title = '鸭鸭日历发布新版本-更新说明';
+const ENTRY_NOTICE_KEY = 'notice-entry-20261025';
+const ENTRY_NOTICE_TITLE = '鸭鸭日历｜两个入口，一份日历';
+const ENTRY_NOTICE_CONTENT = [
+  '大家好！有同事在手机飞书的“最近使用”里看到了两个“鸭鸭日历”。这是飞书将妙搭直达入口（蓝色图标）和公司应用入口（灰底头像图标）分别记录，并不是程序故障，也不是两个不同版本。',
+  '',
+  '- **两个都能点**：它们最终打开同一套鸭鸭日历，日历展示和知会登记使用同一份数据，**无需重复登记**。',
+  '- **日常建议**：优先使用灰底头像图标的“鸭鸭日历”，这是公司面向全员开放的应用入口。习惯蓝色图标的同事继续使用也没问题。',
+  '- 电脑端左侧的“鸭鸭日历”是单独配置的快捷入口，也通往同一页面。',
+  '',
+  '如果发现两边内容确实不一致，请把截图反馈给日历维护者，我们会核查。',
+].join('\n');
 const payloadSchema = z.object({
   version: z.string().regex(/^v\d+\.\d+\.\d+$/),
   highlights: z.array(z.string().trim().min(2).max(90)).min(1).max(5),
@@ -47,9 +58,8 @@ export class ReleaseAnnouncementService {
     @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
   ) {}
 
-  private async recipients(version: string): Promise<string[]> {
-    if (!/^v\d+\.\d+\.\d+$/.test(version)) throw new BadRequestException('版本号无效。');
-    const [snapshot] = await this.db.select().from(roster).where(eq(roster.version, version)).limit(1);
+  private async recipients(key: string): Promise<string[]> {
+    const [snapshot] = await this.db.select().from(roster).where(eq(roster.version, key)).limit(1);
     if (!snapshot) throw new BadGatewayException('尚未核对该版本的企业员工名单，已停止发送。');
     const parsed = z.array(z.string().regex(/^\d+$/)).min(1).safeParse(snapshot.recipientIds);
     if (!parsed.success) throw new BadGatewayException('员工名单格式异常，已停止发送。');
@@ -65,67 +75,94 @@ export class ReleaseAnnouncementService {
   }
 
   async preview(version: string) {
+    if (!/^v\d+\.\d+\.\d+$/.test(version)) throw new BadRequestException('版本号无效。');
     const ids = await this.recipients(version);
     return {recipientCount: ids.length, wikiUrl: WIKI_URL};
+  }
+
+  async entryNoticePreview() {
+    const ids = await this.recipients(ENTRY_NOTICE_KEY);
+    return {recipientCount: ids.length, title: ENTRY_NOTICE_TITLE, content: ENTRY_NOTICE_CONTENT};
   }
 
   async publish(raw: unknown, actorId: string) {
     const parsed = payloadSchema.safeParse(raw);
     if (!parsed.success) throw new BadRequestException('请填写有效版本号和 1 至 5 条简短更新内容。');
     const input = parsed.data;
-    const hash = createHash('sha256').update(JSON.stringify(input)).digest('hex');
-    const [existing] = await this.db.select().from(announcement).where(eq(announcement.version, input.version)).limit(1);
+    return this.publishPrepared(
+      input.version, title, content(input), actorId,
+      createHash('sha256').update(JSON.stringify(input)).digest('hex'),
+    );
+  }
+
+  async publishEntryNotice(actorId: string) {
+    return this.publishPrepared(ENTRY_NOTICE_KEY, ENTRY_NOTICE_TITLE, ENTRY_NOTICE_CONTENT, actorId);
+  }
+
+  private async publishPrepared(
+    key: string, messageTitle: string, messageContent: string, actorId: string,
+    payloadHash = createHash('sha256').update(JSON.stringify({messageTitle, messageContent})).digest('hex'),
+  ) {
+    const [existing] = await this.db.select().from(announcement).where(eq(announcement.version, key)).limit(1);
     if (existing) {
-      if (existing.payloadHash !== hash) throw new ConflictException('该版本已创建通知，请勿改写同一版本的通知内容。');
-      return this.summary(input.version);
+      if (existing.payloadHash !== payloadHash) throw new ConflictException('该批通知已创建，请勿改写同一批次的内容。');
+      return this.campaignSummary(key);
     }
-    const ids = await this.recipients(input.version);
+    const ids = await this.recipients(key);
     const created = await this.db.transaction(async tx => {
       const [row] = await tx.insert(announcement).values({
-        version: input.version, payloadHash: hash, expectedCount: ids.length, status: 'sending', createdBy: actorId,
+        version: key, payloadHash, expectedCount: ids.length, status: 'sending', createdBy: actorId,
       }).onConflictDoNothing({target: announcement.version}).returning();
       if (!row) return false;
-      await tx.insert(delivery).values(ids.map(recipient => ({version: input.version, recipient, state: 'pending', createdBy: actorId})));
+      await tx.insert(delivery).values(ids.map(recipient => ({version: key, recipient, state: 'pending', createdBy: actorId})));
       return true;
     });
-    if (!created) return this.summary(input.version);
+    if (!created) return this.campaignSummary(key);
 
     // Batches stay well under the plugin's 200-user limit. A failed or uncertain
     // batch is never retried automatically: the platform may have accepted it.
     for (let offset = 0; offset < ids.length; offset += 50) {
       const candidateIds = ids.slice(offset, offset + 50);
       const claimed = await this.db.update(delivery).set({state: 'sending'}).where(and(
-        eq(delivery.version, input.version), inArray(delivery.recipient, candidateIds), eq(delivery.state, 'pending'),
+        eq(delivery.version, key), inArray(delivery.recipient, candidateIds), eq(delivery.state, 'pending'),
       )).returning();
       const recipientIds = claimed.map(item => item.recipient);
       if (recipientIds.length === 0) continue;
       try {
         const result = z.object({success: z.boolean()}).parse(await this.capability.load('duck-notify').call('send_feishu_message', {
-          recipients: recipientIds, title, content: content(input),
+          recipients: recipientIds, title: messageTitle, content: messageContent,
         }));
         await this.db.update(delivery).set({state: result.success ? 'accepted' : 'needs_review'}).where(and(
-          eq(delivery.version, input.version), inArray(delivery.recipient, recipientIds),
+          eq(delivery.version, key), inArray(delivery.recipient, recipientIds),
         ));
       } catch (error) {
         await this.db.update(delivery).set({state: 'needs_review'}).where(and(
-          eq(delivery.version, input.version), inArray(delivery.recipient, recipientIds),
+          eq(delivery.version, key), inArray(delivery.recipient, recipientIds),
         ));
-        this.logger.warn({event: 'release_notice_requires_review', version: input.version, batchSize: recipientIds.length, error: error instanceof Error ? error.message : 'unknown'});
+        this.logger.warn({event: 'company_notice_requires_review', key, batchSize: recipientIds.length, error: error instanceof Error ? error.message : 'unknown'});
       }
     }
-    const result = await this.summary(input.version);
-    await this.db.update(announcement).set({status: result.needsReview === 0 ? 'accepted' : 'needs_review'}).where(eq(announcement.version, input.version));
+    const result = await this.campaignSummary(key);
+    await this.db.update(announcement).set({status: result.needsReview === 0 ? 'accepted' : 'needs_review'}).where(eq(announcement.version, key));
     return result;
   }
 
   async summary(version: string) {
     if (!/^v\d+\.\d+\.\d+$/.test(version)) throw new BadRequestException('版本号无效。');
-    const [row] = await this.db.select().from(announcement).where(eq(announcement.version, version)).limit(1);
-    if (!row) throw new BadRequestException('该版本尚未创建通知。');
-    const rows = await this.db.select().from(delivery).where(eq(delivery.version, version));
+    return this.campaignSummary(version);
+  }
+
+  async entryNoticeSummary() {
+    return this.campaignSummary(ENTRY_NOTICE_KEY);
+  }
+
+  private async campaignSummary(key: string) {
+    const [row] = await this.db.select().from(announcement).where(eq(announcement.version, key)).limit(1);
+    if (!row) throw new BadRequestException('该批通知尚未创建。');
+    const rows = await this.db.select().from(delivery).where(eq(delivery.version, key));
     const accepted = rows.filter(item => item.state === 'accepted').length;
-    return {version, expected: row.expectedCount, accepted, needsReview: row.expectedCount - accepted,
+    return {expected: row.expectedCount, accepted, needsReview: row.expectedCount - accepted,
       message: rows.length === row.expectedCount && accepted === row.expectedCount ? '全部通知请求已被平台受理。' : '部分通知需人工核对，请勿重复发送。',
-      wikiUrl: WIKI_URL};
+      ...(key.startsWith('v') ? {version: key, wikiUrl: WIKI_URL} : {})};
   }
 }

@@ -1,0 +1,157 @@
+{
+  "manifestVersion": "duty-ducks-v2.1",
+  "generatedAt": "2026-11-13T00:00:00+08:00",
+  "storage": "miaoda-app-file-storage",
+  "sourcePolicy": "concept PNGs are immutable masters; runtime uses derived 2.5D views",
+  "canvas": {
+    "width": 256,
+    "height": 256,
+    "format": "png",
+    "transparent": true,
+    "grid": "6x6"
+  },
+  "frameContract": {
+    "idleDirections": 36,
+    "angleStepDegrees": 10,
+    "transparent": true,
+    "canvas": "256x256",
+    "fallback": "idle-00",
+    "order": "row-major 0..350 degrees"
+  },
+  "actionContract": {
+    "react": 2,
+    "walkLeft": 3,
+    "peek": 2,
+    "jump": 2,
+    "strategy": "dedicated-action-sheets-from-approved-idle-frames-with-motion-only-transforms"
+  },
+  "roles": {
+    "mia": {
+      "conceptSource": "assets/duty-ducks-v1/concepts/caishen-duck.png",
+      "spriteSheet": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881716124464308.png",
+      "staticFallback": "/1881715001649223.png",
+      "actionSheets": {
+        "react": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717240599716.png",
+        "walk-left": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717248334947.png",
+        "peek": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717314739252.png",
+        "jump": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717248334979.png"
+      },
+      "actionFrameCounts": {
+        "react": 2,
+        "walkLeft": 3,
+        "peek": 2,
+        "jump": 2
+      }
+    },
+    "momo": {
+      "conceptSource": "assets/duty-ducks-v1/concepts/cockroach-duck.png",
+      "spriteSheet": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881716129244340.png",
+      "staticFallback": "/1881715135280195.png",
+      "actionSheets": {
+        "react": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717314740420.png",
+        "walk-left": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717248335955.png",
+        "peek": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717323004931.png",
+        "jump": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717323004947.png"
+      },
+      "actionFrameCounts": {
+        "react": 2,
+        "walkLeft": 3,
+        "peek": 2,
+        "jump": 2
+      }
+    },
+    "zhangsanbo": {
+      "conceptSource": "assets/duty-ducks-v1/concepts/beer-duck.png",
+      "spriteSheet": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881716136310839.png",
+      "staticFallback": "/1881715135282243.png",
+      "actionSheets": {
+        "react": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717375562771.png",
+        "walk-left": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717262593095.png",
+        "peek": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717262593111.png",
+        "jump": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717262593127.png"
+      },
+      "actionFrameCounts": {
+        "react": 2,
+        "walkLeft": 3,
+        "peek": 2,
+        "jump": 2
+      }
+    },
+    "barra": {
+      "conceptSource": "assets/duty-ducks-v1/concepts/esports-duck.png",
+      "spriteSheet": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881716136312839.png",
+      "staticFallback": "/1881714980331571.png",
+      "actionSheets": {
+        "react": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717375564803.png",
+        "walk-left": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717262594071.png",
+        "peek": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717323006035.png",
+        "jump": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717323006051.png"
+      },
+      "actionFrameCounts": {
+        "react": 2,
+        "walkLeft": 3,
+        "peek": 2,
+        "jump": 2
+      }
+    },
+    "ziyu": {
+      "conceptSource": "assets/duty-ducks-v1/concepts/lion-duck.png",
+      "spriteSheet": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881716129246260.png",
+      "staticFallback": "/1881715135283267.png",
+      "actionSheets": {
+        "react": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717323008019.png",
+        "walk-left": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717262596167.png",
+        "peek": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717375565827.png",
+        "jump": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717375565843.png"
+      },
+      "actionFrameCounts": {
+        "react": 2,
+        "walkLeft": 3,
+        "peek": 2,
+        "jump": 2
+      }
+    },
+    "jiajia": {
+      "conceptSource": "assets/duty-ducks-v1/concepts/racing-duck.png",
+      "spriteSheet": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881716156003620.png",
+      "staticFallback": "/1881714980333571.png",
+      "actionSheets": {
+        "react": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717393346600.png",
+        "walk-left": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717379704851.png",
+        "peek": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717430523911.png",
+        "jump": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717393347688.png"
+      },
+      "actionFrameCounts": {
+        "react": 2,
+        "walkLeft": 3,
+        "peek": 2,
+        "jump": 2
+      }
+    },
+    "billy": {
+      "conceptSource": "assets/duty-ducks-v1/concepts/kunduck.png",
+      "spriteSheet": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881716179004488.png",
+      "staticFallback": "/1881715126187108.png",
+      "actionSheets": {
+        "react": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717430523927.png",
+        "walk-left": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717379704867.png",
+        "peek": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717525359639.png",
+        "jump": "/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1881717430523943.png"
+      },
+      "actionFrameCounts": {
+        "react": 2,
+        "walkLeft": 3,
+        "peek": 2,
+        "jump": 2
+      }
+    }
+  },
+  "qa": {
+    "sample": "caishen",
+    "sampleContactSheet": "assets/duty-ducks-v1/concepts/sample-caishen/caishen-36-contact-sheet-v2.png",
+    "sampleFrames": 36,
+    "sampleCanvas": "256x256",
+    "sampleBottomSpread": 0,
+    "batchFramesPerRole": 36
+  }
+}
