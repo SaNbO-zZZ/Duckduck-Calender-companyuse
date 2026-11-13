@@ -1,4 +1,5 @@
 # Dependencies and package-manager caches
+node_modules
 node_modules/
 **/node_modules/
 .npm/
@@ -12,6 +13,8 @@ dist/
 **/dist/
 build/
 **/build/
+output/
+**/output/
 coverage/
 **/coverage/
 .vite/
@@ -70,3 +73,6 @@ Thumbs.db
 session-archive/
 # Local Miaoda dev mirror of uploaded file-storage assets
 client/public/runtime-assets/
+# Large immutable concept PNGs and local slicing samples stay in Miaoda file storage / local QA only
+assets/duty-ducks-v1/concepts/*.png
+assets/duty-ducks-v1/concepts/sample-caishen/
