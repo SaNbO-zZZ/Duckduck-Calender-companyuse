@@ -4,6 +4,7 @@ import { PlatformModule } from '@lark-apaas/fullstack-nestjs-core';
 
 import { GlobalExceptionFilter } from './common/filters/exception.filter';
 import { CalendarModule } from './modules/calendar/calendar.module';
+import { DutyModule } from './modules/duty/duty.module';
 import { ViewModule } from './modules/view/view.module';
 
 @Module({
@@ -12,6 +13,7 @@ import { ViewModule } from './modules/view/view.module';
     PlatformModule.forRoot(),
     // ====== @route-section: business-modules START ======
     CalendarModule,
+    DutyModule,
     // ====== @route-section: business-modules END ======
 
     // ⚠️ @route-order: last
