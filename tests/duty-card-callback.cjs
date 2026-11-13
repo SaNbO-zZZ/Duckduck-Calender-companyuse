@@ -38,6 +38,13 @@ assert.equal(wrapped.ok, true);
 assert.equal(wrapped.value.eventId, 'evt-controlled-1');
 assert.equal(wrapped.value.exchangeAction, 'confirm');
 
+const urlVerification = parseDutyCardCallback({
+  type: 'url_verification',
+  challenge: 'controlled-challenge',
+  token: 'controlled-token',
+});
+assert.equal(urlVerification.ok, false);
+
 for (const value of [null, {}, { type: 'im.message.receive_v1', event_id: 'x', operator_id: 'y' }, { type: 'card.action.trigger', operator_id: 'y' }]) {
   assert.equal(parseDutyCardCallback(value).ok, false);
 }

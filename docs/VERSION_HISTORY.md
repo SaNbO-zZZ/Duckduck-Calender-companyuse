@@ -6,6 +6,7 @@
 | --- | --- | --- | --- | --- |
 | v4.0.0 | 2026-11-13 | 已发布；值日鸭鸭舞台、稳定人员绑定、受控通知和应用数据库迁移 | GitHub `1954376`，Tag `v4.0.0`；妙搭 release `7707564231004244981`；妙搭 commit `3582784` | 发布到 [鸭鸭日历妙搭应用](https://ycn3zdw6f1p7.feishuapp.com/app/app_17fstqsqv1c)。七只鸭鸭动作资源和 `duty-ducks-v2.1` manifest 已接入，7 条 active 绑定已回读；经用户授权 16:00 触发器已启用，并完成一次受控真实收件人单人消息投递核验。 |
 
+> 2026-11-13 复核：对妙搭 runtime 发送受控 `url_verification` 请求，dispatch 成功但响应固定为 `code=200/message=success`，未返回 challenge；本地 `@lark-apaas/nestjs-trigger` 合同确认 `/innerapi/automation/invoke` 为异步接收接口，handler 返回值只进观测日志。最终阻塞记录为妙搭缺少 challenge 响应体合同或官方事件桥接插件；两个触发器继续 disabled。
 > 2026-11-13 增量：官方妙搭 Webhook 桥接已发布并完成受控合成事件验收。release `7707612599382461472` 修复 `DutyModule` 注册，release `7707613395072044059` 修复 Miaoda wrapper 解包，最终运行代码 commit `040de37`；`dutyCardCallbackBridge` 与 `duty16hReminder` 均最终 disabled。飞书开发者服务器模式保存时返回“Challenge code没有返回”，回调地址未保存；未发送真实员工消息。
 | v3.3.2 | 2026-11-06 | 已发布；天气实况字段兼容；鸭鸭动画恢复 | 妙搭 `3582784`；release `7704718438245649675` | 兼容中央气象台实况 `info:"-"` 的有效响应；保留合肥天气、风速与更新时间；背景降级时仍运行轻量鸭鸭帧循环。 |
 | v3.3.1 | 2026-10-26 | 已发布；万圣节视觉修复；更新私聊受理 20/20 | 妙搭 `b4b919a`；GitHub 等价提交见本版 Tag | 桌面日夜边框改为等比呈现，九只独立精细鸭鸭替换旧贴图；修复上线时发现的素材地址与导出语法问题。 |
