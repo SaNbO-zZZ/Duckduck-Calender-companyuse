@@ -1,6 +1,6 @@
 # 版本与来源
 
-此表优先使用真实妙搭 Git 提交与发布记录。Tag 指向**当时的运行工程快照**，后续归档提交不改变这些提交的 SHA。更新说明的图文版见[飞书文档](https://ycn3zdw6f1p7.feishu.cn/wiki/I6uzwNwd7izfPCkQHJDcoxdRnRb)。
+此表优先使用真实妙搭 Git 提交与发布记录。Tag 指向**当时的运行工程快照**，后续归档提交不改变这些提交的 SHA。更新说明的图文版见[飞书文档](https://alphapulse.feishu.cn/docx/I7epdYKpToh4xrxckU1cCXTNnDe)。
 
 | 版本 | 日期 | 类型 | 真实提交 | 主要结果 |
 | --- | --- | --- | --- | --- |
