@@ -50,6 +50,23 @@ function actionFromValue(value: Record<string, unknown>): DutyCardExchangeAction
   return 'unknown';
 }
 
+function unwrapWebhookInput(input: unknown): unknown {
+  if (typeof input === 'string') {
+    try {
+      return unwrapWebhookInput(JSON.parse(input));
+    } catch {
+      return input;
+    }
+  }
+  if (!isRecord(input)) return input;
+  if (!('body' in input)) return input;
+  const body = input.body;
+  if (typeof body === 'string') {
+    try { return JSON.parse(body); } catch { return body; }
+  }
+  return body;
+}
+
 /**
  * Parse the official Feishu card.action.trigger payload after a Miaoda
  * webhook trigger has decoded the HTTP body. This parser intentionally
@@ -57,29 +74,30 @@ function actionFromValue(value: Record<string, unknown>): DutyCardExchangeAction
  * while rejecting missing identity/event fields before any business action.
  */
 export function parseDutyCardCallback(input: unknown): DutyCardCallbackParseResult {
-  if (!isRecord(input)) return { ok: false, reason: '回调 body 必须是 JSON 对象。' };
+  const envelope = unwrapWebhookInput(input);
+  if (!isRecord(envelope)) return { ok: false, reason: '回调 body 必须是 JSON 对象。' };
 
-  const header = isRecord(input.header) ? input.header : input;
-  const event = isRecord(input.event) ? input.event : input;
+  const header = isRecord(envelope.header) ? envelope.header : envelope;
+  const event = isRecord(envelope.event) ? envelope.event : envelope;
   const action = isRecord(event.action) ? event.action : event;
   const operator = isRecord(event.operator) ? event.operator : event;
-  const eventType = stringValue(header.event_type) || stringValue(input.type);
-  const eventId = stringValue(header.event_id) || stringValue(input.event_id);
-  const operatorId = stringValue(operator.open_id) || stringValue(operator.user_id) || stringValue(input.operator_id);
+  const eventType = stringValue(header.event_type) || stringValue(envelope.type);
+  const eventId = stringValue(header.event_id) || stringValue(envelope.event_id);
+  const operatorId = stringValue(operator.open_id) || stringValue(operator.user_id) || stringValue(envelope.operator_id);
   if (eventType !== 'card.action.trigger') return { ok: false, reason: '不是 card.action.trigger 回调。' };
   if (!eventId) return { ok: false, reason: '回调缺少 event_id。' };
   if (!operatorId) return { ok: false, reason: '回调缺少操作人 ID。' };
 
-  const actionValue = parseValue(action.value ?? input.action_value);
+  const actionValue = parseValue(action.value ?? envelope.action_value);
   return {
     ok: true,
     value: {
       eventId,
       eventType: 'card.action.trigger',
       operatorId,
-      messageId: stringValue(input.context && isRecord(input.context) ? input.context.open_message_id : input.message_id),
-      chatId: stringValue(input.context && isRecord(input.context) ? input.context.open_chat_id : input.chat_id),
-      actionTag: stringValue(action.tag) || stringValue(input.action_tag),
+      messageId: stringValue(envelope.context && isRecord(envelope.context) ? envelope.context.open_message_id : envelope.message_id),
+      chatId: stringValue(envelope.context && isRecord(envelope.context) ? envelope.context.open_chat_id : envelope.chat_id),
+      actionTag: stringValue(action.tag) || stringValue(envelope.action_tag),
       actionValue,
       exchangeAction: actionFromValue(actionValue),
       requestId: stringValue(actionValue.requestId) || stringValue(actionValue.request_id),
