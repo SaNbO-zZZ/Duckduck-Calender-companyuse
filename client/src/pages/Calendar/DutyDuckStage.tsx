@@ -98,7 +98,7 @@ export function DutyDuckStage({ selectedDate, onDateChange }: { selectedDate: st
     timer.current = window.setTimeout(() => advance(1), step);
   };
 
-  return <aside aria-label="值日鸭鸭舞台" className="pointer-events-auto fixed bottom-[14vh] left-[8vw] z-40 w-[min(250px,calc(100vw-24px))] rounded-[24px] border border-white/70 bg-white/80 p-3 shadow-xl backdrop-blur-md max-lg:bottom-4 max-lg:left-3 sm:w-[250px]">
+  return <aside aria-label="值日鸭鸭舞台" className="pointer-events-auto fixed bottom-[14vh] left-[5vw] z-40 w-[min(250px,calc(100vw-24px))] rounded-[24px] border border-white/70 bg-white/80 p-3 shadow-xl backdrop-blur-md max-lg:bottom-4 max-lg:left-3 sm:w-[250px]">
     <div className="flex items-center justify-between gap-2"><div><p className="m-0 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">值日鸭鸭舞台</p><p className="m-0 text-sm font-semibold text-slate-800">{day ? (day.duty ? `${weekdayText(day.duty.weekday)} · ${label}` : '值日配置待同步') : '读取中'}</p></div><span className="rounded-full bg-[#fff1da] px-2 py-1 text-[10px] text-[#9b621c]">{selectedDate}</span></div>
     <button type="button" aria-label={isPast ? '历史日期无值日动画' : '播放值日鸭鸭动画'} onClick={play} disabled={!day?.duty || isPast || locked} className="mt-2 flex h-28 w-full items-center justify-center rounded-2xl bg-gradient-to-b from-[#fff7e7] to-[#e8f2fa] transition hover:scale-[1.01] disabled:cursor-default disabled:opacity-70">
       {role && spriteUrl && <img src={spriteUrl} alt="" aria-hidden="true" className="hidden" onError={() => setAssetBroken(true)} />}
