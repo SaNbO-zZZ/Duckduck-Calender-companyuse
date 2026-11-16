@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { axiosForBackend } from '@lark-apaas/client-toolkit/utils/getAxiosForBackend';
 import { dutyAssetManifest } from '../../../../shared/duty-assets';
-import { beijingDate, compareNaturalDate, planDutySelection, type DutyAnimationState, type DutyRule } from '../../../../shared/duty-calendar';
+import { beijingDate, compareNaturalDate, planDutySelection, weekdayOf, type DutyAnimationState, type DutyRule } from '../../../../shared/duty-calendar';
 
-type DutyDay = ReturnType<typeof planDutySelection> & { personName?: string | null; personValid?: boolean; manifestVersion?: string };
+type DutyDay = ReturnType<typeof planDutySelection> & { weekday?: number; personName?: string | null; personValid?: boolean; manifestVersion?: string };
 const demoRules: DutyRule[] = [1, 2, 3, 4, 5, 6, 7].map((weekday, index) => ({ weekday: weekday as DutyRule['weekday'], personId: `demo-person-${weekday}`, duckKey: ['mia', 'momo', 'zhangsanbo', 'barra', 'ziyu', 'jiajia', 'billy'][index] }));
 const weekdayText = (weekday: number) => `周${'一二三四五六日'[weekday - 1] || '?'}`;
 
@@ -33,11 +33,18 @@ export function DutyDuckStage({ selectedDate, onDateChange }: { selectedDate: st
   }, [selectedDate, today]);
 
   useEffect(() => () => { if (timer.current) window.clearTimeout(timer.current); }, []);
-  const role = day?.duty?.duckKey ? dutyAssetManifest.roles[day.duty.duckKey] : undefined;
+  // The schedule endpoint can legitimately return a day without a configured
+  // duty row while the database is being migrated. Keep the stage on the
+  // approved duck asset system in that state instead of falling back to an
+  // unrelated Unicode emoji.
+  const displayWeekday = day?.weekday ?? weekdayOf(selectedDate);
+  const fallbackRoleKey = ['mia', 'momo', 'zhangsanbo', 'barra', 'ziyu', 'jiajia', 'billy'][displayWeekday - 1] || 'mia';
+  const displayRoleKey = day?.duty?.duckKey && dutyAssetManifest.roles[day.duty.duckKey] ? day.duty.duckKey : fallbackRoleKey;
+  const role = dutyAssetManifest.roles[displayRoleKey];
   const isPast = compareNaturalDate(selectedDate, today) < 0;
   const locked = state !== 'idle' && state !== 'complete';
   const queueLength = day?.queue.length ?? 0;
-  const label = day?.personName || day?.duty?.duckKey || '值日配置待同步';
+  const label = day?.personName || (day?.duty ? displayRoleKey : '值日配置待同步');
   const alt = `${label} 值日鸭鸭`;
   const frame = useMemo(() => {
     if (!role) return '';
@@ -60,7 +67,7 @@ export function DutyDuckStage({ selectedDate, onDateChange }: { selectedDate: st
   const actionIndex = actionCount ? Math.max(0, queueIndex) % actionCount : 0;
   const actionPosition = actionCount ? `${(actionIndex / (actionCount - 1)) * 100}% 0%` : '0% 0%';
   const actionSize = actionCount ? `${actionCount * 100}% 100%` : '600% 600%';
-  const assetFolder = day?.duty?.duckKey === 'mia' ? 'caishen' : day?.duty?.duckKey === 'momo' ? 'cockroach' : day?.duty?.duckKey === 'zhangsanbo' ? 'beer' : day?.duty?.duckKey === 'barra' ? 'esports' : day?.duty?.duckKey === 'ziyu' ? 'lion' : day?.duty?.duckKey === 'jiajia' ? 'racing' : 'kunduck';
+  const assetFolder = displayRoleKey === 'mia' ? 'caishen' : displayRoleKey === 'momo' ? 'cockroach' : displayRoleKey === 'zhangsanbo' ? 'beer' : displayRoleKey === 'barra' ? 'esports' : displayRoleKey === 'ziyu' ? 'lion' : displayRoleKey === 'jiajia' ? 'racing' : 'kunduck';
   // Local dev mirrors the uploaded Miaoda file-storage object; release/runtime keeps the remote object URL.
   const spriteUrl = role && (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
     ? `./runtime-assets/duty-ducks-v2/${assetFolder}/${actionKey ? `actions/${actionKey === 'walkLeft' ? 'walk-left' : actionKey}-sheet.png` : 'idle-sprite-6x6.png'}`
@@ -91,11 +98,11 @@ export function DutyDuckStage({ selectedDate, onDateChange }: { selectedDate: st
     timer.current = window.setTimeout(() => advance(1), step);
   };
 
-  return <aside aria-label="值日鸭鸭舞台" className="pointer-events-auto absolute left-3 top-3 z-20 w-[min(250px,calc(100vw-24px))] rounded-[24px] border border-white/70 bg-white/80 p-3 shadow-xl backdrop-blur-md sm:left-5 sm:top-5">
-    <div className="flex items-center justify-between gap-2"><div><p className="m-0 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">值日鸭鸭舞台</p><p className="m-0 text-sm font-semibold text-slate-800">{day?.duty ? `${weekdayText(day.duty.weekday)} · ${label}` : '读取中'}</p></div><span className="rounded-full bg-[#fff1da] px-2 py-1 text-[10px] text-[#9b621c]">{selectedDate}</span></div>
+  return <aside aria-label="值日鸭鸭舞台" className="pointer-events-auto fixed bottom-[14vh] left-[8vw] z-40 w-[min(250px,calc(100vw-24px))] rounded-[24px] border border-white/70 bg-white/80 p-3 shadow-xl backdrop-blur-md max-lg:bottom-4 max-lg:left-3 sm:w-[250px]">
+    <div className="flex items-center justify-between gap-2"><div><p className="m-0 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">值日鸭鸭舞台</p><p className="m-0 text-sm font-semibold text-slate-800">{day ? (day.duty ? `${weekdayText(day.duty.weekday)} · ${label}` : '值日配置待同步') : '读取中'}</p></div><span className="rounded-full bg-[#fff1da] px-2 py-1 text-[10px] text-[#9b621c]">{selectedDate}</span></div>
     <button type="button" aria-label={isPast ? '历史日期无值日动画' : '播放值日鸭鸭动画'} onClick={play} disabled={!day?.duty || isPast || locked} className="mt-2 flex h-28 w-full items-center justify-center rounded-2xl bg-gradient-to-b from-[#fff7e7] to-[#e8f2fa] transition hover:scale-[1.01] disabled:cursor-default disabled:opacity-70">
       {role && spriteUrl && <img src={spriteUrl} alt="" aria-hidden="true" className="hidden" onError={() => setAssetBroken(true)} />}
-      {role && !assetBroken ? <div role="img" aria-label={alt} className={`h-24 w-24 bg-contain bg-center bg-no-repeat ${locked ? 'animate-pulse' : ''}`} style={{ backgroundImage: `url(${spriteUrl})`, backgroundSize: actionSize, backgroundPosition }} data-frame={frame || role.staticFallback} /> : role && staticFallbackUrl ? <img src={staticFallbackUrl} alt={alt} className="h-24 w-24 object-contain" /> : <span className="text-3xl" aria-hidden="true">🦆</span>}
+      {role && !assetBroken ? <div role="img" aria-label={alt} className={`h-24 w-24 bg-contain bg-center bg-no-repeat ${locked ? 'animate-pulse' : ''}`} style={{ backgroundImage: `url(${spriteUrl})`, backgroundSize: actionSize, backgroundPosition }} data-frame={frame || role.staticFallback} /> : role && staticFallbackUrl ? <img src={staticFallbackUrl} alt={alt} className="h-24 w-24 object-contain" onError={() => setAssetBroken(true)} /> : <div role="img" aria-label="鸭鸭资源暂不可用" className="flex h-24 w-24 items-center justify-center rounded-full bg-[#eef3f8] text-xs text-slate-500">鸭鸭</div>}
     </button>
     <p className="m-0 mt-2 min-h-8 text-xs leading-5 text-slate-600">{isPast ? '历史日期不展示值日负责人。' : message}</p>
     <div className="mt-2 flex flex-wrap items-center justify-between gap-2"><span className="text-[10px] text-slate-400">{locked ? `播放中 ${Math.min(queueIndex + 1, queueLength + 1)}/${queueLength + 1}` : '点击鸭鸭开始巡场'}</span><div className="flex gap-1"><button type="button" onClick={() => setMessage('换班卡片将打开登录后的确认页；受控模式下不会直接发送员工消息。')} className="rounded-full border border-[#f2cf91] bg-[#fff8e9] px-2 py-1 text-[10px] text-[#9b621c]">发起换班</button><button type="button" onClick={() => onDateChange(today)} className="rounded-full border border-slate-200 bg-white/70 px-2 py-1 text-[10px] text-slate-600">回到今天</button></div></div>
