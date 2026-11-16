@@ -32,6 +32,6 @@ export const dutyAssetManifest: DutyAssetManifest = {
   roles: Object.fromEntries(Object.entries(remote).map(([role, asset]) => [role, {
     assetPath: asset.fallback, spriteSheet: asset.spriteSheet, actionSheets: asset.actionSheets, conceptSource: asset.conceptSource, idleDirections: frameNames('idle', 36),
     actions: { react: ['react-00', 'react-01'], walkLeft: ['walk-left-00', 'walk-left-01', 'walk-left-02'], peek: ['peek-00', 'peek-01'], jump: ['jump-00', 'jump-01'] },
-    thumbnail: 'idle-09', staticFallback: 'idle-00',
+    thumbnail: 'idle-00', staticFallback: 'idle-00',
   }])) as Record<string, DutyAssetRole>,
 };
