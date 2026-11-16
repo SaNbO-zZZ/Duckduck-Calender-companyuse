@@ -48,3 +48,4 @@
 - `v3.3.1` 妙搭最终提交 `b4b919a`，release ID `7700920271985659142`。同轮前两次候选发布在烟雾测试中分别暴露生成 HTML 语法错误与素材内部路径不可访问，均在最终发布前修复并保留提交历史。飞书 CDN 素材签名有效期覆盖 2026 年试点周；主题限制为该年度。
 - 飞书妙搭 release ID、问题根因与验收边界记录在 `docs/engineering/`；机器人“已发送”与用户“已阅读”仍是不同状态。
 > 2026-11-16 修复：值日鸭鸭舞台“发起换班”接入登录态员工选择、`POST /api/duty/exchange-requests` 和 `open_url` 确认页；妙搭 release `7708645470713875457` finished，GitHub `f892bb8`，妙搭 `06ae021`。`duty16hReminder` 与 `dutyCardCallbackBridge` 继续 disabled，未发送真实员工消息。
+> 2026-11-16 启用：按用户授权启用 `duty16hReminder`（`0 16 * * *`，`Asia/Shanghai`）；先向张三波完成受控测试提醒并回读成功，再向今日排班选中的 Mia 发送“已启动值日表”并回读成功，均由“鸭鸭日历”应用身份发送。消息接受不等同于已读，未在 Git 保存 open_id 或凭证。
