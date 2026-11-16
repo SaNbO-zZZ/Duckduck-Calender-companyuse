@@ -76,9 +76,34 @@ export default function Calendar(){
   let ancestor=shell?.parentElement;
   while(ancestor&&ancestor!==document.body){ancestors.push(ancestor);ancestor=ancestor.parentElement;}
   const nodes=Array.from(new Set([document.documentElement,document.body,document.getElementById('root'),...ancestors].filter((node):node is HTMLElement=>!!node)));
-  const snapshot=nodes.map(node=>({node,overflow:node.style.overflow,height:node.style.height,minHeight:node.style.minHeight,overscrollBehavior:node.style.overscrollBehavior}));
+  const snapshot=nodes.map(node=>({node,overflow:node.style.overflow,height:node.style.height,minHeight:node.style.minHeight,overscrollBehavior:node.style.overscrollBehavior,position:node.style.position,top:node.style.top,left:node.style.left,right:node.style.right,width:node.style.width}));
   nodes.forEach(node=>{node.style.overflow='hidden';node.style.height='100%';node.style.minHeight='100%';node.style.overscrollBehavior='none';});
-  return()=>snapshot.forEach(({node,overflow,height,minHeight,overscrollBehavior})=>{node.style.overflow=overflow;node.style.height=height;node.style.minHeight=minHeight;node.style.overscrollBehavior=overscrollBehavior;});
+  const body=document.body;
+  body.style.position='fixed';
+  body.style.top='0';
+  body.style.left='0';
+  body.style.right='0';
+  body.style.width='100%';
+  const stopHostWheel=(event:WheelEvent)=>{
+    const target=event.target as HTMLElement | null;
+    if (target?.closest('[data-allow-calendar-scroll]')) return;
+    event.preventDefault();
+  };
+  window.addEventListener('wheel',stopHostWheel,{capture:true,passive:false});
+  return()=>{
+    window.removeEventListener('wheel',stopHostWheel,true);
+    snapshot.forEach(({node,overflow,height,minHeight,overscrollBehavior,position,top,left,right,width})=>{
+      node.style.overflow=overflow;
+      node.style.height=height;
+      node.style.minHeight=minHeight;
+      node.style.overscrollBehavior=overscrollBehavior;
+      node.style.position=position;
+      node.style.top=top;
+      node.style.left=left;
+      node.style.right=right;
+      node.style.width=width;
+    });
+  };
  },[]);
  const post=useCallback((message:Record<string,unknown>)=>frame.current?.contentWindow?.postMessage({duckCalendar:true,...message},location.origin),[]);
  // The calendar can render and accept notices while the decorative sprites load.
@@ -94,5 +119,5 @@ export default function Calendar(){
  const description=useMemo(()=>kind==='leave'?'填写不在岗时间，通知 Mentor 和人事':kind==='late'?'10 点以后到达公司，可提前选择日期':'今天提前离开，向同事知会一声',[kind]);
  const dutyStage = <DutyDuckStage selectedDate={selectedDutyDate} onDateChange={setSelectedDutyDate}/>;
  return <><div data-duck-calendar-shell style={{height:'100dvh',minHeight:'100%',width:'100%',background:'#e7edf4',position:'fixed',inset:0,overflow:'hidden',isolation:'isolate'}}><iframe ref={frame} title="鸭鸭日历" srcDoc={initialDocument} sandbox="allow-scripts allow-same-origin allow-popups" style={{border:0,width:'100%',height:'100%',display:'block'}}/>{typeof document !== 'undefined' ? createPortal(dutyStage, document.body) : dutyStage}{assetError&&<div role="status" className="fixed bottom-3 right-3 rounded-xl bg-white/90 px-3 py-2 text-xs text-slate-600">鸭鸭插画暂未加载，日历可正常使用</div>}</div>
- <Dialog open={!!kind} onOpenChange={open=>{if(!open&&!formBusy)setKind(null);}}><DialogContent className="max-h-[92dvh] overflow-y-auto rounded-[28px] border-white bg-white/95 p-6 sm:max-w-[490px]"><DialogHeader><DialogTitle className="text-2xl font-bold text-[#322d28]">{kind?title[kind]:''}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader>{kind&&config?<RegisterForm key={kind} kind={kind} config={config} onDone={()=>setRevision(r=>r+1)} onClose={()=>setKind(null)} onBusy={setFormBusy}/>:<p role="status">{configError||'正在读取后台人事配置…'}{configError&&<Button onClick={()=>setRevision(r=>r+1)} variant="outline" className="ml-3">重试</Button>}</p>}</DialogContent></Dialog></>;
+ <Dialog open={!!kind} onOpenChange={open=>{if(!open&&!formBusy)setKind(null);}}><DialogContent data-allow-calendar-scroll="true" className="max-h-[92dvh] overflow-y-auto rounded-[28px] border-white bg-white/95 p-6 sm:max-w-[490px]"><DialogHeader><DialogTitle className="text-2xl font-bold text-[#322d28]">{kind?title[kind]:''}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader>{kind&&config?<RegisterForm key={kind} kind={kind} config={config} onDone={()=>setRevision(r=>r+1)} onClose={()=>setKind(null)} onBusy={setFormBusy}/>:<p role="status">{configError||'正在读取后台人事配置…'}{configError&&<Button onClick={()=>setRevision(r=>r+1)} variant="outline" className="ml-3">重试</Button>}</p>}</DialogContent></Dialog></>;
 }
