@@ -49,3 +49,4 @@
 - 飞书妙搭 release ID、问题根因与验收边界记录在 `docs/engineering/`；机器人“已发送”与用户“已阅读”仍是不同状态。
 > 2026-11-16 修复：值日鸭鸭舞台“发起换班”接入登录态员工选择、`POST /api/duty/exchange-requests` 和 `open_url` 确认页；妙搭 release `7708645470713875457` finished，GitHub `f892bb8`，妙搭 `06ae021`。`duty16hReminder` 与 `dutyCardCallbackBridge` 继续 disabled，未发送真实员工消息。
 > 2026-11-16 启用：按用户授权启用 `duty16hReminder`（`0 16 * * *`，`Asia/Shanghai`）；先向张三波完成受控测试提醒并回读成功，再向今日排班选中的 Mia 发送“已启动值日表”并回读成功，均由“鸭鸭日历”应用身份发送。消息接受不等同于已读，未在 Git 保存 open_id 或凭证。
+> 2026-11-16 线上数据修复：首次 16:00 `duty16hReminder` 触发链路成功但 online 排班为空，handler 返回 `needs_review`；已将 7 条周排班和 7 条鸭鸭绑定写入 online 并回读确认，触发器保持 enabled，下一次 16:00 继续验收自动投递。
