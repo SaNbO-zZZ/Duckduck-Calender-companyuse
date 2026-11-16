@@ -2,8 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { axiosForBackend } from '@lark-apaas/client-toolkit/utils/getAxiosForBackend';
 import { dutyAssetManifest } from '../../../../shared/duty-assets';
 import { beijingDate, compareNaturalDate, planDutySelection, weekdayOf, type DutyAnimationState, type DutyRule } from '../../../../shared/duty-calendar';
+import { UserSelect } from '../../components/business-ui/user-select';
 
 type DutyDay = ReturnType<typeof planDutySelection> & { weekday?: number; personName?: string | null; personValid?: boolean; manifestVersion?: string };
+type ExchangeResponse = { openUrl?: string; message?: string; state?: string };
 const demoRules: DutyRule[] = [1, 2, 3, 4, 5, 6, 7].map((weekday, index) => ({ weekday: weekday as DutyRule['weekday'], personId: `demo-person-${weekday}`, duckKey: ['mia', 'momo', 'zhangsanbo', 'barra', 'ziyu', 'jiajia', 'billy'][index] }));
 const weekdayText = (weekday: number) => `周${'一二三四五六日'[weekday - 1] || '?'}`;
 
@@ -13,6 +15,10 @@ export function DutyDuckStage({ selectedDate, onDateChange }: { selectedDate: st
   const [state, setState] = useState<DutyAnimationState>('idle');
   const [queueIndex, setQueueIndex] = useState(-1);
   const [message, setMessage] = useState('正在读取值日配置…');
+  const [exchangeOpen, setExchangeOpen] = useState(false);
+  const [exchangeInviteeId, setExchangeInviteeId] = useState('');
+  const [exchangeBusy, setExchangeBusy] = useState(false);
+  const [exchangeMessage, setExchangeMessage] = useState('');
   const timer = useRef<number | null>(null);
   const today = beijingDate();
   const reducedMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -100,6 +106,35 @@ export function DutyDuckStage({ selectedDate, onDateChange }: { selectedDate: st
     timer.current = window.setTimeout(() => advance(1), step);
   };
 
+  const openExchange = () => {
+    if (!day?.duty || isPast) return;
+    setExchangeOpen(true);
+    setExchangeMessage('请选择接班人后创建换班请求。只有当天值日负责人可以发起换班。');
+  };
+
+  const createExchange = async () => {
+    if (!day?.duty || !exchangeInviteeId || exchangeBusy) {
+      setExchangeMessage('请先选择一位接班人。');
+      return;
+    }
+    setExchangeBusy(true);
+    setExchangeMessage('正在创建换班请求…');
+    try {
+      const response = await axiosForBackend<ExchangeResponse>({
+        url: '/api/duty/exchange-requests',
+        method: 'POST',
+        data: { dutyDate: selectedDate, inviteeId: exchangeInviteeId },
+        timeout: 12000,
+      });
+      setExchangeMessage(response.data.message || '换班请求已创建，正在打开登录后的确认页。');
+      if (response.data.openUrl) window.location.assign(response.data.openUrl);
+    } catch (error) {
+      setExchangeMessage(error instanceof Error ? error.message : '换班请求创建失败，请稍后重试。');
+    } finally {
+      setExchangeBusy(false);
+    }
+  };
+
   return <aside aria-label="值日鸭鸭舞台" data-duty-stage="true" className="pointer-events-auto fixed bottom-[14vh] left-[5vw] z-[9999] w-[min(250px,calc(100vw-24px))] rounded-[24px] border border-white/70 bg-white/80 p-3 shadow-xl backdrop-blur-md max-lg:bottom-4 max-lg:left-3 sm:w-[250px]">
     <div className="flex items-center justify-between gap-2"><div><p className="m-0 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">值日鸭鸭舞台</p><p className="m-0 text-sm font-semibold text-slate-800">{day ? (day.duty ? `${weekdayText(day.duty.weekday)} · ${label}` : '值日配置待同步') : '读取中'}</p></div><span className="rounded-full bg-[#fff1da] px-2 py-1 text-[10px] text-[#9b621c]">{selectedDate}</span></div>
     <button type="button" aria-label={isPast ? '历史日期无值日动画' : '播放值日鸭鸭动画'} onClick={play} disabled={!day?.duty || isPast || locked} className="mt-2 flex h-28 w-full items-center justify-center rounded-2xl bg-gradient-to-b from-[#fff7e7] to-[#e8f2fa] transition hover:scale-[1.01] disabled:cursor-default disabled:opacity-70">
@@ -107,6 +142,7 @@ export function DutyDuckStage({ selectedDate, onDateChange }: { selectedDate: st
       {role && !assetBroken ? <div role="img" aria-label={alt} className={`h-24 w-24 bg-contain bg-center bg-no-repeat ${locked ? 'animate-pulse' : ''}`} style={{ backgroundImage: `url(${spriteUrl})`, backgroundSize: actionSize, backgroundPosition }} data-frame={frame || role.staticFallback} /> : role && staticFallbackUrl ? <img src={staticFallbackUrl} alt={alt} className="h-24 w-24 object-contain" onError={() => setAssetBroken(true)} /> : <div role="img" aria-label="鸭鸭资源暂不可用" className="flex h-24 w-24 items-center justify-center rounded-full bg-[#eef3f8] text-xs text-slate-500">鸭鸭</div>}
     </button>
     <p className="m-0 mt-2 min-h-8 text-xs leading-5 text-slate-600" aria-live="polite" data-duty-state={state}>{isPast ? '历史日期不展示值日负责人。' : message}</p>
-    <div className="mt-2 flex flex-wrap items-center justify-between gap-2"><span className="text-[10px] text-slate-400">{locked ? `播放中 ${Math.min(queueIndex + 1, queueLength + 1)}/${queueLength + 1}` : '点击鸭鸭开始巡场'}</span><div className="flex gap-1"><button type="button" onClick={() => setMessage('换班卡片将打开登录后的确认页；受控模式下不会直接发送员工消息。')} className="rounded-full border border-[#f2cf91] bg-[#fff8e9] px-2 py-1 text-[10px] text-[#9b621c]">发起换班</button><button type="button" onClick={() => onDateChange(today)} className="rounded-full border border-slate-200 bg-white/70 px-2 py-1 text-[10px] text-slate-600">回到今天</button></div></div>
+    <div className="mt-2 flex flex-wrap items-center justify-between gap-2"><span className="text-[10px] text-slate-400">{locked ? `播放中 ${Math.min(queueIndex + 1, queueLength + 1)}/${queueLength + 1}` : '点击鸭鸭开始巡场'}</span><div className="flex gap-1"><button type="button" onClick={openExchange} disabled={!day?.duty || isPast || exchangeBusy} className="rounded-full border border-[#f2cf91] bg-[#fff8e9] px-2 py-1 text-[10px] text-[#9b621c] disabled:cursor-default disabled:opacity-60">发起换班</button><button type="button" onClick={() => onDateChange(today)} className="rounded-full border border-slate-200 bg-white/70 px-2 py-1 text-[10px] text-slate-600">回到今天</button></div></div>
+    {exchangeOpen && <div className="mt-3 rounded-2xl border border-[#f2cf91] bg-[#fffaf0] p-2" data-duty-exchange-panel="true"><p className="m-0 text-[11px] font-semibold text-[#8b5a17]">创建值日换班请求</p><UserSelect accountType="apaas" valueType="string" multiple={false} value={exchangeInviteeId || null} onChange={value => setExchangeInviteeId(value || '')} placeholder="搜索接班人" classNames={{ trigger: 'mt-2 w-full rounded-xl bg-white text-xs' }} /><div className="mt-2 flex gap-2"><button type="button" onClick={() => void createExchange()} disabled={exchangeBusy || !exchangeInviteeId} className="flex-1 rounded-full bg-[#e88b38] px-2 py-1 text-[10px] font-semibold text-white disabled:opacity-50">{exchangeBusy ? '创建中…' : '创建并打开确认页'}</button><button type="button" onClick={() => { setExchangeOpen(false); setExchangeMessage(''); }} disabled={exchangeBusy} className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] text-slate-600">取消</button></div><p className="m-0 mt-2 text-[10px] leading-4 text-slate-600" aria-live="polite">{exchangeMessage}</p></div>}
   </aside>;
 }
