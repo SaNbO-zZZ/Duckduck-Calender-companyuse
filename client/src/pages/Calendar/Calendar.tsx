@@ -71,7 +71,11 @@ function RegisterForm({kind,config,onDone,onClose,onBusy}:{kind:RegistrationKind
 export default function Calendar(){
  const frame=useRef<HTMLIFrameElement>(null),[frameReady,setFrameReady]=useState(false),[sprites,setSprites]=useState<unknown|null>(null),[config,setConfig]=useState<CalendarConfig|null>(null),[configError,setConfigError]=useState(''),[kind,setKind]=useState<RegistrationKind|null>(null),[month,setMonth]=useState(today().slice(0,7)),[selectedDutyDate,setSelectedDutyDate]=useState(today()),[data,setData]=useState<CalendarData|null>(null),dataMonth=useRef(''),[dataError,setDataError]=useState(false),[weather,setWeather]=useState<WeatherData|null>(null),[revision,setRevision]=useState(0),[assetError,setAssetError]=useState(false),[formBusy,setFormBusy]=useState(false);
  useLayoutEffect(()=>{
-  const nodes=[document.documentElement,document.body,document.getElementById('root')].filter((node):node is HTMLElement=>!!node);
+  const shell=document.querySelector<HTMLElement>('[data-duck-calendar-shell]');
+  const ancestors:HTMLElement[]=[];
+  let ancestor=shell?.parentElement;
+  while(ancestor&&ancestor!==document.body){ancestors.push(ancestor);ancestor=ancestor.parentElement;}
+  const nodes=Array.from(new Set([document.documentElement,document.body,document.getElementById('root'),...ancestors].filter((node):node is HTMLElement=>!!node)));
   const snapshot=nodes.map(node=>({node,overflow:node.style.overflow,height:node.style.height,minHeight:node.style.minHeight,overscrollBehavior:node.style.overscrollBehavior}));
   nodes.forEach(node=>{node.style.overflow='hidden';node.style.height='100%';node.style.minHeight='100%';node.style.overscrollBehavior='none';});
   return()=>snapshot.forEach(({node,overflow,height,minHeight,overscrollBehavior})=>{node.style.overflow=overflow;node.style.height=height;node.style.minHeight=minHeight;node.style.overscrollBehavior=overscrollBehavior;});
@@ -89,6 +93,6 @@ export default function Calendar(){
  useEffect(()=>{if(frameReady&&sprites)post({action:'sprites',data:sprites});},[frameReady,sprites,post]);
  const description=useMemo(()=>kind==='leave'?'填写不在岗时间，通知 Mentor 和人事':kind==='late'?'10 点以后到达公司，可提前选择日期':'今天提前离开，向同事知会一声',[kind]);
  const dutyStage = <DutyDuckStage selectedDate={selectedDutyDate} onDateChange={setSelectedDutyDate}/>;
- return <><div style={{height:'100dvh',minHeight:'100%',width:'100%',background:'#e7edf4',position:'relative',overflow:'hidden'}}><iframe ref={frame} title="鸭鸭日历" srcDoc={initialDocument} sandbox="allow-scripts allow-same-origin allow-popups" style={{border:0,width:'100%',height:'100%',display:'block'}}/>{typeof document !== 'undefined' ? createPortal(dutyStage, document.body) : dutyStage}{assetError&&<div role="status" className="fixed bottom-3 right-3 rounded-xl bg-white/90 px-3 py-2 text-xs text-slate-600">鸭鸭插画暂未加载，日历可正常使用</div>}</div>
+ return <><div data-duck-calendar-shell style={{height:'100dvh',minHeight:'100%',width:'100%',background:'#e7edf4',position:'fixed',inset:0,overflow:'hidden',isolation:'isolate'}}><iframe ref={frame} title="鸭鸭日历" srcDoc={initialDocument} sandbox="allow-scripts allow-same-origin allow-popups" style={{border:0,width:'100%',height:'100%',display:'block'}}/>{typeof document !== 'undefined' ? createPortal(dutyStage, document.body) : dutyStage}{assetError&&<div role="status" className="fixed bottom-3 right-3 rounded-xl bg-white/90 px-3 py-2 text-xs text-slate-600">鸭鸭插画暂未加载，日历可正常使用</div>}</div>
  <Dialog open={!!kind} onOpenChange={open=>{if(!open&&!formBusy)setKind(null);}}><DialogContent className="max-h-[92dvh] overflow-y-auto rounded-[28px] border-white bg-white/95 p-6 sm:max-w-[490px]"><DialogHeader><DialogTitle className="text-2xl font-bold text-[#322d28]">{kind?title[kind]:''}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader>{kind&&config?<RegisterForm key={kind} kind={kind} config={config} onDone={()=>setRevision(r=>r+1)} onClose={()=>setKind(null)} onBusy={setFormBusy}/>:<p role="status">{configError||'正在读取后台人事配置…'}{configError&&<Button onClick={()=>setRevision(r=>r+1)} variant="outline" className="ml-3">重试</Button>}</p>}</DialogContent></Dialog></>;
 }
