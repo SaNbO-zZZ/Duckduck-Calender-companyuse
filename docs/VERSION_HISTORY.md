@@ -47,3 +47,4 @@
 - `v3.3.0` 妙搭正式发布提交 `5f93928`，release ID `7700877917384330495`。GitHub 对应运行工程提交 `7647da9` 是从妙搭提交 cherry-pick 而来，代码等价但 SHA 不同；原提交号在提交说明中保留。限时素材由妙搭应用文件存储提供，GitHub 同时留有公开归档副本，不包含员工登记数据。
 - `v3.3.1` 妙搭最终提交 `b4b919a`，release ID `7700920271985659142`。同轮前两次候选发布在烟雾测试中分别暴露生成 HTML 语法错误与素材内部路径不可访问，均在最终发布前修复并保留提交历史。飞书 CDN 素材签名有效期覆盖 2026 年试点周；主题限制为该年度。
 - 飞书妙搭 release ID、问题根因与验收边界记录在 `docs/engineering/`；机器人“已发送”与用户“已阅读”仍是不同状态。
+> 2026-11-16 修复：值日鸭鸭舞台“发起换班”接入登录态员工选择、`POST /api/duty/exchange-requests` 和 `open_url` 确认页；妙搭 release `7708645470713875457` finished，GitHub `f892bb8`，妙搭 `06ae021`。`duty16hReminder` 与 `dutyCardCallbackBridge` 继续 disabled，未发送真实员工消息。
