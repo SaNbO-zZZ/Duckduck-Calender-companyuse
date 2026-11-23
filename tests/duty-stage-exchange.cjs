@@ -1,16 +1,16 @@
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-
-const source = fs.readFileSync('client/src/pages/Calendar/DutyDuckStage.tsx', 'utf8');
-assert.match(source, /UserSelect/);
-assert.match(source, /url:\s*['"]\/api\/duty\/exchange-requests['"]/);
-assert.match(source, /method:\s*['"]POST['"]/);
-assert.match(source, /data:\s*\{ dutyDate: selectedDate, inviteeId: exchangeInviteeId \}/);
-assert.match(source, /window\.location\.assign\(response\.data\.openUrl\)/);
-assert.match(source, /创建并打开确认页/);
-assert.match(source, /data-duty-exchange-overlay/);
-assert.match(source, /fixed inset-0 z-\[2147483000\]/);
-assert.match(source, /data-duty-exchange-dialog/);
-assert.match(source, /data-allow-calendar-scroll/);
-assert.match(source, /stopHostScroll/);
-console.log('duty stage exchange entry contract passed');
+const test = require('node:test');
+const { inFestival } = require('../dist/shared/festivals');
+test('holiday weeks cross Gregorian years and follow the lunar calendar', () => {
+  for (const [key, yes, no] of [
+    ['halloween', '2027-10-25', '2027-11-01'],
+    ['winter', '2027-01-03', '2027-01-04'],
+    ['spring', '2026-02-16', '2026-02-15'],
+    ['spring', '2026-03-03', '2026-03-04'],
+    ['dragon', '2026-06-19', '2026-06-22'],
+    ['moon', '2026-09-25', '2026-09-28'],
+  ]) {
+    assert.equal(inFestival(key, yes), true, key + yes);
+    assert.equal(inFestival(key, no), false, key + no);
+  }
+});

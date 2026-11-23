@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { axiosForBackend } from '@lark-apaas/client-toolkit/utils/getAxiosForBackend';
+import { axiosForBackend } from '../../lib/client';
 import { isAxiosError } from 'axios';
 
 type Preview = {recipientCount: number; wikiUrl: string};

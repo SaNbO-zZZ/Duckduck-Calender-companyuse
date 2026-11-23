@@ -29,8 +29,6 @@
   },
   "devDependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@lark-apaas/client-toolkit": "^1.2.73",
-    "@lark-apaas/coding-preset-vite-react": "^1.0.25",
     "@lark-apaas/fullstack-presets": "^1.1.25",
     "@nestjs/cli": "^10.4.9",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -135,7 +133,6 @@
     "gen:db-schema": "npx -y @lark-apaas/db-schema-sync@latest --output server/database/schema.ts --export-custom-types",
     "gen:openapi": "echo 'UNSUPPORTED, SKIP'",
     "lint": "node ./scripts/lint.js",
-    "postinstall": "npx -y @lark-apaas/fullstack-cli@latest action-plugin init",
     "precommit": "node scripts/hooks/run-precommit.js",
     "prepare": "chmod +x .githooks/pre-commit 2>/dev/null; git config core.hooksPath .githooks 2>/dev/null || true",
     "start": "NODE_ENV=production node main.js",
@@ -145,7 +142,9 @@
     "type:check:server": "tsc --noEmit --project tsconfig.node.json",
     "upgrade": "npx -y @lark-apaas/fullstack-cli@latest sync --disable-gen-openapi",
     "type:check:auth": "tsc --noEmit --project tsconfig.auth.json",
-    "build:auth": "tsc --project tsconfig.auth.json --outDir dist/auth"
+    "build:auth": "tsc --project tsconfig.auth.json --outDir dist/auth",
+    "legacy:init": "npx -y @lark-apaas/fullstack-cli@latest action-plugin init",
+    "preview:phase3": "node scripts/preview-phase3.cjs"
   },
   "version": "2.3.0"
 }

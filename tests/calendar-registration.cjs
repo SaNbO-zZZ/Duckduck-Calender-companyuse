@@ -104,10 +104,8 @@ test('current-month refresh uses only three searches while preserving today and 
 });
 
 test('notice presence distinguishes later arrival, leave and earlier departure at exact boundaries',()=>{
- const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
- const window={addEventListener:()=>{}},document={addEventListener:()=>{}},parent={location:{origin:'https://example.test'}};
- vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../client/src/pages/Calendar/frame-runtime.js'),'utf8'),{window,document,parent});
- const classify=window.duckClassifyPresence,at=(time)=>Date.parse('2026-10-21T'+time+':00+08:00');
+ const {classifyPresence:classify}=require('../dist/shared/calendar-presence');
+ const at=(time)=>Date.parse('2026-10-21T'+time+':00+08:00');
  const events=[
   {id:'late',userIds:['a'],type:'晚到',start:at('10:00'),end:at('13:00')},
   {id:'leave',userIds:['b'],type:'年假',start:at('09:00'),end:at('18:00')},

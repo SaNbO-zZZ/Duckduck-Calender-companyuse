@@ -1,136 +1,411 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { axiosForBackend } from '@lark-apaas/client-toolkit/utils/getAxiosForBackend';
-import { isAxiosError } from 'axios';
-import { UserSelect } from '../../components/business-ui/user-select';
-import { UserDisplay } from '../../components/business-ui/user-display';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../../components/ui/form';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
-import { Calendar as DatePicker } from '../../components/ui/calendar';
-import { zhCN } from 'date-fns/locale';
-import { calendarDocument } from './calendar-document';
+import { classifyPresence } from '../../../../shared/calendar-presence';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import {
+  ArrowUpRight,
+  BookOpen,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  CloudSun,
+  Palette,
+  Plane,
+  Sunrise,
+  UsersRound,
+} from 'lucide-react';
+import {
+  addBeijingDays,
+  beijingDate,
+  parseBeijingDate,
+  weekdayOf,
+} from '../../../../shared/duty-calendar';
+import type {
+  CalendarData,
+  CalendarConfig,
+  WeatherData,
+  RegistrationKind,
+} from '../../../../shared/api.interface';
+import { festivals, inFestival } from '../../../../shared/festivals';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '../../components/ui/dialog';
+import { burst, useResource, useUser } from '../../lib/client';
 import { DutyDuckStage } from './DutyDuckStage';
-import { trackRegistration } from '../../../../shared/registration-progress';
-import type { CalendarConfig, CalendarData, RegistrationKind, RegistrationRequest, RegistrationResult, RegistrationStatus, WeatherData } from '../../../../shared/api.interface';
-const halloweenAssetBase = `${import.meta.env.BASE_URL}assets/festivals/halloween/`;
-const initialDocument = calendarDocument
- .replace('/*__DUCK_SPRITE_DATA__*/', '{}')
- .replace('"__DUCK_HALLOWEEN_ASSET_BASE__"', JSON.stringify(halloweenAssetBase));
-const today = (ms=Date.now()) => new Date(ms+480*60000).toISOString().slice(0,10);
-const dateLabel = (d:Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const timeText = (ms:number) => new Date(ms+480*60000).toISOString().slice(0,16).replace('T',' ')+'（北京时间）';
-const apiMessage=(error:unknown)=> {if(isAxiosError(error)&&error.response){const result=z.union([z.object({message:z.union([z.string(),z.array(z.string())])}),z.object({error:z.object({message:z.string()})})]).safeParse(error.response.data);if(result.success){const message='error' in result.data?result.data.error.message:result.data.message;return Array.isArray(message)?message.join('；'):message;}}return '网络请求未确认，请勿重复创建登记。可以核对本次登记结果。';};
-const schema=z.object({mentorId:z.string().min(1,'请选择你的 Mentor'),leaveType:z.enum(['年假','出差','事假','病假','今天不想上班']),startDate:z.date(),startTime:z.string().regex(/^\d{2}:\d{2}$/,'请选择开始时刻'),endDate:z.date(),endTime:z.string().regex(/^\d{2}:\d{2}$/,'请选择结束时刻'),arrivalDate:z.date(),arrivalTime:z.string().regex(/^\d{2}:\d{2}$/,'请选择预计到达时刻')});
-type Values=z.infer<typeof schema>;
-const title={leave:'请假 / 出差知会',late:'天才总是晚到',early:'我先去拯救世界了'};
-function RegisterForm({kind,config,onDone,onClose,onBusy}:{kind:RegistrationKind;config:CalendarConfig;onDone:()=>void;onClose:()=>void;onBusy:(value:boolean)=>void}){
- const offset=useRef(config.serverTime-Date.now()),[now,setNow]=useState(Date.now()+offset.current),[busy,setBusy]=useState(false),[result,setResult]=useState<RegistrationResult|null>(null),[error,setError]=useState(''),key=useRef(crypto.randomUUID()),snapshot=useRef<RegistrationRequest|null>(null);
- const progressAbort=useRef<AbortController|null>(null),observedRecord=useRef(false),mounted=useRef(true);
- useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;progressAbort.current?.abort();};},[]);
- const defaultDay=today(now),defaultDate=new Date(defaultDay+'T12:00:00'),arrival=new Date(Math.min(Date.parse(defaultDay+'T23:59:00+08:00'),Math.max(now+30*60000,Date.parse(defaultDay+'T10:01:00+08:00')))+480*60000).toISOString().slice(11,16);
- const form=useForm<Values>({resolver:zodResolver(schema),defaultValues:{mentorId:'',leaveType:'年假',startDate:defaultDate,startTime:'10:00',endDate:defaultDate,endTime:'18:00',arrivalDate:defaultDate,arrivalTime:arrival}});
- useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()+offset.current),1000);return()=>clearInterval(timer);},[]);
- const submit=async(data:Values)=>{
-  if(busy||(result&&!result.processing))return;
-  if(!snapshot.current){
-   const request:RegistrationRequest={requestKey:key.current,kind,mentorId:data.mentorId,leaveType:kind==='leave'?data.leaveType:'',start:kind==='leave'?dateLabel(data.startDate)+'T'+data.startTime:'',end:kind==='leave'?dateLabel(data.endDate)+'T'+data.endTime:'',arrivalTime:kind==='late'?data.arrivalTime:'',...(kind==='late'?{arrivalDate:dateLabel(data.arrivalDate)}:{})};
-   if(kind==='leave'&&request.end<=request.start){form.setError('endTime',{message:'结束时间须晚于开始时间。'});return;}
-   if(kind==='late'&&(Date.parse(dateLabel(data.arrivalDate)+'T'+data.arrivalTime+':00+08:00')<=now||data.arrivalTime<='10:00')){form.setError('arrivalTime',{message:'预计到达须晚于所选日期 10:00，且尚未到达该时刻。'});return;}
-   snapshot.current=request;
-  }
-  setBusy(true);onBusy(true);setError('');
-  const controller=new AbortController();progressAbort.current=controller;
-  const showProgress=(r:RegistrationResult)=>{
-   if(!mounted.current)return;setResult(r);
-   if(r.recorded){onBusy(false);if(!observedRecord.current){observedRecord.current=true;onDone();}}
-  };
-  try {await trackRegistration({
-   submit:()=>axiosForBackend<RegistrationResult>({url:'/api/calendar/register',method:'POST',data:snapshot.current,timeout:120000}).then(r=>r.data),
-   read:()=>axiosForBackend<RegistrationStatus>({url:'/api/calendar/registration-status',method:'GET',params:{requestKey:key.current},timeout:5000,signal:controller.signal}).then(r=>r.data.result),
-   onProgress:showProgress,signal:controller.signal
-  });}
-  catch(e){if(mounted.current){setError(apiMessage(e));if(isAxiosError(e)&&e.response&&e.response.status<500){snapshot.current=null;setResult(null);}}}
-  finally{if(mounted.current){setBusy(false);onBusy(false);}}
- };
- const dateField=(name:'startDate'|'endDate'|'arrivalDate',label:string)=><FormField control={form.control} name={name} render={({field})=><FormItem className="flex-1 min-w-0"><FormLabel>{label}日期</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button type="button" variant="outline" className="w-full justify-start rounded-2xl">{dateLabel(field.value)}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><DatePicker mode="single" locale={zhCN} defaultMonth={field.value} selected={field.value} onSelect={d=>d&&field.onChange(d)} /></PopoverContent></Popover><FormMessage /></FormItem>} />;
- const timeField=(name:'startTime'|'endTime'|'arrivalTime',label:string)=><FormField control={form.control} name={name} render={({field})=><FormItem className="flex-1 min-w-0"><FormLabel>{label}</FormLabel><FormControl><Input type="time" className="rounded-2xl" {...field}/></FormControl><FormMessage/></FormItem>}/>;
- return <Form {...form}><form className="space-y-5" onSubmit={form.handleSubmit(submit)}>
-  <fieldset disabled={busy||!!snapshot.current||!!result} className="space-y-5 min-w-0">
-  {kind==='leave'?<><FormField control={form.control} name="leaveType" render={({field})=><FormItem><FormLabel>类型<span aria-hidden="true" className="text-red-500"> *</span></FormLabel><FormControl><div className="flex flex-wrap gap-2" role="radiogroup" aria-label="不在岗类型">{(['年假','出差','事假','病假','今天不想上班'] as const).map((name,i)=><Button type="button" key={name} role="radio" aria-checked={field.value===name} onClick={()=>field.onChange(name)} className={'rounded-full '+(field.value===name?'bg-[#ff7957] text-white hover:bg-[#f66d4b]':'bg-[#f5f3f0] text-[#38332e] hover:bg-[#eee9e3]')}>{['🌴','🧳','📝','🤒','📌'][i]} {name}</Button>)}</div></FormControl><FormMessage/></FormItem>}/><div className="flex gap-3">{dateField('startDate','开始')}{timeField('startTime','开始时刻')}</div><div className="flex gap-3">{dateField('endDate','结束')}{timeField('endTime','结束时刻')}</div></>:kind==='late'?<>{dateField('arrivalDate','到达')}{timeField('arrivalTime','预计到达时间')}<p className="text-sm text-[#8d8074]">按北京时间登记。请选择所选日期 10:00 之后、尚未到达的时刻。</p></>:<div><p className="mb-2 font-medium">当前时间</p><p className="rounded-2xl bg-[#f6f4f1] p-3 text-sm" role="timer">{timeText(now)}</p></div>}
-  <FormField control={form.control} name="mentorId" render={({field})=><FormItem><FormLabel>@你的 Mentor<span aria-hidden="true" className="text-red-500"> *</span></FormLabel><FormControl><UserSelect accountType="apaas" valueType="string" multiple={false} value={field.value||null} onChange={value=>field.onChange(value||'')} placeholder="搜索并选择你的 Mentor" classNames={{trigger:'w-full rounded-2xl'}} /></FormControl><FormMessage/></FormItem>}/>
-  <div><p className="mb-2 font-medium">人事</p><div className="rounded-2xl bg-[#f6f4f1] p-3"><UserDisplay value={[config.hrUserId]}/></div><p className="mt-2 text-xs text-[#8d8074]">后台固定人事 · 仅通知，无审批</p></div>
-  </fieldset>
-  {error&&<p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-  {result&&<p role="status" className="rounded-2xl bg-[#f4f4ed] p-3 text-sm">{result.message}<br/><span className="break-all text-xs text-[#8d8074]">登记编号：{key.current}</span></p>}
-  <div className="flex justify-end gap-3"><Button type="button" variant="outline" onClick={onClose} disabled={busy&&!result?.recorded} className="rounded-full">{result?.recorded?(result.processing?'关闭':'完成'):'取消'}</Button>{(!result||result.processing)&&<Button type="submit" disabled={busy} className="rounded-full bg-gradient-to-r from-[#ff7952] to-[#ff5186] text-white">{busy?(result?.recorded?'正在发送通知…':'正在保存登记…'):snapshot.current?'核对本次登记结果':'登记并通知'}</Button>}</div>
- </form></Form>;
+import { RegisterForm, title } from './RegisterForm';
+import { ThemeRow, FestivalPanel, Preview } from './FestivalPanel';
+import { Sky } from './scene/Sky';
+import { Particles } from './scene/Particles';
+import { WeatherDucks } from './scene/WeatherDucks';
+const labels: Record<string, string> = {
+  clear: '晴',
+  partly: '多云',
+  overcast: '阴',
+  lightRain: '小雨',
+  heavyRain: '大雨',
+  storm: '暴雨',
+  lightSnow: '小雪',
+  snow: '雪',
+  heavySnow: '大雪',
+};
+const weekdays = '一二三四五六日';
+const kinds = [
+  { id: 'late', label: '晚到登记', Icon: Clock3 },
+  { id: 'early', label: '提前离开', Icon: Sunrise },
+  { id: 'leave', label: '请假 / 出差', Icon: Plane },
+] as const;
+function changeMonth(value: string, delta: number) {
+  const d = new Date(value + '-15T12:00:00Z');
+  d.setUTCMonth(d.getUTCMonth() + delta);
+  return d.toISOString().slice(0, 7);
 }
-export default function Calendar(){
- const frame=useRef<HTMLIFrameElement>(null),[frameReady,setFrameReady]=useState(false),[sprites,setSprites]=useState<unknown|null>(null),[config,setConfig]=useState<CalendarConfig|null>(null),[configError,setConfigError]=useState(''),[kind,setKind]=useState<RegistrationKind|null>(null),[month,setMonth]=useState(today().slice(0,7)),[selectedDutyDate,setSelectedDutyDate]=useState(today()),[data,setData]=useState<CalendarData|null>(null),dataMonth=useRef(''),[dataError,setDataError]=useState(false),[weather,setWeather]=useState<WeatherData|null>(null),[revision,setRevision]=useState(0),[assetError,setAssetError]=useState(false),[formBusy,setFormBusy]=useState(false);
- useLayoutEffect(()=>{
-  const shell=document.querySelector<HTMLElement>('[data-duck-calendar-shell]');
-  const ancestors:HTMLElement[]=[];
-  let ancestor=shell?.parentElement;
-  while(ancestor&&ancestor!==document.body){ancestors.push(ancestor);ancestor=ancestor.parentElement;}
-  const nodes=Array.from(new Set([document.documentElement,document.body,document.getElementById('root'),...ancestors].filter((node):node is HTMLElement=>!!node)));
-  const snapshot=nodes.map(node=>({node,overflow:node.style.overflow,height:node.style.height,minHeight:node.style.minHeight,overscrollBehavior:node.style.overscrollBehavior,position:node.style.position,top:node.style.top,left:node.style.left,right:node.style.right,width:node.style.width}));
-  nodes.forEach(node=>{node.style.overflow='hidden';node.style.height='100%';node.style.minHeight='100%';node.style.overscrollBehavior='none';});
-  const body=document.body;
-  body.style.position='fixed';
-  body.style.top='0';
-  body.style.left='0';
-  body.style.right='0';
-  body.style.width='100%';
-  const stopHostWheel=(event:WheelEvent)=>{
-    const target=event.target as HTMLElement | null;
-    if (target?.closest('[data-allow-calendar-scroll]')) return;
-    event.preventDefault();
+export default function Calendar() {
+  const user = useUser(),
+    [now, setNow] = useState(Date.now),
+    today = beijingDate(now);
+  const [month, setMonth] = useState(today.slice(0, 7)),
+    [date, setDate] = useState(today),
+    [direction, setDirection] = useState(1);
+  const [rev, refresh] = useState(0),
+    [weatherRev, refreshWeather] = useState(0),
+    [kind, setKind] = useState<RegistrationKind | null>(null),
+    [busy, setBusy] = useState(false);
+  const [panel, setPanel] = useState(false),
+    [preview, setPreview] = useState<Preview | null>(null),
+    reduce = useReducedMotion();
+  const cal = useResource<CalendarData>('/api/calendar/month?month=' + month, rev),
+    cfg = useResource<CalendarConfig>('/api/calendar/config', rev),
+    weather = useResource<WeatherData>('/api/calendar/weather', weatherRev).data,
+    settings = useResource<ThemeRow[]>('/api/festivals', rev);
+  useEffect(() => {
+    const clock = setInterval(() => setNow(Date.now()), 15000),
+      r = setInterval(() => {
+        if (!document.hidden) refresh((i) => i + 1);
+      }, 120000),
+      w = setInterval(() => refreshWeather((i) => i + 1), 300000);
+    return () => {
+      clearInterval(clock);
+      clearInterval(r);
+      clearInterval(w);
+    };
+  }, []);
+  const hour = new Date(now + 28800000).getUTCHours(),
+    night = preview?.night ?? (hour < 6 || hour >= 18),
+    phase = night ? 'night' : preview ? 'day' : hour < 8 ? 'dawn' : hour >= 16 ? 'dusk' : 'day';
+  const theme = festivals.find((f) =>
+    preview
+      ? f.key === preview.key
+      : settings.data?.some((r) => r.key === f.key && r.enabled) && inFestival(f.key, today),
+  );
+  const presence = classifyPresence(cal.data?.todayEvents || [], now),
+    active = presence.people,
+    away = active.length;
+  useEffect(() => {
+    if (Number.isFinite(presence.nextTransition)) {
+      const t = setTimeout(
+        () => setNow(Date.now()),
+        Math.max(1, presence.nextTransition - Date.now() + 1),
+      );
+      return () => clearTimeout(t);
+    }
+  }, [presence.nextTransition]);
+  const monthStart = month + '-01',
+    first = addBeijingDays(monthStart, 1 - weekdayOf(monthStart)),
+    days = Array.from({ length: 42 }, (_, i) => addBeijingDays(first, i));
+  const person = (id: string) => cal.data?.people.find((p) => p.id === id)?.name || '账号资料待同步';
+  const onDay = (d: string) =>
+    cal.data?.events.filter(
+      (e) => e.start < parseBeijingDate(d) + 86400000 && e.end > parseBeijingDate(d),
+    ) || [];
+  const chosen = onDay(date);
+  function select(d: string) {
+    setDate(d);
+    if (!d.startsWith(month)) {
+      setDirection(d < monthStart ? -1 : 1);
+      setMonth(d.slice(0, 7));
+    }
+  }
+  function move(n: number) {
+    const m = changeMonth(month, n);
+    setDirection(n);
+    setMonth(m);
+    setDate(m === today.slice(0, 7) ? today : m + '-01');
+  }
+  const stagger = {
+    hidden: { opacity: 0, y: reduce ? 0 : 18 },
+    show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 260, damping: 24 } },
   };
-  window.addEventListener('wheel',stopHostWheel,{capture:true,passive:false});
-  return()=>{
-    window.removeEventListener('wheel',stopHostWheel,true);
-    snapshot.forEach(({node,overflow,height,minHeight,overscrollBehavior,position,top,left,right,width})=>{
-      node.style.overflow=overflow;
-      node.style.height=height;
-      node.style.minHeight=minHeight;
-      node.style.overscrollBehavior=overscrollBehavior;
-      node.style.position=position;
-      node.style.top=top;
-      node.style.left=left;
-      node.style.right=right;
-      node.style.width=width;
-    });
-  };
- },[]);
- const post=useCallback((message:Record<string,unknown>)=>frame.current?.contentWindow?.postMessage({duckCalendar:true,...message},location.origin),[]);
- // The calendar can render and accept notices while the decorative sprites load.
- useEffect(() => {
-  const controller = new AbortController();
-  fetch(`${import.meta.env.BASE_URL}assets/weather-sprites/embed-sprites.json`, { signal: controller.signal })
-   .then(response => {
-    if (!response.ok) throw new Error('插画资源加载失败。');
-    return response.json();
-   })
-   .then(data => { if (!controller.signal.aborted) setSprites(data); })
-   .catch(() => { if (!controller.signal.aborted) setAssetError(true); });
-  return () => controller.abort();
- }, []);
- useEffect(()=>{let active=true;axiosForBackend<CalendarConfig>({url:'/api/calendar/config',method:'GET'}).then(r=>{if(active){setConfig(r.data);setConfigError('');}}).catch(()=>{if(active)setConfigError('固定人事配置读取失败，请稍后重试。');});return()=>{active=false;};},[revision]);
- useEffect(()=>{let active=true;setDataError(false);axiosForBackend<CalendarData>({url:'/api/calendar/month',method:'GET',params:{month},timeout:120000}).then(r=>{if(active){dataMonth.current=month;setData(r.data);}}).catch(()=>{if(active)setDataError(true);});return()=>{active=false;};},[month,revision]);
- useEffect(()=>{let active=true;const load=()=>{if(document.hidden)return;axiosForBackend<WeatherData>({url:'/api/calendar/weather',method:'GET',timeout:15000}).then(r=>{if(active)setWeather(r.data);}).catch(()=>{if(active)setWeather({available:false,scene:'overcast',windSpeed:0,windFrom:0,cloud:.9,validTime:'',updatedAt:'',source:'天气暂不可用'});});};load();const timer=setInterval(load,5*60000+Math.random()*60000);document.addEventListener('visibilitychange',load);return()=>{active=false;clearInterval(timer);document.removeEventListener('visibilitychange',load);};},[]);
- useEffect(()=>{const refresh=()=>{if(!document.hidden)setRevision(r=>r+1);};const timer=setInterval(refresh,120000);document.addEventListener('visibilitychange',refresh);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',refresh);};},[]);
- useEffect(()=>{const listener=(e:MessageEvent<unknown>)=>{if(e.source!==frame.current?.contentWindow||e.origin!==location.origin)return;const parsed=z.object({duckCalendar:z.literal(true),action:z.string(),kind:z.enum(['leave','late','early']).optional(),month:z.string().optional(),date:z.string().regex(/^20\d{2}-\d{2}-\d{2}$/).optional()}).safeParse(e.data);if(!parsed.success)return;const m=parsed.data;if(m.action==='ready')setFrameReady(true);if(m.action==='register'&&m.kind)setKind(m.kind);if(m.action==='refresh')setRevision(r=>r+1);if(m.action==='month'&&m.month&&/^20\d{2}-(0[1-9]|1[0-2])$/.test(m.month))setMonth(m.month);if(m.action==='date-select'&&m.date)setSelectedDutyDate(m.date);};window.addEventListener('message',listener);return()=>window.removeEventListener('message',listener);},[]);
- useEffect(()=>{if(!frameReady)return;post(dataError?{action:'error'}:data&&dataMonth.current===month?{action:'calendar',data,month}:{action:'loading',month});},[data,dataError,month,frameReady,post]);
- useEffect(()=>{if(frameReady&&weather)post({action:'weather',data:weather});},[frameReady,weather,post]);
- useEffect(()=>{if(frameReady&&sprites)post({action:'sprites',data:sprites});},[frameReady,sprites,post]);
- const description=useMemo(()=>kind==='leave'?'填写不在岗时间，通知 Mentor 和人事':kind==='late'?'10 点以后到达公司，可提前选择日期':'今天提前离开，向同事知会一声',[kind]);
- const dutyStage = <DutyDuckStage selectedDate={selectedDutyDate} onDateChange={setSelectedDutyDate}/>;
- return <><div data-duck-calendar-shell style={{height:'100dvh',minHeight:'100%',width:'100%',background:'#e7edf4',position:'fixed',inset:0,overflow:'hidden',isolation:'isolate'}}><iframe ref={frame} title="鸭鸭日历" srcDoc={initialDocument} sandbox="allow-scripts allow-same-origin allow-popups" style={{border:0,width:'100%',height:'100%',display:'block'}}/>{typeof document !== 'undefined' ? createPortal(dutyStage, document.body) : dutyStage}{assetError&&<div role="status" className="fixed bottom-3 right-3 rounded-xl bg-white/90 px-3 py-2 text-xs text-slate-600">鸭鸭插画暂未加载，日历可正常使用</div>}</div>
- <Dialog open={!!kind} onOpenChange={open=>{if(!open&&!formBusy)setKind(null);}}><DialogContent data-allow-calendar-scroll="true" className="max-h-[92dvh] overflow-y-auto rounded-[28px] border-white bg-white/95 p-6 sm:max-w-[490px]"><DialogHeader><DialogTitle className="text-2xl font-bold text-[#322d28]">{kind?title[kind]:''}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader>{kind&&config?<RegisterForm key={kind} kind={kind} config={config} onDone={()=>setRevision(r=>r+1)} onClose={()=>setKind(null)} onBusy={setFormBusy}/>:<p role="status">{configError||'正在读取后台人事配置…'}{configError&&<Button onClick={()=>setRevision(r=>r+1)} variant="outline" className="ml-3">重试</Button>}</p>}</DialogContent></Dialog></>;
+  return (
+    <div
+      className={'calendar-app ' + (night ? 'is-night' : '')}
+      data-festival={theme?.key || 'regular'}
+      style={{
+        '--accent': theme?.color || '#407c67',
+        '--wash': theme?.light || '#e1eedc',
+        '--night': theme?.night || '#263b49',
+      }}
+    >
+      <Sky theme={theme?.key} weather={weather} night={night} />
+      <Particles
+        theme={theme?.key}
+        night={night}
+        wind={weather?.windSpeed}
+        rain={/rain|storm/i.test(weather?.scene || '')}
+        snow={/snow/i.test(weather?.scene || '')}
+      />
+      <motion.main
+        className="planner"
+        initial="hidden"
+        animate="show"
+        variants={{ show: { transition: { staggerChildren: reduce ? 0 : 0.06 } } }}
+      >
+        <motion.header variants={stagger} className="topbar">
+          <Link className="brand" to="/">
+            <img src="/assets/duty-ducks-v2/caishen/idle-00.png" alt="" />
+            <strong>鸭鸭日历</strong>
+          </Link>
+          <span className="weather-pill">
+            <CloudSun size={17} />
+            {weather?.available ? '合肥 · ' + (labels[weather.scene] || '天气') : '合肥 · 天气待更新'}
+          </span>
+          <nav>
+            <Link to="/charter">
+              <BookOpen size={17} />
+              鸭鸭公约
+            </Link>
+            {user.role === 'admin' && (
+              <button aria-label="节日预览" onClick={() => setPanel(true)}>
+                <Palette size={17} />
+                <span>节日预览</span>
+              </button>
+            )}
+            <span className="avatar" title={user.name}>
+              {user.avatar_url ? <img alt={user.name} src={user.avatar_url} /> : user.name?.slice(0, 1)}
+            </span>
+          </nav>
+        </motion.header>
+        {preview && (
+          <aside className="preview-strip">
+            {theme?.name} · {night ? '夜晚' : '白天'}预览
+            <button onClick={() => setPanel(true)}>切换</button>
+            <button onClick={() => setPreview(null)}>结束预览</button>
+          </aside>
+        )}
+        <motion.section variants={stagger} className="hero">
+          <WeatherDucks weather={weather} phase={phase} halloween={theme?.key === 'halloween'} />
+          <div className="hero-copy">
+            <div className="hero-date">
+              <span className="dot" />
+              {today.slice(0, 4)} 年 {Number(today.slice(5, 7))} 月 {Number(today.slice(8))} 日 星期
+              {weekdays[weekdayOf(today) - 1]}
+              {theme && <b>{theme.name}</b>}
+            </div>
+            <h1>
+              {hour < 6
+                ? '夜深了'
+                : hour < 11
+                  ? '早上好'
+                  : hour < 14
+                    ? '中午好'
+                    : hour < 18
+                      ? '下午好'
+                      : '晚上好'}
+              ，{user.name || '同事'}
+              <span>。</span>
+            </h1>
+            <p>
+              {cal.data ? (
+                <>
+                  此刻有 <strong>{away}</strong> 位同事不在岗。
+                </>
+              ) : (
+                cal.error || '正在读取团队知会…'
+              )}
+            </p>
+            <div className="hero-actions">
+              {kinds.map(({ id, label, Icon }) => (
+                <motion.button
+                  key={id}
+                  whileHover={reduce ? {} : { y: -2, scale: 1.02 }}
+                  whileTap={{ scale: reduce ? 1 : 0.96 }}
+                  onClick={() => setKind(id)}
+                >
+                  <Icon size={16} />
+                  {label}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+          <div className="date-ticket" aria-hidden>
+            <div>
+              <i />
+              <i />
+            </div>
+            <small>
+              {new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'Asia/Shanghai' })
+                .format(now)
+                .toUpperCase()}
+            </small>
+            <b>{today.slice(8)}</b>
+            <em>星期{weekdays[weekdayOf(today) - 1]}</em>
+          </div>
+        </motion.section>
+        <div className="workspace-grid">
+          <motion.aside variants={stagger} className="left-stack">
+            <section className="card now-card">
+              <div className="card-heading">
+                <h2>此刻的知会</h2>
+                <UsersRound size={18} />
+              </div>
+              {active.length ? (
+                active.map((e) => (
+                  <p className="notice-row" key={e.id}>
+                    <b>{person(e.id)}</b>
+                    <span>{e.event.type}</span>
+                  </p>
+                ))
+              ) : (
+                <div className="quiet">
+                  <span className="availability">
+                    <i />
+                    {cal.data ? '全员在岗' : cal.error ? '读取失败' : '读取中'}
+                  </span>
+                  <p>{cal.data ? '当前没有进行中的知会。' : cal.error || '正在读取知会…'}</p>
+                </div>
+              )}
+            </section>
+            <DutyDuckStage key={date} selectedDate={date} />
+          </motion.aside>
+          <motion.section variants={stagger} className="card month-card">
+            <div className="month-top">
+              <div>
+                <span className="section-label">
+                  <CalendarDays size={15} />
+                  团队月历
+                </span>
+                <h2>
+                  {Number(month.slice(5))}月 <small>{month.slice(0, 4)}</small>
+                </h2>
+              </div>
+              <div className="month-nav">
+                <button aria-label="上个月" onClick={() => move(-1)}>
+                  <ChevronLeft />
+                </button>
+                <button onClick={() => select(today)}>今天</button>
+                <button aria-label="下个月" onClick={() => move(1)}>
+                  <ChevronRight />
+                </button>
+              </div>
+            </div>
+            <div className="week-row">
+              {[...weekdays].map((w) => (
+                <span key={w}>{w}</span>
+              ))}
+            </div>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                className="month-grid"
+                key={month}
+                initial={{ opacity: 0, x: reduce ? 0 : direction * 24 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: reduce ? 0 : -direction * 24 }}
+                transition={{ duration: reduce ? 0 : 0.22 }}
+              >
+                {days.map((d) => {
+                  const holiday = cal.data?.holidays.find((h) => h.date === d),
+                    listed = onDay(d);
+                  return (
+                    <button
+                      key={d}
+                      className={
+                        (d.startsWith(month) ? '' : 'muted ') +
+                        (d === today ? 'today ' : '') +
+                        (d === date ? 'selected' : '')
+                      }
+                      onClick={() => select(d)}
+                      aria-label={d}
+                      aria-pressed={d === date}
+                    >
+                      {d === date && <motion.i className="selected-ring" layoutId="selected-day-ring" />}
+                      <b>{Number(d.slice(8))}</b>
+                      {holiday && <small>{holiday.type}</small>}
+                      {listed.length > 0 && <i className="event-dot" />}
+                    </button>
+                  );
+                })}
+              </motion.div>
+            </AnimatePresence>
+            <div className="day-summary">
+              <div>
+                <strong>
+                  {Number(date.slice(5, 7))} 月 {Number(date.slice(8))} 日
+                </strong>
+                <span>星期{weekdays[weekdayOf(date) - 1]}</span>
+              </div>
+              {cal.error ? (
+                <button onClick={() => refresh((i) => i + 1)}>加载失败 · 重试</button>
+              ) : chosen.length ? (
+                chosen.map((e) => (
+                  <p key={e.id}>
+                    {e.userIds.map(person).join('、')} · {e.type}
+                  </p>
+                ))
+              ) : (
+                <p>{cal.data ? '当天没有登记' : '正在读取登记…'}</p>
+              )}
+            </div>
+          </motion.section>
+        </div>
+        <footer>
+          鸭鸭日历 <span>北京时间 UTC+8</span>
+          {user.role === 'admin' && (
+            <Link to="/release-announcement">
+              版本知会 <ArrowUpRight size={12} />
+            </Link>
+          )}
+        </footer>
+      </motion.main>
+      <FestivalPanel
+        open={panel}
+        close={() => setPanel(false)}
+        preview={preview}
+        onPreview={setPreview}
+        rows={settings.data || []}
+        onSaved={() => refresh((i) => i + 1)}
+      />
+      <Dialog
+        open={!!kind}
+        onOpenChange={(v) => {
+          if (!v && !busy) setKind(null);
+        }}
+      >
+        <DialogContent className="registration-panel">
+          <DialogHeader>
+            <DialogTitle>{kind && title[kind]}</DialogTitle>
+            <DialogDescription>登记后会向 Mentor 和人事发送知会。</DialogDescription>
+          </DialogHeader>
+          {kind && cfg.data ? (
+            <RegisterForm
+              key={kind}
+              kind={kind}
+              config={cfg.data}
+              onDone={() => {
+                burst();
+                refresh((i) => i + 1);
+              }}
+              onBusy={setBusy}
+              onClose={() => setKind(null)}
+            />
+          ) : (
+            <p role="status">{cfg.error || '正在读取人事配置…'}</p>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }

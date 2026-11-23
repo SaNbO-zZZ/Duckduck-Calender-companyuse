@@ -7,6 +7,20 @@
     {
       "source": "/api/duty/:route+",
       "destination": "/api/duty?route=:route"
+    },
+    {
+      "source": "/charter",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/duty-exchange",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/release-announcement",
+      "destination": "/index.html"
     }
-  ]
+  ],
+  "buildCommand": "npm run build:client",
+  "outputDirectory": "dist/client"
 }

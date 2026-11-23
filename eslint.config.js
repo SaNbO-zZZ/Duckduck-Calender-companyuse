@@ -17,6 +17,7 @@ module.exports = tseslint.config(
   // Client configuration
   {
     files: ['client/**/*.{ts,tsx}', 'shared/**/*.{ts,tsx}'],
+    rules: { '@lark-apaas/require-app-container': 'off' },
     extends: [
       ...eslintPresetsOfSimple.client,
     ],

@@ -1,56 +1,53 @@
-import React from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { ErrorBoundary } from 'react-error-boundary';
-
-import { AppContainer } from '@lark-apaas/client-toolkit/components/AppContainer';
-import { ErrorRender } from '@lark-apaas/client-toolkit/components/ErrorRender';
-
-import RoutesComponent from './app.tsx';
+import { MotionConfig } from 'framer-motion';
+import axios from 'axios';
+import RoutesComponent from './app';
+import { Directory, Session, type Person, type User } from './lib/client';
 import './index.css';
-import { createPortal } from 'react-dom';
-import { Toaster } from '@client/src/components/ui/sonner';
-
-const CLIENT_BASE_PATH = process.env.CLIENT_BASE_PATH || '/';
-
-const MainApp = () => {
-  return (
-    <BrowserRouter basename={CLIENT_BASE_PATH}>
-      <AppContainer defaultTheme="light">
-        <ErrorBoundary
-          fallbackRender={({ error, resetErrorBoundary }) => (
-            <ErrorRender
-              error={error as Error}
-              resetErrorBoundary={resetErrorBoundary}
-            />
-          )}
-        >
-          <RoutesComponent />
-          {createPortal(<Toaster />, document.body)}
-        </ErrorBoundary>
-      </AppContainer>
-    </BrowserRouter>
-  );
-};
-
-async function start() {
-  const root = createRoot(document.getElementById('root')!);
-  if (window.location.hostname === 'calendar.alphapulsex.online' || import.meta.env.VITE_FEISHU_OAUTH === 'true') {
-    try {
-      const response = await axios.get<{ user?: { open_id?: string } }>('/api/auth/me', { validateStatus: () => true });
-      if (response.status === 401) {
-        const { pathname, search, hash } = window.location;
-        window.location.replace('/api/auth/feishu/login?' + new URLSearchParams({ returnTo: pathname + search + hash }));
+import './pages/Calendar/calendar.css';
+function App() {
+  const [user, setUser] = useState<User | null>(null),
+    [people, setPeople] = useState<Person[]>([]),
+    [error, setError] = useState('');
+  useEffect(() => {
+    const ac = new AbortController();
+    (async () => {
+      const me = await axios.get('/api/auth/me', { signal: ac.signal });
+      if (!me.data?.user?.open_id) throw Error();
+      setUser(me.data.user);
+      const { data } = await axios.get<Person[]>('/api/calendar/people', { signal: ac.signal });
+      setPeople(data);
+    })().catch((e) => {
+      if (ac.signal.aborted) return;
+      if (e.response?.status === 401) {
+        location.replace(
+          '/api/auth/feishu/login?' +
+            new URLSearchParams({ returnTo: location.pathname + location.search + location.hash }),
+        );
         return;
       }
-      if (response.status !== 200 || !response.data.user?.open_id) throw new Error('auth');
-    } catch {
-      root.render(<p role="alert">暂时无法进入鸭鸭日历，请确认账号可用后刷新重试。</p>);
-      return;
-    }
-  }
-  root.render(<MainApp />);
+      setError('暂时无法读取账号资料，请刷新重试。');
+    });
+    return () => ac.abort();
+  }, []);
+  if (error || !user)
+    return (
+      <main className="loading-page" role="status">
+        {error || '正在打开鸭鸭日历…'}
+      </main>
+    );
+  return (
+    <Session.Provider value={user}>
+      <Directory.Provider value={people}>
+        <MotionConfig reducedMotion="user">
+          <BrowserRouter>
+            <RoutesComponent />
+          </BrowserRouter>
+        </MotionConfig>
+      </Directory.Provider>
+    </Session.Provider>
+  );
 }
-
-void start();
+createRoot(document.getElementById('root')!).render(<App />);

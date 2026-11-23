@@ -114,6 +114,32 @@ export class Feishu {
     return records;
   }
 
+  async charterSource() {
+    const node = await this.call('wiki/v2/spaces/get_node?token=PH9ZwxfOwi1cJdksnjxcCf1Snzf', 'GET');
+    if (node.node?.obj_type !== 'docx') throw new HttpError(502, '公约来源文档类型不符。');
+    const path = 'docx/v1/documents/' + encodeURIComponent(node.node.obj_token);
+    const { document } = await this.call(path, 'GET');
+    const revision = z.number().int().positive().parse(document.revision_id);
+    const blocks: unknown[] = [];
+    let cursor = '';
+    const seen = new Set<string>();
+    do {
+      const params = new URLSearchParams({ page_size: '500' });
+      if (cursor) params.set('page_token', cursor);
+      const page = await this.call(path + '/blocks?' + params, 'GET');
+      if (!Array.isArray(page.items)) throw new HttpError(502, '公约文档内容不完整。');
+      blocks.push(...page.items);
+      if (!page.has_more) break;
+      cursor = page.page_token;
+      if (!cursor || seen.has(cursor)) throw new HttpError(502, '公约分页不完整。');
+      seen.add(cursor);
+    } while (cursor);
+    const after = await this.call(path, 'GET');
+    if (after.document?.revision_id !== revision)
+      throw new HttpError(409, '读取期间飞书公约有更新，请重新同步。');
+    return { revision, blocks };
+  }
+
   async hr() {
     const records = await this.search(
       tables.settings,

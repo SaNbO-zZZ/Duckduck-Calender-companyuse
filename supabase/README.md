@@ -20,3 +20,9 @@ Phase 1 的数据时点是 2026-11-23 的妙搭生产快照。切流前需另行
 云端任务 `ducky-duty-reminder-1600` 使用 UTC 的 `0 8 * * *`，初始状态为停用。预发时在目标 Vercel 环境设置 `CRON_SECRET`，并用 Supabase Vault 保存同值的 `ducky_cron_secret`。使用带 Bearer 凭证的 `GET /api/cron/duty-reminder?dryRun=1` 核实排班解析，返回的 `sent` 应为 `false`。切流获批后，先停用妙搭触发器，再启用该任务。通过 `cron.job_run_details`、`net._http_response` 和 `duty_notification_delivery` 分别核对触发时间、HTTP 回执和最终投递状态。出现 `needs_review` 时核对平台回执再处理。
 
 全员消息还需管理员会话、24 小时内核实的版本名单，以及与获批批次完全相同的服务端配置 `APPROVED_BROADCAST_VERSION`。日常部署留空。
+
+## Phase 3 公约与节日
+
+`20261123000400_festivals.sql` 为五个节日初始化配置，重复执行保留已有审批结果。目标云项目已通过服务端接口按同一批数据初始化，五个主题在 Phase 3 验收时全部停用。员工首页按北京时间和节期读取已批准主题，管理员预览只影响当前页面。
+
+公约同步固定读取飞书知识库中的鸭鸭公约，核对读取前后的文档修订号后，整批写入该版本的章节。已阅记录按账号和版本去重。重新同步同一版本不会覆盖管理员选定的配图和重点标记。
