@@ -8,14 +8,14 @@ const WEEK = 7 * 24 * 60 * 60;
 const OPEN_ID = /^ou_[A-Za-z0-9]+$/;
 const OAUTH = 'ducky_oauth';
 const SESSION = 'ducky_session';
-type Context = { req: IncomingMessage; res: ServerResponse; url: URL; origin: string };
+export type Context = { req: IncomingMessage; res: ServerResponse; url: URL; origin: string };
 type Route = (ctx: Context) => Promise<void>;
 
-class HttpError extends Error {
+export class HttpError extends Error {
   constructor(readonly status: number, message: string) { super(message); }
 }
 
-function setting(name: string) {
+export function setting(name: string) {
   const value = process.env[name];
   if (!value) throw new Error('Missing server configuration');
   return value;
@@ -65,23 +65,24 @@ function redirect(res: ServerResponse, location: string) {
   res.writeHead(302, { Location: location }).end();
 }
 
-export function handler(route: Route) {
+export function handler(route: Route, methods: string[] = ['GET']) {
   return async (req: IncomingMessage, res: ServerResponse) => {
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Referrer-Policy', 'no-referrer');
     try {
-      if (req.method !== 'GET') {
-        res.setHeader('Allow', 'GET');
+      if (!methods.includes(req.method || '')) {
+        res.setHeader('Allow', methods.join(', '));
         throw new HttpError(405, '请求方式不支持。');
       }
       const base = new URL(setting('APP_BASE_URL'));
       if ((base.protocol !== 'https:' && !(base.protocol === 'http:' && base.hostname === 'localhost')) ||
           base.username || base.password || setting('FEISHU_APP_ID') !== APP_ID) throw new Error('Invalid configuration');
+      if (req.method === 'POST' && req.headers.origin && req.headers.origin !== base.origin) throw new HttpError(403, '请求来源无效。');
       await route({ req, res, url: new URL(req.url || '/', base.origin), origin: base.origin });
     } catch (error) {
       const known = error instanceof HttpError;
       res.writeHead(known ? error.status : 503, { 'Content-Type': 'application/json; charset=utf-8' })
-        .end(JSON.stringify({ error: known ? error.message : '登录服务暂时不可用，请稍后重试。' }));
+        .end(JSON.stringify({ error: known ? error.message : '服务暂时不可用，请稍后重试。' }));
     }
   };
 }
@@ -102,19 +103,25 @@ export const login: Route = async ({ res, url, origin }) => {
 
 async function jsonRequest(url: URL | string, init: RequestInit) {
   const result = await fetch(url, { ...init, redirect: 'error', signal: AbortSignal.timeout(8000) });
-  if (!result.ok) throw new Error('Upstream unavailable');
-  return result.json();
+  if (!result.ok) {
+    const error = await result.json().catch(() => ({}));
+    if (['PT400','PT403','PT404','PT409'].includes(error.code)) throw new HttpError(Number(error.code.slice(2)), error.message);
+    throw new Error('Upstream unavailable');
+  }
+  if (result.status === 204) return null;
+  const payload = await result.text();
+  return payload ? JSON.parse(payload) : null;
 }
 
-function database(path: string, body?: Record<string, unknown>) {
+export async function db<T>(path: string, method = 'GET', body?: unknown, prefer?: string): Promise<T> {
   const url = new URL(setting('SUPABASE_URL'));
   if (url.protocol !== 'https:' || url.username || url.password) throw new Error('Invalid database URL');
   const serviceKey = setting('SUPABASE_SERVICE_ROLE_KEY');
   const headers: Record<string, string> = { apikey: serviceKey, 'Content-Type': 'application/json' };
-  // Legacy service_role keys are JWTs. New sb_secret keys use only the apikey header.
   if (!serviceKey.startsWith('sb_secret_')) headers.Authorization = 'Bearer ' + serviceKey;
+  if (prefer) headers.Prefer = prefer;
   return jsonRequest(new URL('/rest/v1/' + path, url), {
-    method: body ? 'POST' : 'GET', headers, body: body ? JSON.stringify(body) : undefined,
+    method, headers, body: body === undefined ? undefined : JSON.stringify(body),
   });
 }
 
@@ -141,7 +148,7 @@ export const callback: Route = async ({ req, res, url, origin }) => {
     throw new HttpError(401, '无法核实飞书身份。');
   }
   if (person.tenant_key !== setting('FEISHU_TENANT_KEY')) throw new HttpError(403, '仅限本企业成员登录。');
-  const users = await database('rpc/sync_feishu_login', {
+  const users = await db<DirectoryUser[]>('rpc/sync_feishu_login', 'POST', {
     p_open_id: person.open_id, p_union_id: person.union_id || null,
     p_name: person.name, p_avatar_url: person.avatar_url || null,
   });
@@ -153,10 +160,12 @@ export const callback: Route = async ({ req, res, url, origin }) => {
   redirect(res, localPath(transient.returnTo, origin));
 };
 
-export const me: Route = async ({ req, res, origin }) => {
+export interface DirectoryUser { open_id: string; name: string | null; avatar_url: string | null; role: 'member' | 'admin' }
+
+export async function currentUser({ req, res, origin }: Context): Promise<DirectoryUser> {
   const session = await verify(readCookie(req, SESSION), SESSION, WEEK, origin);
   if (!session.sub || !OPEN_ID.test(session.sub)) throw new HttpError(401, '请先登录。');
-  const users = await database('feishu_users?' + new URLSearchParams({
+  const users = await db<DirectoryUser[]>('feishu_users?' + new URLSearchParams({
     open_id: 'eq.' + session.sub, is_active: 'eq.true', select: 'open_id,name,avatar_url,role',
   }));
   if (!Array.isArray(users)) throw new Error('Invalid directory response');
@@ -164,5 +173,10 @@ export const me: Route = async ({ req, res, origin }) => {
     res.setHeader('Set-Cookie', cookie(SESSION, '', 0));
     throw new HttpError(403, '账号已停用。');
   }
-  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }).end(JSON.stringify({ user: users[0] }));
+  return users[0];
+}
+
+export const me: Route = async ctx => {
+  const user = await currentUser(ctx);
+  ctx.res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }).end(JSON.stringify({ user }));
 };

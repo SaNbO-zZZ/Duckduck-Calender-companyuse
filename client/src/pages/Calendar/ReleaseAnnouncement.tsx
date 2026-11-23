@@ -7,7 +7,7 @@ type Preview = {recipientCount: number; wikiUrl: string};
 type Result = {version: string; expected: number; accepted: number; needsReview: number; message: string; wikiUrl: string};
 type EntryPreview = {recipientCount: number; title: string; content: string};
 type EntryResult = {expected: number; accepted: number; needsReview: number; message: string};
-const wikiUrl = 'https://ycn3zdw6f1p7.feishu.cn/wiki/I6uzwNwd7izfPCkQHJDcoxdRnRb';
+import { WIKI_URL as wikiUrl } from '../../../../shared/release-copy';
 const explain = (error: unknown) => isAxiosError(error)
   ? String(error.response?.data?.message || error.message)
   : '请求未确认，请先核对该版本的发送状态，不要重复提交。';

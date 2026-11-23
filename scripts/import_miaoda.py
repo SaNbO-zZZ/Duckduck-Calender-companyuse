@@ -57,6 +57,8 @@ def load_snapshot(root):
         rows = json.loads(raw)
         require(len(rows) == counts[table], "Source count mismatch: " + table)
         for row in rows:
+            if table == "duty_exchange_request":
+                row.update(invite_delivery="pending", decision_delivery="pending")
             if table == "duty_notification_delivery":
                 date, recipient = row["idempotency_key"].split(":")
                 require(date == row["duty_date"] and resolve(recipient) == resolve(row["final_person_id"]),

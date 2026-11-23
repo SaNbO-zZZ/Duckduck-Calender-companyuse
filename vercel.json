@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/calendar/:route+",
+      "destination": "/api/calendar?route=:route"
+    },
+    {
+      "source": "/api/duty/:route+",
+      "destination": "/api/duty?route=:route"
+    }
+  ]
+}

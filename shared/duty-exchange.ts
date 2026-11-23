@@ -14,7 +14,7 @@ export function exchangeCutoffMs(dutyDate: string): number {
   return parseBeijingDate(dutyDate) + 16 * 60 * 60 * 1000;
 }
 
-export function exchangeOpenUrl(requestId: string, baseUrl = '/app/app_17fstqsqv1c'): string {
+export function exchangeOpenUrl(requestId: string, baseUrl = 'https://calendar.alphapulsex.online'): string {
   if (!requestId.trim()) throw new Error('换班请求 ID 不能为空。');
   return `${baseUrl.replace(/\/$/, '')}/duty-exchange?requestId=${encodeURIComponent(requestId)}`;
 }

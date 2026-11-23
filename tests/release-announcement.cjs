@@ -17,7 +17,7 @@ test('preflight accepts a fresh, complete and unique official-contact snapshot',
   const f = fixture(good());
   const preview = await f.service.preview('v3.2.1');
   assert.equal(preview.recipientCount, 3);
-  assert.match(preview.wikiUrl, /I6uzwNwd7izfPCkQHJDcoxdRnRb/);
+  assert.match(preview.wikiUrl, /I7epdYKpToh4xrxckU1cCXTNnDe/);
   assert.equal(f.reads(), 1);
 });
 
