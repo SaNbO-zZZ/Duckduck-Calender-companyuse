@@ -1,4 +1,5 @@
 import React from 'react';
+import axios from 'axios';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -33,4 +34,23 @@ const MainApp = () => {
   );
 };
 
-createRoot(document.getElementById('root')!).render(<MainApp />);
+async function start() {
+  const root = createRoot(document.getElementById('root')!);
+  if (window.location.hostname === 'calendar.alphapulsex.online' || import.meta.env.VITE_FEISHU_OAUTH === 'true') {
+    try {
+      const response = await axios.get<{ user?: { open_id?: string } }>('/api/auth/me', { validateStatus: () => true });
+      if (response.status === 401) {
+        const { pathname, search, hash } = window.location;
+        window.location.replace('/api/auth/feishu/login?' + new URLSearchParams({ returnTo: pathname + search + hash }));
+        return;
+      }
+      if (response.status !== 200 || !response.data.user?.open_id) throw new Error('auth');
+    } catch {
+      root.render(<p role="alert">暂时无法进入鸭鸭日历，请确认账号可用后刷新重试。</p>);
+      return;
+    }
+  }
+  root.render(<MainApp />);
+}
+
+void start();
