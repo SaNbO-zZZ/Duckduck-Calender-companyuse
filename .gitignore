@@ -34,6 +34,8 @@ logs/
 *.pid.lock
 *.seed
 tmp/
+tmp-migration-backup/
+tmp-export-*.zip
 temp/
 .cache/
 .playwright-cli/

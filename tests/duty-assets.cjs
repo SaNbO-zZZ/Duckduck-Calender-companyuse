@@ -26,3 +26,27 @@ test('duty asset manifest keeps seven immutable role sources and v2.1 action con
     for (const action of actions) assert.match(entry.actionSheets[action], /\/188\d+\.png$/);
   }
 });
+
+test('the runtime manifest resolves approved roles to bundled PNG grids', () => {
+  const { dutyAssetManifest, resolveDutyDuckKey, weeklyDutyDuckKeys } = require('../dist/shared/duty-assets');
+  assert.deepEqual(Object.keys(dutyAssetManifest.roles), [...weeklyDutyDuckKeys]);
+  for (const legacyKey of roles) assert.ok(resolveDutyDuckKey(legacyKey));
+  assert.equal(resolveDutyDuckKey('toString'), undefined);
+
+  for (const key of weeklyDutyDuckKeys) {
+    assert.equal(resolveDutyDuckKey(key), key);
+    const role = dutyAssetManifest.roles[key];
+    const files = [
+      [role.assetPath, 256, 256],
+      [role.spriteSheet, 1536, 1536],
+      ...Object.entries(role.actionSheets).map(([action, url]) => [url, role.actions[action].length * 256, 256]),
+    ];
+    for (const [url, width, height] of files) {
+      assert.ok(url.startsWith(`/assets/duty-ducks-v2/${key}/`));
+      const png = fs.readFileSync(path.join(root, 'client/public', url));
+      assert.equal(png.toString('ascii', 12, 16), 'IHDR');
+      assert.equal(png.readUInt32BE(16), width, url);
+      assert.equal(png.readUInt32BE(20), height, url);
+    }
+  }
+});

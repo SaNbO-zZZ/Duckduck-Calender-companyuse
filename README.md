@@ -11,7 +11,7 @@
 | 路径 | 用途 |
 | --- | --- |
 | `client/`、`server/`、`shared/`、`database/` | 飞书妙搭实际运行的前后端工程；妙搭原提交历史保留在 `main`。 |
-| `source/鸭鸭日历.html` | 本地单文件设计与交互源，供继续迭代和对照；**不等于**自动部署入口。 |
+| `archive/miaoda-single-file/` | 妙搭单文件设计的脱敏副本、导出脚本和来源记录。 |
 | `archive/local-history/` | 早期真实留存的 HTML、复核脚本与快照；只作追溯。 |
 | `archive/claude-prompts/` | 交给 Claude 的三轮开发提示词；Claude 云端会话与未导出的中间文件不在此仓库。 |
 | `assets/duck-original-24/` | 公司原创 24 款鸭鸭表情包的解压源素材与清单。 |

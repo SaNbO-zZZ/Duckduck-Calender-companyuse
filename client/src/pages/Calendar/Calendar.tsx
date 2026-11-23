@@ -18,7 +18,10 @@ import { calendarDocument } from './calendar-document';
 import { DutyDuckStage } from './DutyDuckStage';
 import { trackRegistration } from '../../../../shared/registration-progress';
 import type { CalendarConfig, CalendarData, RegistrationKind, RegistrationRequest, RegistrationResult, RegistrationStatus, WeatherData } from '../../../../shared/api.interface';
-const initialDocument = calendarDocument.replace('/*__DUCK_SPRITE_DATA__*/', '{}');
+const halloweenAssetBase = `${import.meta.env.BASE_URL}assets/festivals/halloween/`;
+const initialDocument = calendarDocument
+ .replace('/*__DUCK_SPRITE_DATA__*/', '{}')
+ .replace('"__DUCK_HALLOWEEN_ASSET_BASE__"', JSON.stringify(halloweenAssetBase));
 const today = (ms=Date.now()) => new Date(ms+480*60000).toISOString().slice(0,10);
 const dateLabel = (d:Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const timeText = (ms:number) => new Date(ms+480*60000).toISOString().slice(0,16).replace('T',' ')+'（北京时间）';
@@ -107,7 +110,17 @@ export default function Calendar(){
  },[]);
  const post=useCallback((message:Record<string,unknown>)=>frame.current?.contentWindow?.postMessage({duckCalendar:true,...message},location.origin),[]);
  // The calendar can render and accept notices while the decorative sprites load.
- useEffect(()=>{let active=true;axiosForBackend<unknown>({url:'/api/calendar/sprites',method:'GET'}).then(r=>{if(active)setSprites(r.data);}).catch(()=>{if(active)setAssetError(true);});return()=>{active=false;};},[]);
+ useEffect(() => {
+  const controller = new AbortController();
+  fetch(`${import.meta.env.BASE_URL}assets/weather-sprites/embed-sprites.json`, { signal: controller.signal })
+   .then(response => {
+    if (!response.ok) throw new Error('插画资源加载失败。');
+    return response.json();
+   })
+   .then(data => { if (!controller.signal.aborted) setSprites(data); })
+   .catch(() => { if (!controller.signal.aborted) setAssetError(true); });
+  return () => controller.abort();
+ }, []);
  useEffect(()=>{let active=true;axiosForBackend<CalendarConfig>({url:'/api/calendar/config',method:'GET'}).then(r=>{if(active){setConfig(r.data);setConfigError('');}}).catch(()=>{if(active)setConfigError('固定人事配置读取失败，请稍后重试。');});return()=>{active=false;};},[revision]);
  useEffect(()=>{let active=true;setDataError(false);axiosForBackend<CalendarData>({url:'/api/calendar/month',method:'GET',params:{month},timeout:120000}).then(r=>{if(active){dataMonth.current=month;setData(r.data);}}).catch(()=>{if(active)setDataError(true);});return()=>{active=false;};},[month,revision]);
  useEffect(()=>{let active=true;const load=()=>{if(document.hidden)return;axiosForBackend<WeatherData>({url:'/api/calendar/weather',method:'GET',timeout:15000}).then(r=>{if(active)setWeather(r.data);}).catch(()=>{if(active)setWeather({available:false,scene:'overcast',windSpeed:0,windFrom:0,cloud:.9,validTime:'',updatedAt:'',source:'天气暂不可用'});});};load();const timer=setInterval(load,5*60000+Math.random()*60000);document.addEventListener('visibilitychange',load);return()=>{active=false;clearInterval(timer);document.removeEventListener('visibilitychange',load);};},[]);

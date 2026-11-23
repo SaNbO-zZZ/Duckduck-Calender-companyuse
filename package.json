@@ -12,7 +12,6 @@
     "@nestjs/core": "^10.4.20",
     "@nestjs/platform-express": "^10.4.20",
     "@nestjs/swagger": "^7.4.2",
-    "@tanstack/react-form": "^1.27.6",
     "@tanstack/react-query": "^5.90.12",
     "axios": "^1.12.2",
     "cache-manager": "^6.4.3",
@@ -75,13 +74,9 @@
     "cmdk": "^1.1.1",
     "concurrently": "^9.2.1",
     "date-fns": "^4.1.0",
-    "echarts": "^6.1.0",
-    "echarts-for-react": "~3.0.2",
-    "embla-carousel-react": "^8.6.0",
     "eslint": "^9.35.0",
     "framer-motion": "^12.38.0",
     "gsap": "^3.13.0",
-    "input-otp": "^1.4.2",
     "lodash": "^4.17.21",
     "lucide-react": "0.577.0",
     "nanoid": "^5.1.6",
@@ -95,9 +90,7 @@
     "react-error-boundary": "^6.0.0",
     "react-hook-form": "^7.65.0",
     "react-markdown": "^10.1.0",
-    "react-resizable-panels": "^3.0.6",
     "react-router-dom": "^7.13.2",
-    "recharts": "^2.15.4",
     "remark-gfm": "^4.0.1",
     "rxjs": "^7.8.2",
     "sonner": "^2.0.7",
@@ -108,7 +101,6 @@
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.44.0",
     "uuid": "11.0.5",
-    "vaul": "^1.1.2",
     "vite": "^8"
   },
   "engines": {
@@ -124,7 +116,6 @@
   "overrides": {
     "clsx": "^2.1.1",
     "dayjs": "^1.11.15",
-    "echarts": "^6.1.0",
     "stylelint": "^17.3.0",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"

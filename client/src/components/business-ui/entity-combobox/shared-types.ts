@@ -66,7 +66,9 @@ export type ClassNamesConfig = {
  * 弹层容器配置
  */
 export type PopoverSlotProps = {
-  popover?: React.ComponentProps<typeof PopoverContent>;
+  popover?: React.ComponentProps<typeof PopoverContent> & {
+    'data-allow-calendar-scroll'?: boolean;
+  };
 };
 
 /**

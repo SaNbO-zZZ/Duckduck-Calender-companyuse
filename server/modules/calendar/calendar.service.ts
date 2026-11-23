@@ -1,9 +1,11 @@
 import { Inject, Injectable, BadGatewayException, BadRequestException, ConflictException, ForbiddenException, Logger } from '@nestjs/common';
-import { CapabilityService, FileService, AuthNPaasService, DRIZZLE_DATABASE, type PostgresJsDatabase } from '@lark-apaas/fullstack-nestjs-core';
+import { CapabilityService, AuthNPaasService, DRIZZLE_DATABASE, type PostgresJsDatabase } from '@lark-apaas/fullstack-nestjs-core';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { and, eq } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { z } from 'zod';
 import { calendarSubmission } from '../../database/schema';
 import type { CalendarConfig, CalendarData, CalendarEvent, Holiday, RegistrationResult, WeatherData } from '../../../shared/api.interface';
@@ -42,12 +44,13 @@ function notificationContent(input:z.infer<typeof inputSchema>,actorName:string,
 @Injectable()
 export class CalendarService {
  private readonly logger = new Logger(CalendarService.name);
- constructor(@Inject(CapabilityService) private readonly capability: CapabilityService, @Inject(AuthNPaasService) private readonly authn: AuthNPaasService, @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase, @Inject(CACHE_MANAGER) private readonly cache: Cache, @Inject(FileService) private readonly files: FileService) {}
+ constructor(@Inject(CapabilityService) private readonly capability: CapabilityService, @Inject(AuthNPaasService) private readonly authn: AuthNPaasService, @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase, @Inject(CACHE_MANAGER) private readonly cache: Cache) {}
  async sprites():Promise<unknown> {
   return this.cache.wrap('duck-calendar:sprite-data:v3',async()=>{
-   const result=await this.files.download('/spark/app/app_17fstqsqv1c/runtime/api/v1/storage/object/bucket_aadkzip6foyts/1878663148282906.json');
-   if(result.content.size>100000)throw new BadGatewayException('插画资源大小异常。');
-   return JSON.parse(await result.content.text());
+   const assetRoot = process.env.NODE_ENV === 'production' ? 'dist/client' : 'client/public';
+   const data = await readFile(join(assetRoot, 'assets/weather-sprites/embed-sprites.json'));
+   if (data.byteLength > 100000) throw new BadGatewayException('插画资源大小异常。');
+   return JSON.parse(data.toString('utf8'));
   },86400000);
  }
  // Retry only idempotent reads on a confirmed transport failure. Never retry writes or notifications.

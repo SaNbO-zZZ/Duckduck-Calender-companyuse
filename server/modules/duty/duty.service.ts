@@ -3,7 +3,7 @@ import { AuthNPaasService, DRIZZLE_DATABASE, type PostgresJsDatabase } from '@la
 import { Inject } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { dutyAssetManifest } from '../../../shared/duty-assets';
+import { dutyAssetManifest, resolveDutyDuckKey } from '../../../shared/duty-assets';
 import { applyAvatarBinding, beijingDate, canInitiateExchange, parseBeijingDate, planDutySelection, resolveDuty, weekdayOf, type DutyAvatarBinding, type DutyOverride, type DutyRule, type ExchangeState } from '../../../shared/duty-calendar';
 import { exchangeCutoffMs, exchangeOpenUrl, reduceExchange, type DutyExchangeAction, type DutyExchangeDecision } from '../../../shared/duty-exchange';
 import { buildDutyExchangeOpenCard } from '../../../shared/duty-exchange-card';
@@ -29,7 +29,7 @@ export class DutyService {
 
   private async avatarBinding(personId: string): Promise<DutyAvatarBinding | null> {
     const [row] = await this.db.select().from(dutyAvatarBinding).where(and(eq(dutyAvatarBinding.personId, personId), eq(dutyAvatarBinding.status, 'active'))).limit(1);
-    if (!row || !dutyAssetManifest.roles[row.duckKey]) return null;
+    if (!row || !resolveDutyDuckKey(row.duckKey)) return null;
     return { personId: row.personId, duckKey: row.duckKey, manifestVersion: row.manifestVersion, status: row.status as DutyAvatarBinding['status'] };
   }
 
