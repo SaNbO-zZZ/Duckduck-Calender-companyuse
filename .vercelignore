@@ -1,0 +1,16 @@
+.env
+.env.*
+/.git/
+._*
+**/._*
+/.agents/
+/.spark/
+/.spark_project
+/docs/
+/archive/
+/assets/
+/session-archive/
+/tmp-migration-backup/
+/output/
+/dist/
+/node_modules/

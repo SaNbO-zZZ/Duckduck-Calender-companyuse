@@ -144,7 +144,8 @@
     "type:check:auth": "tsc --noEmit --project tsconfig.auth.json",
     "build:auth": "tsc --project tsconfig.auth.json --outDir dist/auth",
     "legacy:init": "npx -y @lark-apaas/fullstack-cli@latest action-plugin init",
-    "preview:phase3": "node scripts/preview-phase3.cjs"
+    "preview:phase3": "node scripts/preview-phase3.cjs",
+    "test": "npm run build:prod && node --test tests/*.cjs"
   },
   "version": "2.3.0"
 }

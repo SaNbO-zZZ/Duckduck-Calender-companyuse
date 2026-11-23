@@ -34,7 +34,7 @@ export async function body(ctx: Context) {
     throw new HttpError(415, '请提交 JSON。');
   const req = ctx.req as typeof ctx.req & { body?: unknown };
   if (req.body !== undefined && typeof req.body !== 'string') return req.body;
-  let raw = req.body || '';
+  let raw = typeof req.body === 'string' ? req.body : '';
   if (req.body === undefined) {
     const chunks: Buffer[] = [];
     let bytes = 0;

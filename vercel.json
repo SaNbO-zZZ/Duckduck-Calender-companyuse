@@ -21,6 +21,7 @@
       "destination": "/index.html"
     }
   ],
+  "installCommand": "npm ci --include=dev",
   "buildCommand": "npm run build:client",
   "outputDirectory": "dist/client"
 }

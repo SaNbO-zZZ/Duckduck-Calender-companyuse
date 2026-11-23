@@ -1,5 +1,5 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { handler, HttpError, setting } from '../../lib/feishu-auth.js';
+import { handler, HttpError, requireBusinessWrites, setting } from '../../lib/feishu-auth.js';
 import { json } from '../../lib/business-http.js';
 import { dutyDay, remind } from '../../lib/duty.js';
 import { Feishu } from '../../lib/feishu-platform.js';
@@ -24,6 +24,7 @@ export default handler(
         sent: false,
       });
     }
+    requireBusinessWrites();
     json(ctx, await remind(new Feishu(), ctx.origin));
   },
   ['GET', 'POST'],

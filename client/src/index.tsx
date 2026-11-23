@@ -10,12 +10,14 @@ import './pages/Calendar/calendar.css';
 function App() {
   const [user, setUser] = useState<User | null>(null),
     [people, setPeople] = useState<Person[]>([]),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [readOnly, setReadOnly] = useState(false);
   useEffect(() => {
     const ac = new AbortController();
     (async () => {
       const me = await axios.get('/api/auth/me', { signal: ac.signal });
       if (!me.data?.user?.open_id) throw Error();
+      setReadOnly(me.data.readOnly === true);
       setUser(me.data.user);
       const { data } = await axios.get<Person[]>('/api/calendar/people', { signal: ac.signal });
       setPeople(data);
@@ -43,6 +45,11 @@ function App() {
       <Directory.Provider value={people}>
         <MotionConfig reducedMotion="user">
           <BrowserRouter>
+            {readOnly && (
+              <p className="preview-notice" role="status">
+                只读预发 · 可浏览日历、公约和节日预览。提交、审批及提醒投递暂停。
+              </p>
+            )}
             <RoutesComponent />
           </BrowserRouter>
         </MotionConfig>

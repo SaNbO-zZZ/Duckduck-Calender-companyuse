@@ -78,6 +78,23 @@ test('login, callback and me preserve the requested page and verify account acti
   assert.equal(JSON.parse(loggedIn.body).user.open_id, 'ou_test');
   assert.equal(loggedIn.headers['Cache-Control'], 'private, no-store');
 });
+test('preview login reads the imported directory without changing shared records', async t => {
+  const prev = process.env.VERCEL_ENV;
+  process.env.VERCEL_ENV = 'preview';
+  t.after(() => {
+    if (prev === undefined) delete process.env.VERCEL_ENV;
+    else process.env.VERCEL_ENV = prev;
+  });
+  const flow = await start('/charter');
+  const fetch = provider(t, flow.authorization);
+  const response = await request(callback, flow.url, flow.cookie);
+  assert.equal(response.status, 302);
+  const [url, init] = fetch.mock.calls[2].arguments;
+  assert.equal(url.pathname, '/rest/v1/feishu_users');
+  assert.equal(init.method, 'GET');
+  const session = response.headers['Set-Cookie'][1].split(';')[0];
+  assert.equal(JSON.parse((await request(me, '/api/auth/me', session)).body).readOnly, true);
+});
 test('invalid state, absent credentials and unsupported methods stop before network access', async t => {
   const flow = await start('/');
   const stub = t.mock.method(global, 'fetch');

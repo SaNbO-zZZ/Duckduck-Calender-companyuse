@@ -10,7 +10,7 @@ import {
 } from '../shared/duty-calendar.js';
 import { dutyAssetManifest } from '../shared/duty-assets.js';
 import { exchangeOpenUrl } from '../shared/duty-exchange.js';
-import { db, HttpError } from './feishu-auth.js';
+import { db, HttpError, previewReadOnly } from './feishu-auth.js';
 import { directory, input, patch, query } from './business-http.js';
 import { Feishu, openId } from './feishu-platform.js';
 
@@ -85,6 +85,18 @@ const exchangeForm = z
   .strict();
 const decisions = z.object({ decision: z.enum(['confirm', 'reject', 'cancel']) }).strict();
 
+async function previewExchange(id: string, actor: string) {
+  const rows = await db<Exchange[]>(query('duty_exchange_request', {
+    id: 'eq.' + id,
+    or: '(initiator_open_id.eq.' + actor + ',invitee_open_id.eq.' + actor + ')',
+  }));
+  const row = rows[0];
+  if (!row) throw new HttpError(404, '换班请求不存在。');
+  return row.state === 'awaiting_confirmation' && Date.parse(row._expires_at) <= Date.now()
+    ? { ...row, state: 'expired' }
+    : row;
+}
+
 export async function exchange(
   api: Feishu,
   actor: string,
@@ -95,13 +107,15 @@ export async function exchange(
   const create = id === undefined ? input(exchangeForm, raw) : null;
   const action = create ? 'create' : raw === undefined ? 'read' : input(decisions, raw).decision;
   const requestId = create ? create.requestId || randomUUID() : input(z.uuid(), id);
-  const response = await db<Exchange | Exchange[]>('rpc/ducky_exchange', 'POST', {
-    p_actor: actor,
-    p_action: action,
-    p_id: requestId,
-    p_day: create?.dutyDate ?? null,
-    p_invitee: create?.inviteeId ?? null,
-  });
+  const response = action === 'read' && previewReadOnly()
+    ? await previewExchange(requestId, actor)
+    : await db<Exchange | Exchange[]>('rpc/ducky_exchange', 'POST', {
+        p_actor: actor,
+        p_action: action,
+        p_id: requestId,
+        p_day: create?.dutyDate ?? null,
+        p_invitee: create?.inviteeId ?? null,
+      });
   const row = Array.isArray(response) ? response[0] : response;
   if (!row?.id || (Array.isArray(response) && response.length !== 1))
     throw new HttpError(502, '换班回执无效。');
@@ -170,7 +184,9 @@ export async function exchange(
     openUrl: url,
     inviteDelivery: row.invite_delivery,
     decisionDelivery: row.decision_delivery,
-    message: row[field] === 'needs_review' ? '换班状态已保存，私聊投递待核对。' : '换班状态已保存。',
+    message: action === 'read'
+      ? (row[field] === 'needs_review' ? '私聊投递待核对。' : '')
+      : (row[field] === 'needs_review' ? '换班状态已保存，私聊投递待核对。' : '换班状态已保存。'),
   };
 }
 

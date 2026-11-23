@@ -18,6 +18,7 @@ output/
 coverage/
 **/coverage/
 .vite/
+.vercel/
 .next/
 *.tsbuildinfo
 .eslintcache

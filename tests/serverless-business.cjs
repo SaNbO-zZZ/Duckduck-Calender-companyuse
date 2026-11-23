@@ -5,6 +5,11 @@ const { Feishu, messageUuid } = require('../dist/auth/lib/feishu-platform');
 const { register } = require('../dist/auth/lib/registration');
 const { db } = require('../dist/auth/lib/feishu-auth');
 const cron = require('../dist/auth/api/cron/duty-reminder').default;
+const calendar = require('../dist/auth/api/calendar').default;
+const duty = require('../dist/auth/api/duty').default;
+const festivals = require('../dist/auth/api/festivals').default;
+const charter = require('../dist/auth/api/charter').default;
+const { exchange } = require('../dist/auth/lib/duty');
 
 Object.assign(process.env, {
   FEISHU_APP_ID: 'cli_aa35caedff78dcc5',
@@ -108,4 +113,68 @@ test('cron rejects missing authorization before contacting the database', async 
 test('PostgREST void RPC accepts an empty response', async (t) => {
   t.mock.method(global, 'fetch', async () => new Response(null, { status: 204 }));
   assert.equal(await db('rpc/ducky_prepare_notice', 'POST', {}), null);
+});
+
+test('preview blocks business writes and live cron through either HTTP method', async (t) => {
+  const previous = process.env.VERCEL_ENV;
+  process.env.VERCEL_ENV = 'preview';
+  t.after(() => {
+    if (previous === undefined) delete process.env.VERCEL_ENV;
+    else process.env.VERCEL_ENV = previous;
+  });
+  const fetch = t.mock.method(global, 'fetch', () => {
+    throw Error('unexpected upstream');
+  });
+  for (const [handler, path, method] of [
+    [calendar, '/api/calendar/register', 'POST'],
+    [calendar, '/api/calendar/release-announcement/publish', 'POST'],
+    [duty, '/api/duty/exchange-requests', 'POST'],
+    [festivals, '/api/festivals', 'POST'],
+    [charter, '/api/charter?action=ack', 'POST'],
+    [cron, '/api/cron/duty-reminder', 'POST'],
+    [cron, '/api/cron/duty-reminder', 'GET'],
+  ]) {
+    const res = {
+      setHeader() {},
+      writeHead(status) {
+        this.status = status;
+        return this;
+      },
+      end(data) {
+        this.body = data;
+      },
+    };
+    await handler({
+      method,
+      url: path,
+      headers: { authorization: 'Bearer ' + process.env.CRON_SECRET },
+    }, res);
+    assert.equal(res.status, 403, method + ' ' + path);
+    assert.match(JSON.parse(res.body).error, /只读预览/);
+  }
+  assert.equal(fetch.mock.callCount(), 0);
+});
+
+test('preview shows an expired exchange without updating the shared request', async (t) => {
+  const previous = process.env.DUCKY_READ_ONLY;
+  process.env.DUCKY_READ_ONLY = '1';
+  t.after(() => {
+    if (previous === undefined) delete process.env.DUCKY_READ_ONLY;
+    else process.env.DUCKY_READ_ONLY = previous;
+  });
+  const id = randomUUID();
+  const fetch = t.mock.method(global, 'fetch', async (url, init) => {
+    assert.equal(init.method, 'GET');
+    if (url.pathname.endsWith('/feishu_users')) return Response.json([]);
+    assert.equal(url.pathname, '/rest/v1/duty_exchange_request');
+    assert.equal(url.searchParams.get('id'), 'eq.' + id);
+    assert.equal(url.searchParams.get('or'), '(initiator_open_id.eq.ou_fixture,invitee_open_id.eq.ou_fixture)');
+    return Response.json([{
+      id, state: 'awaiting_confirmation', _expires_at: '2026-01-01T00:00:00Z',
+      initiator_open_id: 'ou_fixture', invitee_open_id: 'ou_fixture2',
+    }]);
+  });
+  const row = await exchange(new Feishu(), 'ou_fixture', process.env.APP_BASE_URL, id);
+  assert.equal(row.state, 'expired');
+  assert.equal(fetch.mock.callCount(), 2);
 });

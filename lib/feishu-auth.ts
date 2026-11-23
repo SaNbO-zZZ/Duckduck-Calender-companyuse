@@ -65,6 +65,14 @@ function redirect(res: ServerResponse, location: string) {
   res.writeHead(302, { Location: location }).end();
 }
 
+export function previewReadOnly() {
+  return process.env.VERCEL_ENV === 'preview' || process.env.DUCKY_READ_ONLY === '1';
+}
+
+export function requireBusinessWrites() {
+  if (previewReadOnly()) throw new HttpError(403, '当前为只读预览，暂不可提交变更。');
+}
+
 export function handler(route: Route, methods: string[] = ['GET']) {
   return async (req: IncomingMessage, res: ServerResponse) => {
     res.setHeader('Cache-Control', 'private, no-store');
@@ -78,6 +86,7 @@ export function handler(route: Route, methods: string[] = ['GET']) {
       if ((base.protocol !== 'https:' && !(base.protocol === 'http:' && base.hostname === 'localhost')) ||
           base.username || base.password || setting('FEISHU_APP_ID') !== APP_ID) throw new Error('Invalid configuration');
       if (req.method === 'POST' && req.headers.origin && req.headers.origin !== base.origin) throw new HttpError(403, '请求来源无效。');
+      if (req.method === 'POST') requireBusinessWrites();
       await route({ req, res, url: new URL(req.url || '/', base.origin), origin: base.origin });
     } catch (error) {
       const known = error instanceof HttpError;
@@ -148,12 +157,14 @@ export const callback: Route = async ({ req, res, url, origin }) => {
     throw new HttpError(401, '无法核实飞书身份。');
   }
   if (person.tenant_key !== setting('FEISHU_TENANT_KEY')) throw new HttpError(403, '仅限本企业成员登录。');
-  const users = await db<DirectoryUser[]>('rpc/sync_feishu_login', 'POST', {
-    p_open_id: person.open_id, p_union_id: person.union_id || null,
-    p_name: person.name, p_avatar_url: person.avatar_url || null,
-  });
+  const users = previewReadOnly()
+    ? await activeUsers(person.open_id)
+    : await db<DirectoryUser[]>('rpc/sync_feishu_login', 'POST', {
+      p_open_id: person.open_id, p_union_id: person.union_id || null,
+      p_name: person.name, p_avatar_url: person.avatar_url || null,
+    });
   if (!Array.isArray(users)) throw new Error('Invalid directory response');
-  if (!users.length) throw new HttpError(403, '账号已停用。');
+  if (!users.length) throw new HttpError(403, '账号未获访问权限。');
   if (users.length !== 1 || users[0].open_id !== person.open_id) throw new Error('Directory identity mismatch');
   const jwt = await sign({ sub: person.open_id }, SESSION, WEEK, origin);
   res.setHeader('Set-Cookie', [cleared, cookie(SESSION, jwt, WEEK)]);
@@ -162,12 +173,16 @@ export const callback: Route = async ({ req, res, url, origin }) => {
 
 export interface DirectoryUser { open_id: string; name: string | null; avatar_url: string | null; role: 'member' | 'admin' }
 
+function activeUsers(openId: string) {
+  return db<DirectoryUser[]>('feishu_users?' + new URLSearchParams({
+    open_id: 'eq.' + openId, is_active: 'eq.true', select: 'open_id,name,avatar_url,role',
+  }));
+}
+
 export async function currentUser({ req, res, origin }: Context): Promise<DirectoryUser> {
   const session = await verify(readCookie(req, SESSION), SESSION, WEEK, origin);
   if (!session.sub || !OPEN_ID.test(session.sub)) throw new HttpError(401, '请先登录。');
-  const users = await db<DirectoryUser[]>('feishu_users?' + new URLSearchParams({
-    open_id: 'eq.' + session.sub, is_active: 'eq.true', select: 'open_id,name,avatar_url,role',
-  }));
+  const users = await activeUsers(session.sub);
   if (!Array.isArray(users)) throw new Error('Invalid directory response');
   if (users.length !== 1 || users[0].open_id !== session.sub) {
     res.setHeader('Set-Cookie', cookie(SESSION, '', 0));
@@ -178,5 +193,6 @@ export async function currentUser({ req, res, origin }: Context): Promise<Direct
 
 export const me: Route = async ctx => {
   const user = await currentUser(ctx);
-  ctx.res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }).end(JSON.stringify({ user }));
+  ctx.res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
+    .end(JSON.stringify({ user, readOnly: previewReadOnly() }));
 };

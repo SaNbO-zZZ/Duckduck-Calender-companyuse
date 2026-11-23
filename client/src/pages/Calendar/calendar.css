@@ -37,6 +37,16 @@ a {
 .loading-page {
   padding: 12vh 8vw;
 }
+.preview-notice {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 8px 16px;
+  background: #f2e8c7;
+  color: #4d3e1e;
+  font-size: 13px;
+  text-align: center;
+}
 .calendar-app {
   min-height: 100dvh;
   isolation: isolate;
