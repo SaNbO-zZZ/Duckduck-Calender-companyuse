@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
+import type { JWTPayload } from 'jose';
 
 const APP_ID = 'cli_aa35caedff78dcc5';
 const CALLBACK = '/api/auth/feishu/callback';
@@ -46,13 +46,15 @@ function key() {
   return secret;
 }
 
-function sign(data: JWTPayload, audience: string, seconds: number, origin: string) {
+async function sign(data: JWTPayload, audience: string, seconds: number, origin: string) {
+  const { SignJWT } = await import('jose');
   return new SignJWT(data).setProtectedHeader({ alg: 'HS256', typ: 'JWT' }).setIssuer(origin)
     .setAudience(audience).setIssuedAt().setExpirationTime(Math.floor(Date.now() / 1000) + seconds).sign(key());
 }
 
 async function verify(raw: string, audience: string, seconds: number, origin: string) {
   const secret = key();
+  const { jwtVerify } = await import('jose');
   try {
     const { payload } = await jwtVerify(raw, secret, {
       algorithms: ['HS256'], issuer: origin, audience, requiredClaims: ['iat', 'exp'], maxTokenAge: seconds,
