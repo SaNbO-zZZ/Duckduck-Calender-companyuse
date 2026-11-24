@@ -11,4 +11,4 @@
 
 不要把飞书 token、员工名单、环境变量、授权文件或 `node_modules` 提交到 Git。`session-archive/` 是从旧会话迁移的本地完整资料归档，默认不纳入 Git；需要引用时直接读取其中内容。
 
-迁移分支的运行入口为 `client/` 和 `api/`，数据库变更放在 `supabase/migrations/`。用 `npm run lint` 和 `npm test` 检查，部署使用 Vercel Preview。正式部署、飞书桌面和手机主页、企业导航、提醒调度切换及节日主题启用按[迁移切流验收清单](docs/VERCEL_CUTOVER_CHECKLIST.md)逐项提交批准。全员知会需要对具体批次的明确批准。
+迁移分支的运行入口为 `client/` 和 `api/`，数据库变更放在 `supabase/migrations/`。用 `npm run lint` 和 `npm test` 检查，预发验证使用 Vercel Preview。当前生产站为 https://calendar.alphapulsex.online/ ，登记原表继续保留。维护员工原入口时，分别核对飞书网页应用的桌面和手机主页，以及企业管理后台独立配置的电脑左栏链接。正式部署、飞书桌面和手机主页、企业导航、提醒调度切换及节日主题启用按[迁移切流验收清单](docs/VERCEL_CUTOVER_CHECKLIST.md)逐项提交批准。全员知会需要对具体批次的明确批准。

@@ -32,7 +32,7 @@ Step 1 核验的只读 Production 部署为 `dpl_CTjz9KkRMvjXkv4WWarvkmyFprDK`�
 | 最终数据 | 九表源端 210、目标端 207。备份后补入两条登记及一条历史失败回执，幂等导入执行两次，九表两端均为 210 行，逐字段零差异。17:54:05 复读源端，全部指纹一致。 |
 | 原表对账 | 76/76 笔登记的编号、申请人、Mentor、人事与通知状态全部匹配，无重复或未完成。另有 3 行原表历史数据无登记编号，已保留。 |
 | 正式写入 | 17:54，Production 的 `DUCKY_READ_ONLY=0`。正式域名回读部署 `dpl_tJxzHXhP95isBCKsi9g6UMwu9g7D`，运行代码 `fada875b1044c5d16c6c13c4ffa3b94cec928dbe`。匿名首页 200、登记接口 401，登录 302 到飞书，回调为正式地址。[部署详情](https://vercel.com/sa-nb-o/ducky-calendar/tJxzHXhP95isBCKsi9g6UMwu9g7D) |
-| 真实登记 | 等待指定账号提交一条真实请假或晚到，并按同一登记核对飞书人员字段、私聊内容及去重。 |
+| 真实登记 | 17:55:25，负责人接受真实「提前离开」作为本次上线登记验收。登记编号唯一，申请人、Mentor、人事和状态与原表一致，77/77 笔全量匹配。两位不同收件人的发送均获飞书 API 受理，人事于 17:55 实收。该笔未覆盖 Mentor 兼人事情形；同人去重由自动测试覆盖。Mentor 端实收、实际条数及客户端提及显示待取得终端证据。 |
 
 ## Step 3　员工原入口、正式提醒与上线确认
 
@@ -44,4 +44,13 @@ Step 1 核验的只读 Production 部署为 `dpl_CTjz9KkRMvjXkv4WWarvkmyFprDK`�
 | 每日提醒 | 再次确认旧触发器 disabled 后，启用 Supabase `ducky-duty-reminder-1600`。回读 active 与 `0 8 * * *` UTC，登记切换后的首个北京时间 16:00。核对工作日志、请求编号、HTTP 回执、当日值班人、唯一投递及手机实收。 |
 | 发布记录与退役 | 汇总部署 ID、代码 SHA、数据核对、原图标实测和调度状态到主文档、DOCX 及飞书更新日志，提交并推送迁移分支。旧妙搭保留至正式稳定运行、首次 16:00 确认实收并获明确批准。五个节日主题保持关闭，全员版本知会按批次另行批准。 |
 
-上线成功后列出两条可清理的预发记录供负责人核对：`calendar-preview.alphapulsex.online` 的 CNAME，以及 `_vercel.alphapulsex.online` 上验证 `calendar-preview.alphapulsex.online` 的旧 TXT。正式 CNAME 和正式验证 TXT 均保留。
+### 已回读的发布配置
+
+- 原企业应用 1.0.5 已发布（版本 ID `7707614820930112455`）。桌面和手机主页均为正式地址，正式回调已在飞书安全设置回读，版本可用范围为「所有员工」，没有权限变更。
+- 手机工作台原图标已由负责人分别用管理员与普通员工实测，均能进入新版。负责人将桌面独立链接拖回并保存。重新打开已发布的桌面默认配置，原名原图标的唯一条目仍在第 12 位（邮箱之后、Billsystem 之前）。桌面飞书实点该原图标后，页面地址为正式域名，打开公约后为同域 /charter。负责人确认桌面普通员工和管理员均通过。
+- 18:05:25 再次逐行比对旧源九表，210 行相较 17:54 新增、修改、删除均为 0。Supabase 保留新端 17:55 的真实登记。
+- 通讯录与 Supabase 已启用身份逐人比对，19 人全部匹配。五个节日主题均为关闭。
+
+18:07:17，Supabase 任务 `ducky-duty-reminder-1600`（job 1）回读 active=true，计划 `0 8 * * *` UTC。18:07:27 再读旧妙搭触发器为 disabled。已完成 1 次预演，启用时正式请求为 0。首次正式触发为 **11 月 25 日周三 16:00（北京时间）**，当班赛车鸭。按 run_id 和 request_id 核对任务与 HTTP 回执、当日唯一投递记录和收件人手机实收时刻。旧应用保留至稳定运行、首次正式实收及负责人批准退役。
+
+上线后可清理的两条预发 DNS 记录为`calendar-preview.alphapulsex.online` 的 CNAME，以及 `_vercel.alphapulsex.online` 上验证 `calendar-preview.alphapulsex.online` 的旧 TXT。正式 CNAME 和正式验证 TXT 均保留。
