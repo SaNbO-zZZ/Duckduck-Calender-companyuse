@@ -36,6 +36,8 @@
 
 ## 本地检查
 
+使用 Node.js 24 和 npm 10 或更新版本。
+
 ```bash
 npm ci
 npm run lint
