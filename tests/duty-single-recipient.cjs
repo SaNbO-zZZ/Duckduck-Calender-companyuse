@@ -30,7 +30,7 @@ function makeDb() {
   };
 }
 
-function makeHandler({ personId = 'person-1', db = makeDb() } = {}) {
+function makeHandler({ personId = '1000000000000001', db = makeDb() } = {}) {
   const calls = [];
   const duty = {
     day: async date => ({
@@ -39,21 +39,30 @@ function makeHandler({ personId = 'person-1', db = makeDb() } = {}) {
       personValid: true,
     }),
   };
-  const authn = { getBatchLarkUserIds: async ids => ids.map(id => `lark-${id}`) };
   const capability = { load: () => ({ call: async (action, input) => { calls.push({ action, input }); return { success: true }; } }) };
-  return { handler: new DutyNotificationHandler(db, capability, authn, duty), calls, db };
+  return { handler: new DutyNotificationHandler(db, capability, duty), calls, db };
 }
 
 (async () => {
   const fixture = makeHandler();
-  const first = await fixture.handler.run('2026-11-13', { controlledRecipient: 'test-person' });
+  const first = await fixture.handler.run('2026-11-13', { controlledRecipient: '1000000000000002' });
   assert.equal(first.state, 'accepted');
-  assert.deepEqual(fixture.calls.map(call => call.input.recipients), [['lark-test-person']]);
+  assert.deepEqual(fixture.calls.map(call => call.input.recipients), [['1000000000000002']]);
   assert.equal(fixture.calls[0].input.recipients.length, 1);
-  const second = await fixture.handler.run('2026-11-13', { controlledRecipient: 'test-person' });
+  const second = await fixture.handler.run('2026-11-13', { controlledRecipient: '1000000000000002' });
   assert.equal(second.state, 'accepted');
   assert.equal(fixture.calls.length, 1, 'same date/person must not send twice');
 
+  assert.ok(fixture.db.rows[0].acceptedAt instanceof Date);
+  const invalid = makeHandler();
+  assert.equal((await invalid.handler.run('2026-11-14', { controlledRecipient: 'not-a-miaoda-id' })).state, 'needs_review');
+  assert.equal(invalid.calls.length, 0);
+  const live = makeHandler();
+  assert.equal((await live.handler.run('2026-11-14', { allowLive: true })).state, 'accepted');
+  assert.deepEqual(live.calls[0].input.recipients, ['1000000000000001']);
+  live.db.rows[0].state = 'pending';
+  await live.handler.run('2026-11-14', { allowLive: true });
+  assert.equal(live.calls.length, 1);
   const noLive = makeHandler();
   const previewOnly = await noLive.handler.run('2026-11-14');
   assert.equal(previewOnly.state, 'needs_review');
