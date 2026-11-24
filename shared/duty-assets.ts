@@ -15,7 +15,7 @@ export interface DutyAssetManifest {
   fallback: string;
   roles: Record<string, DutyAssetRole>;
 }
-export const weeklyDutyDuckKeys = ['caishen', 'cockroach', 'beer', 'esports', 'lion', 'racing', 'kunduck'] as const;
+export const weeklyDutyDuckKeys = ['caishen', 'cockroach', 'racing', 'beer', 'esports', 'lion', 'kunduck'] as const;
 
 const assetRoot = '/assets/duty-ducks-v2';
 const legacyRoleKeys: Readonly<Record<string, typeof weeklyDutyDuckKeys[number]>> = {

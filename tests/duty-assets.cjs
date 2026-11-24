@@ -29,6 +29,7 @@ test('duty asset manifest keeps seven immutable role sources and v2.1 action con
 
 test('the runtime manifest resolves approved roles to bundled PNG grids', () => {
   const { dutyAssetManifest, resolveDutyDuckKey, weeklyDutyDuckKeys } = require('../dist/shared/duty-assets');
+  assert.deepEqual([...weeklyDutyDuckKeys], ['caishen', 'cockroach', 'racing', 'beer', 'esports', 'lion', 'kunduck']);
   assert.deepEqual(Object.keys(dutyAssetManifest.roles), [...weeklyDutyDuckKeys]);
   for (const legacyKey of roles) assert.ok(resolveDutyDuckKey(legacyKey));
   assert.equal(resolveDutyDuckKey('toString'), undefined);
