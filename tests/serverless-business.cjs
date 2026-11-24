@@ -1,7 +1,8 @@
 const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const test = require('node:test');
-const { Feishu, messageUuid } = require('../dist/auth/lib/feishu-platform');
+const { Feishu, messageUuid, tables } = require('../dist/auth/lib/feishu-platform');
+const { notice } = require('../dist/auth/lib/notices');
 const { register } = require('../dist/auth/lib/registration');
 const { db } = require('../dist/auth/lib/feishu-auth');
 const cron = require('../dist/auth/api/cron/duty-reminder').default;
@@ -177,4 +178,80 @@ test('preview shows an expired exchange without updating the shared request', as
   const row = await exchange(new Feishu(), 'ou_fixture', process.env.APP_BASE_URL, id);
   assert.equal(row.state, 'expired');
   assert.equal(fetch.mock.callCount(), 2);
+});
+
+for (const [kind, leaveType, table, label] of [
+  ['leave', '年假', 'leave', '年假'],
+  ['leave', '调休', 'leave', '调休'],
+  ['late', '', 'attendance', '晚到'],
+  ['early', '', 'attendance', '提前离开'],
+]) {
+  test('serverless registration writes person fields and separate notifications for ' + label, async (t) => {
+    const actor = 'ou_Applicant', mentor = 'ou_Mentor', hr = 'ou_Hr';
+    const form = {
+      requestKey: randomUUID(), kind, leaveType, mentorId: mentor,
+      start: '2099-05-04T09:00', end: '2099-05-04T18:00',
+      arrivalDate: '2099-05-04', arrivalTime: '10:30',
+    };
+    let receipt;
+    t.mock.method(global, 'fetch', async (url, init) => {
+      if (url.pathname.endsWith('/feishu_users'))
+        return Response.json([actor, mentor, hr].map((id) => ({ open_id: id, name: 'Fixture' })));
+      assert.equal(url.pathname, '/rest/v1/calendar_submission');
+      if (init.method === 'GET') return Response.json(receipt ? [receipt] : []);
+      const values = JSON.parse(init.body);
+      if (init.method === 'POST') {
+        assert.equal(receipt, undefined);
+        receipt = { id: 'receipt', record_state: 'creating', ...values };
+      } else {
+        assert.equal(init.method, 'PATCH');
+        Object.assign(receipt, values);
+      }
+      return Response.json([receipt]);
+    });
+    const api = {
+      hr: async () => hr,
+      create: t.mock.fn(async () => 'record'),
+      send: t.mock.fn(async () => 'message'),
+      update: t.mock.fn(async () => {}),
+    };
+    assert.equal((await register(api, actor, form)).notifications, 'sent');
+    assert.equal((await register(api, actor, form)).recordId, 'record');
+    assert.equal(api.create.mock.callCount(), 1);
+    const [target, fields, clientToken] = api.create.mock.calls[0].arguments;
+    assert.equal(target, tables[table]);
+    assert.equal(fields['登记编号'], form.requestKey);
+    assert.equal(clientToken, messageUuid('record:' + form.requestKey));
+    assert.equal(fields[kind === 'leave' ? '类型' : '登记类型'], label);
+    assert.deepEqual([fields['申请人'], fields.Mentor, fields['人事']], [[{ id: actor }], [{ id: mentor }], [{ id: hr }]]);
+    const messages = api.send.mock.calls.map((call) => call.arguments);
+    assert.deepEqual(messages.map(([recipient]) => recipient), [mentor, hr]);
+    for (const [recipient, key, post] of messages) {
+      assert.equal(key, 'registration:' + form.requestKey + ':' + recipient);
+      assert.deepEqual(post.content.flat().filter((tag) => tag.tag === 'at').map((tag) => tag.user_id), [mentor, hr]);
+    }
+    assert.equal(api.update.mock.callCount(), 1);
+    assert.deepEqual(api.update.mock.calls[0].arguments, [target, 'record', { 通知状态: '已发送' }]);
+  });
+}
+
+test('notice publication requires both an administrator and approval for this exact batch', async (t) => {
+  const saved = process.env.APPROVED_BROADCAST_VERSION;
+  t.after(() => {
+    if (saved === undefined) delete process.env.APPROVED_BROADCAST_VERSION;
+    else process.env.APPROVED_BROADCAST_VERSION = saved;
+  });
+  const ctx = {
+    req: { method: 'POST', headers: { 'content-type': 'application/json' }, body: { version: 'v9.8.7', highlights: ['测试批次'] } },
+    url: new URL('/api/calendar/release-announcement/publish', process.env.APP_BASE_URL),
+  };
+  const send = t.mock.fn();
+  const network = t.mock.method(global, 'fetch', () => { throw Error('unexpected upstream'); });
+  for (const [role, approved] of [['member', 'v9.8.7'], ['admin', 'v9.8.6'], ['admin', undefined]]) {
+    if (approved === undefined) delete process.env.APPROVED_BROADCAST_VERSION;
+    else process.env.APPROVED_BROADCAST_VERSION = approved;
+    await assert.rejects(notice(ctx, 'release-announcement/publish', { role }, { send }), { status: 403 });
+  }
+  assert.equal(network.mock.callCount(), 0);
+  assert.equal(send.mock.callCount(), 0);
 });

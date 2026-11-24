@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+from urllib.parse import parse_qsl, unquote, urlsplit
 
 TABLES = (
     "calendar_submission", "calendar_release_announcement", "calendar_release_delivery",
@@ -79,6 +80,40 @@ def load_snapshot(root):
     return result
 
 
+def run_psql(target, statement):
+    args = ["psql", "-X", "-w", "-q", "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=sqlstate"]
+    env = os.environ.copy()
+    if not target.startswith(("postgresql://", "postgres://")):
+        return subprocess.run(args, input=statement, text=True, capture_output=True,
+                              env={**env, "PGDATABASE": target})
+
+    # libpq treats a URI supplied through PGDATABASE as a literal database name.
+    # Put connection options in a private service file so passwords never appear in argv.
+    uri = urlsplit(target)
+    require(not uri.fragment, "Invalid PostgreSQL connection URI")
+    authority = uri.netloc.rsplit("@", 1)[-1]
+    options = {}
+    if uri.username is not None:
+        options["user"] = unquote(uri.username)
+    if uri.password is not None:
+        options["password"] = unquote(uri.password)
+    options.update(parse_qsl(uri.query, keep_blank_values=True))
+    require(all(re.fullmatch(r"[a-z_0-9]+", k) and not any(c in v for c in "\r\n\0")
+                for k, v in options.items()), "Invalid PostgreSQL connection option")
+    for option, variable in (("user", "PGUSER"), ("password", "PGPASSWORD")):
+        if option in options:
+            env[variable] = options.pop(option)
+    env.pop("DATABASE_URL", None)
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8") as service:
+        service.write("[ducky_import]\n")
+        for key, value in options.items():
+            service.write(f"{key}={value}\n")
+        service.flush()
+        destination = f"postgresql://{authority}{uri.path}?service=ducky_import"
+        return subprocess.run([*args, "-d", destination], input=statement, text=True,
+                              capture_output=True, env={**env, "PGSERVICEFILE": service.name})
+
+
 def import_snapshot(snapshot, rest):
     raw = json.dumps(snapshot, ensure_ascii=False).encode()
     if rest:
@@ -107,9 +142,7 @@ def import_snapshot(snapshot, rest):
     payload = base64.b64encode(raw).decode("ascii")
     statement = ("SELECT public.import_miaoda_snapshot(convert_from(decode('" + payload +
                  "', 'base64'), 'UTF8')::jsonb);")
-    run = subprocess.run(["psql", "-X", "-q", "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=sqlstate"],
-                         input=statement, text=True, capture_output=True,
-                         env={**os.environ, "PGDATABASE": target})
+    run = run_psql(target, statement)
     if run.returncode:
         codes = re.findall(r"(?:ERROR|FATAL):\s+([A-Z0-9]{5})\b", run.stderr)
         raise ValueError("Import failed; check destination, schema and conflicts. SQLSTATE " +
