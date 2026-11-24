@@ -6,11 +6,11 @@
 
 | 项目 | 通过条件 | 2026-11-24 北京时间实测 |
 | --- | --- | --- |
-| 域名归属 | 两台权威 DNS 返回正式 CNAME 和 Vercel 要求的准确 TXT，Vercel 回读 verified=true | 两台服务器均返回正确 CNAME 并保留预发 TXT。17:44，正式 TXT 校验串第 7 位为字母 l，要求为数字 1，Vercel 验证返回 HTTP 400。待负责人编辑已有正式 TXT 后复测。 |
-| 正式 HTTPS | Production 别名指向指定部署，证书对正式域名受信且有效 | 只读部署已 READY；正式域名 TLS 握手未完成。归属通过后绑定并核对证书。 |
-| 无登录页面及鉴权 | 正式域名首页、公约、换班页 200；无会话身份接口 401；登录 302 跳转飞书，回调为正式地址；写入口返回只读 403 | 独立部署已验证。上述状态码还须在正式域名用无 Cookie、无 Vercel 绕过凭据的请求回读。 |
-| 云端提醒预演 | 在目标 Supabase 运行一次 `ducky_scheduler.enqueue_reminder(true)`，按请求编号回读正式域名的 HTTP 200、`recipientResolved=true`、`sent=false` | 等待正式 HTTPS。直接调用独立部署的预演已通过，正式每日任务仍停用。 |
-| 双端飞书登录 | 负责人用桌面与手机飞书直接打开正式地址，登录后看到月历、值日鸭鸭和五章公约，无 Vercel 授权页 | 等待以上检查通过后实测，并由负责人确认进入低峰窗口。此项验证直达网址，原图标在 Step 3 验收。 |
+| 域名归属 | 两台权威 DNS 返回正式 CNAME 和 Vercel 要求的准确 TXT，Vercel 回读 verified=true | 通过。两台权威 DNS 均返回正确 CNAME 和正式 TXT。Vercel 回读 verified=true。 |
+| 正式 HTTPS | Production 别名指向指定部署，证书对正式域名受信且有效 | 通过。17:48 正式别名绑定至下列只读 Production 部署，API 回读部署 ID 一致。公开访问证书校验成功，Let’s Encrypt 证书覆盖正式主机，有效至 2027-02-22。 |
+| 无登录页面及鉴权 | 正式域名首页、公约、换班页 200；无会话身份接口 401；登录 302 跳转飞书，回调为正式地址；写入口返回只读 403 | 通过。首页、公约、换班页均为 200；身份接口 401；登录 302 至飞书，回调为正式域名且使用 PKCE S256；登记、换班、公约、节日和版本知会五个写入口均为只读 403。访问无需 Vercel 授权。 |
+| 云端提醒预演 | 在目标 Supabase 运行一次 `ducky_scheduler.enqueue_reminder(true)`，按请求编号回读正式域名的 HTTP 200、`recipientResolved=true`、`sent=false` | 通过。17:49:01 入队 #1，pg_net 同编号回执为 HTTP 200，dryRun=true、recipientResolved=true、sent=false。每日任务回读 active=false。 |
+| 双端飞书登录 | 负责人用桌面与手机飞书直接打开正式地址，登录后看到月历、值日鸭鸭和五章公约，无 Vercel 授权页 | 待负责人在桌面和手机飞书直接打开正式地址实测，并确认是否进入窗口。员工原图标在 Step 3 验收。 |
 
 当前只读 Production 部署为 `dpl_CTjz9KkRMvjXkv4WWarvkmyFprDK`，运行代码 `fada875`。[部署详情](https://vercel.com/sa-nb-o/ducky-calendar/CTjz9KkRMvjXkv4WWarvkmyFprDK)
 
