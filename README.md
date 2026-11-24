@@ -4,7 +4,7 @@
 
 ## 当前线上版本
 
-自 2026-11-24 起，员工可从桌面飞书原左栏和手机工作台原应用进入新版。正式站使用 Vercel 与 Supabase，登记继续写入原飞书多维表格。飞书企业应用版本为 1.0.5。[打开鸭鸭日历](https://calendar.alphapulsex.online/) · [切流实测记录](docs/VERCEL_CUTOVER_CHECKLIST.md)
+自 2026-11-24 起，员工可从桌面飞书原左栏和手机「更多 → 工作台 → 我的常用 → 鸭鸭日历」进入新版。正式站使用 Vercel 与 Supabase，登记继续写入原飞书多维表格。飞书企业应用版本为 1.0.5。[打开鸭鸭日历](https://calendar.alphapulsex.online/) · [切流实测记录](docs/VERCEL_CUTOVER_CHECKLIST.md)
 
 ## 妙搭历史修复
 

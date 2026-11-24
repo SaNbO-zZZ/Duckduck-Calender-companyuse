@@ -53,4 +53,8 @@ Step 1 核验的只读 Production 部署为 `dpl_CTjz9KkRMvjXkv4WWarvkmyFprDK`�
 
 18:07:17，Supabase 任务 `ducky-duty-reminder-1600`（job 1）回读 active=true，计划 `0 8 * * *` UTC。18:07:27 再读旧妙搭触发器为 disabled。已完成 1 次预演，启用时正式请求为 0。首次正式触发为 **11 月 25 日周三 16:00（北京时间）**，当班赛车鸭。按 run_id 和 request_id 核对任务与 HTTP 回执、当日唯一投递记录和收件人手机实收时刻。旧应用保留至稳定运行、首次正式实收及负责人批准退役。
 
-上线后可清理的两条预发 DNS 记录为`calendar-preview.alphapulsex.online` 的 CNAME，以及 `_vercel.alphapulsex.online` 上验证 `calendar-preview.alphapulsex.online` 的旧 TXT。正式 CNAME 和正式验证 TXT 均保留。
+两台 Cloudflare 权威 DNS 已确认自定义预发域名 `calendar-preview.alphapulsex.online` 返回 NXDOMAIN，`_vercel` 仅有正式域名的验证 TXT。正式 CNAME 和 HTTPS 核验通过。飞书已移除该自定义预发域名的登录回调；刷新后，正式域名、仍用于预发的 Vercel 域名及本地开发回调均在。
+
+飞书工作台的「管理员推荐」已对全体员工启用。负责人已在手机「更多 → 工作台 → 我的常用」首屏看到图标，实点进入新版。已有五个底部导航项均保留。18:22 复核旧妙搭九表 210 行，与 Supabase 中的对应行逐字段一致；Supabase 另有切流后的 1 条真实登记。旧端两个触发器均停用。
+
+本批妙搭助手知会经负责人授权，19 名在职员工均由平台受理。旧项目退役已获授权，首次正式提醒实收后再核对归档和九表最终增量。妙搭「我的应用」可识别的额外测试或预发副本为 0。生产飞书企业应用、原多维表格和公约源继续使用。
