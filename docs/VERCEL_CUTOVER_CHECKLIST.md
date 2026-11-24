@@ -10,9 +10,9 @@
 | 正式 HTTPS | Production 别名指向指定部署，证书对正式域名受信且有效 | 通过。17:48 正式别名绑定至下列只读 Production 部署，API 回读部署 ID 一致。公开访问证书校验成功，Let’s Encrypt 证书覆盖正式主机，有效至 2027-02-22。 |
 | 无登录页面及鉴权 | 正式域名首页、公约、换班页 200；无会话身份接口 401；登录 302 跳转飞书，回调为正式地址；写入口返回只读 403 | 通过。首页、公约、换班页均为 200；身份接口 401；登录 302 至飞书，回调为正式域名且使用 PKCE S256；登记、换班、公约、节日和版本知会五个写入口均为只读 403。访问无需 Vercel 授权。 |
 | 云端提醒预演 | 在目标 Supabase 运行一次 `ducky_scheduler.enqueue_reminder(true)`，按请求编号回读正式域名的 HTTP 200、`recipientResolved=true`、`sent=false` | 通过。17:49:01 入队 #1，pg_net 同编号回执为 HTTP 200，dryRun=true、recipientResolved=true、sent=false。每日任务回读 active=false。 |
-| 双端飞书登录 | 负责人用桌面与手机飞书直接打开正式地址，登录后看到月历、值日鸭鸭和五章公约，无 Vercel 授权页 | 待负责人在桌面和手机飞书直接打开正式地址实测，并确认是否进入窗口。员工原图标在 Step 3 验收。 |
+| 双端飞书登录 | 负责人用桌面与手机飞书直接打开正式地址，登录后看到月历、值日鸭鸭和五章公约，无 Vercel 授权页 | 通过。负责人已确认桌面及手机飞书直达正式地址，登录后月历、值日鸭鸭和五章公约显示正常，并同意立即进入窗口。员工原图标单独在 Step 3 验收。 |
 
-当前只读 Production 部署为 `dpl_CTjz9KkRMvjXkv4WWarvkmyFprDK`，运行代码 `fada875`。[部署详情](https://vercel.com/sa-nb-o/ducky-calendar/CTjz9KkRMvjXkv4WWarvkmyFprDK)
+Step 1 核验的只读 Production 部署为 `dpl_CTjz9KkRMvjXkv4WWarvkmyFprDK`，运行代码 `fada875`。[部署详情](https://vercel.com/sa-nb-o/ducky-calendar/CTjz9KkRMvjXkv4WWarvkmyFprDK)
 
 ## Step 2　低峰 10 分钟窗口
 
@@ -23,6 +23,16 @@
 3. 运行 `npm run build:auth` 及 `node --env-file=.env.local scripts/audit_registration_receipts.cjs`。核对原表登记编号、申请人、Mentor、人事和通知状态，退出码为 0。旧窗口仍可能提交，开放写入前复读源端增量；有新增就补齐，未解释的差异保留只读。
 4. 关闭 Vercel Production 的 `DUCKY_READ_ONLY` 并重新部署。记录新部署 ID 和代码 SHA，核对正式别名、身份接口及员工访问均可用。
 5. 由指定账号实际提交一条请假或晚到，使用同一登记编号核对原表人员字段和机器人私聊回执。Mentor 与人事为同一人时应只有一条私聊。核实消息无原始提及标签，记录脱敏结果。
+
+### 本次窗口回执
+
+| 项目 | 11 月 24 日北京时间实测 |
+| --- | --- |
+| 停旧提醒 | 17:51:36，妙搭云端回读 `duty16hReminder=disabled`。 |
+| 最终数据 | 九表源端 210、目标端 207。备份后补入两条登记及一条历史失败回执，幂等导入执行两次，九表两端均为 210 行，逐字段零差异。17:54:05 复读源端，全部指纹一致。 |
+| 原表对账 | 76/76 笔登记的编号、申请人、Mentor、人事与通知状态全部匹配，无重复或未完成。另有 3 行原表历史数据无登记编号，已保留。 |
+| 正式写入 | 17:54，Production 的 `DUCKY_READ_ONLY=0`。正式域名回读部署 `dpl_tJxzHXhP95isBCKsi9g6UMwu9g7D`，运行代码 `fada875b1044c5d16c6c13c4ffa3b94cec928dbe`。匿名首页 200、登记接口 401，登录 302 到飞书，回调为正式地址。[部署详情](https://vercel.com/sa-nb-o/ducky-calendar/tJxzHXhP95isBCKsi9g6UMwu9g7D) |
+| 真实登记 | 等待指定账号提交一条真实请假或晚到，并按同一登记核对飞书人员字段、私聊内容及去重。 |
 
 ## Step 3　员工原入口、正式提醒与上线确认
 
