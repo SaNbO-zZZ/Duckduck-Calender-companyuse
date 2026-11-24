@@ -145,7 +145,7 @@ export function splitCharter(raw: unknown[], revision: number) {
   for (const id of root.children) visit(id, 0);
   return sections;
 }
-export async function chapters() {
+export async function chapters(): Promise<Section[]> {
   const [latest] = await db<{ version: string }[]>(
     query('company_charter_docs', { select: 'version', order: 'version.desc', limit: '1' }),
   );
