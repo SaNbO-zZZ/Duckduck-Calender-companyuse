@@ -30,7 +30,7 @@ export class LegacyWriteGate {
     let admitted: boolean;
     try {
       const [row] = await this.db.execute(sql`
-        SELECT public.ducky_legacy_admit(${ticket}::uuid, ${operation}, ${ref}) AS admitted
+        SELECT ducky_legacy_admit(${ticket}::uuid, ${operation}, ${ref}) AS admitted
       `);
       admitted = row?.admitted === true;
     } catch {
@@ -51,13 +51,13 @@ export class LegacyWriteGate {
       return result;
     }
     const [completed] = await this.db.execute(sql`
-      DELETE FROM public.ducky_legacy_work WHERE id = ${ticket}::uuid RETURNING id
+      DELETE FROM ducky_legacy_work WHERE id = ${ticket}::uuid RETURNING id
     `);
     if (completed?.id !== ticket) throw new ServiceUnavailableException('旧版操作回执待核对。');
     return result;
   }
 
   private async markForReview(ticket: string) {
-    await this.db.execute(sql`UPDATE public.ducky_legacy_work SET state = 'needs_review' WHERE id = ${ticket}::uuid`);
+    await this.db.execute(sql`UPDATE ducky_legacy_work SET state = 'needs_review' WHERE id = ${ticket}::uuid`);
   }
 }

@@ -47,7 +47,10 @@ test('independent database connections close admission, require drain and seal a
   const dbConfig = { host: root, port: 55492, user: 'gate_fixture', database: 'postgres', max: 1, onnotice() {} };
   const application = postgres(dbConfig), operator = postgres(dbConfig);
   try {
-    for (const table of tables) await operator.unsafe(`CREATE TABLE public.${table}(sample integer)`);
+    await operator.unsafe('CREATE ROLE service_role; CREATE ROLE authenticated; CREATE ROLE anon; CREATE SCHEMA gate_fixture; CREATE TYPE gate_fixture.user_profile AS (user_id text)');
+    await operator`SET search_path TO gate_fixture, public`;
+    await application`SET search_path TO gate_fixture, public`;
+    for (const table of tables) await operator.unsafe(`CREATE TABLE ${table}(sample integer)`);
     await operator.unsafe(sqlFile('install'));
     const gate = new LegacyWriteGate(drizzle(application));
     let start, finish;
@@ -69,6 +72,8 @@ test('independent database connections close admission, require drain and seal a
     assert.equal(await admitted, 'done');
     await operator.unsafe(sqlFile('seal'));
     await operator.unsafe(sqlFile('install'));
+    await operator.unsafe(sqlFile('initialize'));
+    assert.equal((await operator`SELECT mode FROM ducky_legacy_gate`)[0].mode, 'sealed');
     for (const table of tables) {
       for (const command of [`INSERT INTO ${table} VALUES(2)`, `UPDATE ${table} SET sample=3`, `DELETE FROM ${table}`, `TRUNCATE ${table}`]) {
         await assert.rejects(operator.unsafe(command), /Legacy business writes are sealed/);
