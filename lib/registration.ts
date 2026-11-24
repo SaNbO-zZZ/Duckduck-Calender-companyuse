@@ -31,6 +31,7 @@ type Row = {
   record_state: string;
   mentor_state: string;
   hr_state: string;
+  base_status_synced: boolean | null;
 };
 const table = 'calendar_submission';
 const time = (ms: number) => new Date(ms + 8 * 3600000).toISOString().slice(0, 16).replace('T', ' ');
@@ -70,13 +71,14 @@ function result(row: Row): RegistrationResult {
     recordId: row.record_id,
     processing,
     notifications: sent ? 'sent' : processing ? 'sending' : 'pending_review',
-    message: sent
+    message: (sent
       ? '已登记，已向 Mentor 和人事发送通知。'
       : processing
         ? '正在处理，请稍候。'
         : recorded
           ? '已登记，通知待核对。'
-          : '登记结果待核对，请勿重复提交。',
+          : '登记结果待核对，请勿重复提交。') +
+      (recorded && !processing && row.base_status_synced === false ? ' 多维表格的通知状态待同步。' : ''),
   };
 }
 
@@ -90,16 +92,32 @@ export async function registrationStatus(key: string | null, actor: string) {
   const row = await existing(input(z.uuid(), key), actor);
   return { result: row ? result(row) : null };
 }
-function replay(row: Row | undefined, hash: string) {
+async function syncBaseStatus(api: Feishu, target: string, row: Row) {
+  const outcome = result(row);
+  if (row.base_status_synced !== false || !outcome.recorded || !row.record_id ||
+      ![row.mentor_state, row.hr_state].every(s => s === 'sent' || s === 'pending_review')) return outcome;
+  try {
+    await api.update(target, row.record_id, {
+      通知状态: outcome.notifications === 'sent' ? '已发送' : '待核对',
+    });
+    const [updated] = await patch<Row>(table, { id: 'eq.' + row.id }, { base_status_synced: true });
+    if (updated) return result(updated);
+  } catch {
+    // A retry can safely repair this field without creating a record or sending again.
+  }
+  return outcome;
+}
+function replay(api: Feishu, target: string, row: Row | undefined, hash: string) {
   if (!row || row.payload_hash !== hash) throw new HttpError(409, '登记编号冲突。');
-  return result(row);
+  return syncBaseStatus(api, target, row);
 }
 
 export async function register(api: Feishu, actor: string, raw: unknown) {
   const f = input(form, raw);
+  const target = f.kind === 'leave' ? tables.leave : tables.attendance;
   const hash = createHash('sha256').update(JSON.stringify(f)).digest('hex');
   const prior = await existing(f.requestKey, actor);
-  if (prior) return replay(prior, hash);
+  if (prior) return replay(api, target, prior, hash);
   const now = Date.now(),
     { start, end } = interval(f, now);
   const hr = await api.hr(),
@@ -118,12 +136,12 @@ export async function register(api: Feishu, actor: string, raw: unknown) {
     end_ms: end,
     submitted_ms: now,
     payload_hash: hash,
+    base_status_synced: false,
     _created_by: actor,
     _updated_by: actor,
   });
-  if (!claim) return replay(await existing(f.requestKey, actor), hash);
+  if (!claim) return replay(api, target, await existing(f.requestKey, actor), hash);
 
-  const target = f.kind === 'leave' ? tables.leave : tables.attendance;
   const label = f.kind === 'leave' ? f.leaveType : f.kind === 'late' ? '晚到' : '提前离开';
   const changes = async (values: Partial<Row>) => {
     const [updated] = await patch<Row>(table, { id: 'eq.' + claim.id }, values);
@@ -193,13 +211,5 @@ export async function register(api: Feishu, actor: string, raw: unknown) {
       ...(recipient === hr && { hr_state: state }),
     });
   }
-  const outcome = result(claim);
-  try {
-    await api.update(target, record, {
-      通知状态: outcome.notifications === 'sent' ? '已发送' : '待核对',
-    });
-  } catch {
-    return { ...outcome, message: outcome.message + ' 多维表格的通知状态待同步。' };
-  }
-  return outcome;
+  return syncBaseStatus(api, target, claim);
 }

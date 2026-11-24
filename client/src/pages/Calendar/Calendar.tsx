@@ -1,5 +1,5 @@
 import { classifyPresence } from '../../../../shared/calendar-presence';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
@@ -75,6 +75,10 @@ export default function Calendar() {
     [weatherRev, refreshWeather] = useState(0),
     [kind, setKind] = useState<RegistrationKind | null>(null),
     [busy, setBusy] = useState(false);
+  const registrationDone = useCallback(() => {
+    burst();
+    refresh((i) => i + 1);
+  }, []);
   const [panel, setPanel] = useState(false),
     [preview, setPreview] = useState<Preview | null>(null),
     reduce = useReducedMotion();
@@ -391,13 +395,11 @@ export default function Calendar() {
           </DialogHeader>
           {kind && cfg.data ? (
             <RegisterForm
-              key={kind}
+              key={user.open_id + kind}
+              actor={user.open_id}
               kind={kind}
               config={cfg.data}
-              onDone={() => {
-                burst();
-                refresh((i) => i + 1);
-              }}
+              onDone={registrationDone}
               onBusy={setBusy}
               onClose={() => setKind(null)}
             />

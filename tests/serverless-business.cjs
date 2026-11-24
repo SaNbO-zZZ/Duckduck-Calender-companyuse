@@ -56,7 +56,8 @@ test('registration replays one receipt after a status mirror failure and mention
     };
   let saved,
     creations = 0,
-    sends = 0;
+    sends = 0,
+    mirrorAttempts = 0;
   t.mock.method(global, 'fetch', async (url, init) => {
     if (new URL(url).pathname.endsWith('/feishu_users'))
       return Response.json([{ open_id: actor, name: 'Fixture' }]);
@@ -80,18 +81,23 @@ test('registration replays one receipt after a status mirror failure and mention
         [{ tag: 'at', user_id: actor }],
       );
     },
-    update: async () => {
-      throw Error('mirror busy');
+    update: async (target, record, fields) => {
+      assert.deepEqual([target, record, fields], [tables.attendance, 'rec1', { 通知状态: '已发送' }]);
+      if (++mirrorAttempts === 1) throw Error('mirror busy');
     },
   };
   const first = await register(api, actor, form);
   assert.equal(first.recorded, true);
   assert.equal(first.notifications, 'sent');
   assert.match(first.message, /待同步/);
-  assert.equal((await register(api, actor, form)).recordId, first.recordId);
+  const replayed = await register(api, actor, form);
+  assert.equal(replayed.recordId, first.recordId);
+  assert.doesNotMatch(replayed.message, /待同步/);
+  assert.equal(mirrorAttempts, 2);
   assert.equal(creations, 1);
   assert.equal(sends, 1);
   await assert.rejects(register(api, actor, { ...form, kind: 'late' }), { status: 409 });
+  assert.equal(mirrorAttempts, 2);
 });
 
 test('cron rejects missing authorization before contacting the database', async (t) => {

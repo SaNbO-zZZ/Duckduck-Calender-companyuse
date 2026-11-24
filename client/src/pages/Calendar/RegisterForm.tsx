@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,15 +19,14 @@ import { Input } from '../../components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
 import { Calendar as DatePicker } from '../../components/ui/calendar';
 import { zhCN } from 'date-fns/locale';
+import { confirmedRegistration, pendingRegistration } from '../../../../shared/pending-registration';
 import { trackRegistration } from '../../../../shared/registration-progress';
 import type {
   CalendarConfig,
-  CalendarData,
   RegistrationKind,
   RegistrationRequest,
   RegistrationResult,
   RegistrationStatus,
-  WeatherData,
 } from '../../../../shared/api.interface';
 const today = (ms = Date.now()) => new Date(ms + 480 * 60000).toISOString().slice(0, 10);
 const dateLabel = (d: Date) =>
@@ -64,35 +63,100 @@ const schema = z.object({
 type Values = z.infer<typeof schema>;
 export const title = { leave: '请假 / 出差知会', late: '天才总是晚到', early: '我先去拯救世界了' };
 export function RegisterForm({
+  actor,
   kind,
   config,
   onDone,
   onClose,
   onBusy,
 }: {
+  actor: string;
   kind: RegistrationKind;
   config: CalendarConfig;
   onDone: () => void;
   onClose: () => void;
   onBusy: (value: boolean) => void;
 }) {
+  const [receipt] = useState(() => pendingRegistration(actor, kind, () => window.localStorage));
+  const [initial] = useState(() => {
+    try { return { id: receipt.read(), error: '' }; }
+    catch (e) { return { id: null, error: (e as Error).message }; }
+  });
   const offset = useRef(config.serverTime - Date.now()),
     [now, setNow] = useState(Date.now() + offset.current),
     [busy, setBusy] = useState(false),
     [result, setResult] = useState<RegistrationResult | null>(null),
-    [error, setError] = useState(''),
-    key = useRef(crypto.randomUUID()),
+    [error, setError] = useState(initial.error),
+    [checkOnly, setCheckOnly] = useState(Boolean(initial.id)),
+    [hint, setHint] = useState(''),
+    key = useRef(initial.id),
     snapshot = useRef<RegistrationRequest | null>(null);
   const progressAbort = useRef<AbortController | null>(null),
-    observedRecord = useRef(false),
-    mounted = useRef(true);
+    observedRecord = useRef(false);
+  const showProgress = useCallback((r: RegistrationResult) => {
+    setResult(r);
+    setCheckOnly(!confirmedRegistration(r));
+    if (confirmedRegistration(r)) receipt.clear(key.current);
+    if (r.recorded) {
+      onBusy(false);
+      if (!observedRecord.current) {
+        observedRecord.current = true;
+        onDone();
+      }
+    }
+  }, [receipt, onBusy, onDone]);
+
+  const readStatus = useCallback((signal: AbortSignal) =>
+    axiosForBackend<RegistrationStatus>({
+      url: '/api/calendar/registration-status', method: 'GET',
+      params: { requestKey: key.current }, timeout: 5000, signal,
+    }).then(({ data }) => {
+      if (data?.result === null || (typeof data?.result?.recorded === 'boolean' &&
+          typeof data.result.processing === 'boolean')) return data.result;
+      throw new Error('登记状态响应不完整。');
+    }), []);
+
+  const recover = useCallback(async () => {
+    if (progressAbort.current) return;
+    const controller = new AbortController();
+    progressAbort.current = controller;
+    setBusy(true);
+    setCheckOnly(true);
+    setError('');
+    setHint('');
+    try {
+      const prior = await readStatus(controller.signal);
+      if (controller.signal.aborted) return;
+      if (prior) {
+        await trackRegistration({
+          submit: () => Promise.resolve(prior), read: () => readStatus(controller.signal),
+          onProgress: showProgress, signal: controller.signal,
+        });
+      } else {
+        setCheckOnly(false);
+        setResult(null);
+        setHint(snapshot.current
+          ? '暂未查到这笔登记，可以按原内容和编号重新提交。'
+          : '暂未查到这笔登记。请填写原登记内容，提交时将沿用同一登记编号。');
+      }
+    } catch (e) {
+      if (!controller.signal.aborted) setError(apiMessage(e));
+    } finally {
+      if (progressAbort.current === controller) {
+        progressAbort.current = null;
+        setBusy(false);
+        onBusy(false);
+      }
+    }
+  }, [onBusy, readStatus, showProgress]);
+
   useEffect(() => {
-    mounted.current = true;
+    if (initial.id) void recover();
     return () => {
-      mounted.current = false;
       progressAbort.current?.abort();
+      progressAbort.current = null;
     };
-  }, []);
+  }, [initial, recover]);
   const defaultDay = today(now),
     defaultDate = new Date(defaultDay + 'T12:00:00'),
     arrival = new Date(
@@ -122,10 +186,10 @@ export function RegisterForm({
     return () => clearInterval(timer);
   }, []);
   const submit = async (data: Values) => {
-    if (busy || (result && !result.processing)) return;
+    if (busy || progressAbort.current || checkOnly || result) return;
     if (!snapshot.current) {
       const request: RegistrationRequest = {
-        requestKey: key.current,
+        requestKey: key.current ?? crypto.randomUUID(),
         kind,
         mentorId: data.mentorId,
         leaveType: kind === 'leave' ? data.leaveType : '',
@@ -146,24 +210,24 @@ export function RegisterForm({
         form.setError('arrivalTime', { message: '预计到达须晚于所选日期 10:00，且尚未到达该时刻。' });
         return;
       }
+      try {
+        key.current = receipt.remember(request.requestKey);
+        if (key.current !== request.requestKey) {
+          void recover();
+          return;
+        }
+      } catch (e) {
+        setError((e as Error).message);
+        return;
+      }
       snapshot.current = request;
     }
     setBusy(true);
     onBusy(true);
     setError('');
+    setHint('');
     const controller = new AbortController();
     progressAbort.current = controller;
-    const showProgress = (r: RegistrationResult) => {
-      if (!mounted.current) return;
-      setResult(r);
-      if (r.recorded) {
-        onBusy(false);
-        if (!observedRecord.current) {
-          observedRecord.current = true;
-          onDone();
-        }
-      }
-    };
     try {
       await trackRegistration({
         submit: () =>
@@ -173,27 +237,26 @@ export function RegisterForm({
             data: snapshot.current,
             timeout: 120000,
           }).then((r) => r.data),
-        read: () =>
-          axiosForBackend<RegistrationStatus>({
-            url: '/api/calendar/registration-status',
-            method: 'GET',
-            params: { requestKey: key.current },
-            timeout: 5000,
-            signal: controller.signal,
-          }).then((r) => r.data.result),
+        read: () => readStatus(controller.signal),
         onProgress: showProgress,
         signal: controller.signal,
       });
     } catch (e) {
-      if (mounted.current) {
+      if (!controller.signal.aborted) {
         setError(apiMessage(e));
-        if (isAxiosError(e) && e.response && e.response.status < 500) {
+        if (isAxiosError(e) && [400, 422].includes(e.response?.status)) {
+          receipt.clear(key.current);
+          key.current = null;
           snapshot.current = null;
           setResult(null);
+          setCheckOnly(false);
+        } else {
+          setCheckOnly(true);
         }
       }
     } finally {
-      if (mounted.current) {
+      if (progressAbort.current === controller) {
+        progressAbort.current = null;
         setBusy(false);
         onBusy(false);
       }
@@ -247,7 +310,7 @@ export function RegisterForm({
   return (
     <Form {...form}>
       <form className="space-y-5" onSubmit={form.handleSubmit(submit)}>
-        <fieldset disabled={busy || !!snapshot.current || !!result} className="space-y-5 min-w-0">
+        <fieldset disabled={busy || checkOnly || !!snapshot.current || !!result} className="space-y-5 min-w-0">
           {kind === 'leave' ? (
             <>
               <FormField
@@ -341,14 +404,15 @@ export function RegisterForm({
             <p className="mt-2 text-xs text-[#8d8074]">后台固定人事 · 仅通知，无审批</p>
           </div>
         </fieldset>
+        {hint && <p role="status" className="text-sm">{hint}</p>}
         {error && (
           <p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm text-red-700">
             {error}
           </p>
         )}
-        {result && (
+        {(result || (checkOnly && key.current)) && (
           <p role="status" className="rounded-2xl bg-[#f4f4ed] p-3 text-sm">
-            {result.message}
+            {result?.message || '正在核对上次登记。'}
             <br />
             <span className="break-all text-xs text-[#8d8074]">登记编号：{key.current}</span>
           </p>
@@ -363,7 +427,11 @@ export function RegisterForm({
           >
             {result?.recorded ? (result.processing ? '关闭' : '完成') : '取消'}
           </Button>
-          {(!result || result.processing) && (
+          {checkOnly ? (
+            <Button type="button" disabled={busy} onClick={() => void recover()} className="rounded-full">
+              {busy ? '正在核对登记…' : '核对本次登记结果'}
+            </Button>
+          ) : !result && (
             <Button
               type="submit"
               disabled={busy}
@@ -373,9 +441,7 @@ export function RegisterForm({
                 ? result?.recorded
                   ? '正在发送通知…'
                   : '正在保存登记…'
-                : snapshot.current
-                  ? '核对本次登记结果'
-                  : '登记并通知'}
+                : '登记并通知'}
             </Button>
           )}
         </div>

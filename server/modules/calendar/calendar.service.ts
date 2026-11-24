@@ -130,7 +130,7 @@ export class CalendarService {
   if(row.applicant!==userId)throw new ForbiddenException('不能读取其他员工的登记。');
   return this.result(row);
  }
- async submit(raw:unknown,userId:string):Promise<RegistrationResult> {
+ async submit(raw:unknown,userId:string):Promise<RegistrationResult & { mirrorPending?: true }> {
   const began=performance.now();
   const mark=(stage:string)=>this.logger.log({event:'calendar_registration_timing',stage,durationMs:Math.round(performance.now()-began)});
   const parsed=inputSchema.safeParse(raw);if(!parsed.success)throw new BadRequestException('登记内容无效，请检查类型、日期和 Mentor。');const input=parsed.data;
@@ -176,7 +176,7 @@ export class CalendarService {
    if(outcomes.some(outcome=>outcome.status==='rejected'))this.logger.warn('Calendar notification status persistence requires reconciliation');
   }
   mark('notification-attempts-finished');
-  try{await this.capability.load(cap).call('batchUpdateRecords',{records:[{id:recordId,record:{'通知状态':mentorState==='sent'&&hrState==='sent'?'已发送':'待核对'}}]});}catch{this.logger.warn('Calendar Base notification-state mirror requires reconciliation');}
+  try{await this.capability.load(cap).call('batchUpdateRecords',{records:[{id:recordId,record:{'通知状态':mentorState==='sent'&&hrState==='sent'?'已发送':'待核对'}}]});}catch{this.logger.warn('Calendar Base notification-state mirror requires reconciliation');return {...this.result({...created,recordId,recordState:'created',mentorState,hrState}),mirrorPending:true};}
   mark('mirror-finished');
   return this.result({...created,recordId,recordState:'created',mentorState,hrState});
  }

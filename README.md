@@ -48,3 +48,19 @@ npm run preview:phase3
 `npm test` 构建前端、Serverless Functions 和妙搭回归依赖，再运行全部自动测试。示例预览在 `127.0.0.1:4173` 使用合成数据。预发阶段通过飞书登录，且只允许已导入的有效企业成员访问。Vercel Preview 默认禁止业务写入和真实提醒，可在可信本地环境使用 `DUCKY_READ_ONLY=1` 验证相同限制。
 
 预发使用 Vercel Preview 环境，`APP_BASE_URL` 指向固定预发地址，飞书 OAuth 需登记同一地址下的 `/api/auth/feishu/callback`。配置名见 [`.env.example`](.env.example)。密钥在 Vercel 后台按环境配置，数据库导入连接串仅保存在迁移操作者的本机。Git 分支和恢复命令见 [Git 工作流](docs/GIT_WORKFLOW.md)。
+
+## Vercel 版知会名单
+
+在目标 Supabase 应用 `20261124000200_release_roster.sql` 后，使用 Node.js 24 和本机 `.env.local` 中的 `FEISHU_APP_ID`、`FEISHU_APP_SECRET`、`SUPABASE_URL`、`SUPABASE_SERVICE_ROLE_KEY`。先确认原企业飞书应用具备覆盖所有员工的通讯录可见范围，再预演指定版本。
+
+```bash
+node --env-file=.env.local scripts/refresh_supabase_roster.mjs v3.4.0
+```
+
+用独立核实的本批员工人数校验写入。以下版本号和人数为用法示例，应替换为实际值。
+
+```bash
+node --env-file=.env.local scripts/refresh_supabase_roster.mjs v3.4.0 --apply --expect-count 19
+```
+
+工具从根部门逐页读取员工，按目标应用的 `open_id` 去重，核对 Supabase 有效人员，输出部门数和收件人数。新员工可先通过正式飞书登录补全身份。名单有效期为 24 小时，已创建投递批次的名单被冻结。该命令只准备名单，全员知会仍须由管理员按批次批准并另行发布。
