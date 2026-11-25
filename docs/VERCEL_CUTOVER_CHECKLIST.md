@@ -1,5 +1,7 @@
 # 鸭鸭日历正式切流验收清单
 
+2026-11-25 的 UI V2 候选部署、双端实测、截图、提醒回执与待批事项见[本次预发验收清单](engineering/UI_V2_PREVIEW_ACCEPTANCE.md)。
+
 正式域名为 `https://calendar.alphapulsex.online/`。负责人确认先以当前 Hobby 账号完成 11 月 28 日前切流，上线后再评估迁至公司/Pro 账号。
 
 ## Step 1　正式域名和只读验收

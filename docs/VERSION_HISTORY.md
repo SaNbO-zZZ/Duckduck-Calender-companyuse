@@ -4,6 +4,7 @@
 
 | 版本 | 日期 | 类型 | 真实提交 | 主要结果 |
 | --- | --- | --- | --- | --- |
+| UI V2 候选 | 2026-11-25 | Vercel 只读预发，正式发布待批 | [6e85096](https://github.com/SaNbO-zZZ/Duckduck-Calender-companyuse/commit/6e8509627c7f8679506a0c978c480ee6597d279d)；Preview `dpl_E7oYw5MaSZJhuGCyiFmdmKvQHXpJ` | 电脑及手机飞书实测通过，21 组布局与 23 次详情检查通过。九表、原定时提醒与五个关闭主题已核对，生产生日加列另批。[验收清单及截图](engineering/UI_V2_PREVIEW_ACCEPTANCE.md) · [飞书回执](https://alphapulse.feishu.cn/docx/I7epdYKpToh4xrxckU1cCXTNnDe#doxcnlRFAdyIjWwUjmYgk4CGbsg) |
 | 飞书企业应用 1.0.5 | 2026-11-24 | Vercel + Supabase 正式切流 | 运行提交 `fada875`，Vercel 部署 `dpl_tJxzHXhP95isBCKsi9g6UMwu9g7D` | 原桌面左栏和手机工作台直达正式站，原表登记与私聊通过真实验收。手机工作台已置顶，妙搭助手私聊 19/19 获平台受理。[员工使用指南](https://alphapulse.feishu.cn/docx/I7epdYKpToh4xrxckU1cCXTNnDe#doxcn5jctn9TbDYHPXBf970KwJb) · [发布回执](VERCEL_CUTOVER_CHECKLIST.md) |
 | v4.0.0 | 2026-11-13 | 已发布；值日鸭鸭舞台、稳定人员绑定、受控通知和应用数据库迁移 | GitHub `1954376`，Tag `v4.0.0`；妙搭 release `7707564231004244981`；妙搭 commit `3582784` | 发布到 [鸭鸭日历妙搭应用](https://ycn3zdw6f1p7.feishuapp.com/app/app_17fstqsqv1c)。七只鸭鸭动作资源和 `duty-ducks-v2.1` manifest 已接入，7 条 active 绑定已回读；经用户授权 16:00 触发器已启用，并完成一次受控真实收件人单人消息投递核验。 |
 
