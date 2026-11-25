@@ -44,13 +44,14 @@ import {
   DialogTitle,
   DialogDescription,
 } from '../../components/ui/dialog';
-import { burst, useResource, useUser } from '../../lib/client';
+import { useResource, useUser } from '../../lib/client';
 import { DutyDuckStage } from './DutyDuckStage';
 import { RegisterForm, title } from './RegisterForm';
 import { ThemeRow, FestivalPanel, Preview } from './FestivalPanel';
 import { Sky } from './scene/Sky';
 import { Particles } from './scene/Particles';
-import { WeatherDucks } from './scene/WeatherDucks';
+import { InteractionDust } from './scene/InteractionDust';
+import { Ducky3DStage } from './scene/Ducky3DStage';
 import { MonthCard } from './MonthCard';
 import {
   WeatherMenu,
@@ -86,7 +87,6 @@ export default function Calendar() {
     [kind, setKind] = useState<RegistrationKind | null>(null),
     [busy, setBusy] = useState(false);
   const registrationDone = useCallback(() => {
-    burst();
     refresh((i) => i + 1);
   }, []);
   const [panel, setPanel] = useState(false),
@@ -236,6 +236,7 @@ export default function Calendar() {
         weather={weather}
         night={night}
       />
+      <InteractionDust />
       <Particles
         theme={theme?.key}
         night={night}
@@ -320,9 +321,9 @@ export default function Calendar() {
         <div className="planner-columns">
           <div className="month-column">
             <div ref={stage} className="duck-stage" aria-label="天气鸭舞台">
-              <WeatherDucks
+              <Ducky3DStage
                 weather={weather}
-                phase={phase}
+                sky={sky}
                 halloween={theme?.key === 'halloween'}
               />
             </div>

@@ -1,3 +1,4 @@
+import { scatter } from './scene/InteractionDust';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Cake, CalendarDays, ChevronLeft, ChevronRight, X } from 'lucide-react';
@@ -181,6 +182,31 @@ export function MonthCard({
   const cells = useMemo(() => monthDays(month, data), [month, data]);
   const reduce = useReducedMotion();
   const selected = cells.find((d) => d.date === opened);
+  const celebrated = useRef('');
+  const hasBirthday = !!selected?.birthdays.length;
+  useEffect(() => {
+    if (!opened || !hasBirthday) return;
+    const frame = requestAnimationFrame(() =>
+      scatter('birthday', document.querySelector('.day-sheet,.day-pop')),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [opened, hasBirthday]);
+  useEffect(() => {
+    if (
+      celebrated.current === today ||
+      opened ||
+      !data?.birthdays?.some((b) => b.date === today)
+    )
+      return;
+    const cell = grid.current?.querySelector('[aria-label="' + today + '"]');
+    if (cell) {
+      const frame = requestAnimationFrame(() => {
+        celebrated.current = today;
+        scatter('birthday', cell);
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [today, data, opened]);
   const person = (id: string) =>
     displayText(data?.people.find((p) => p.id === id)?.name || '') ||
     '团队成员';

@@ -139,31 +139,6 @@
   overflow: hidden;
   position: relative;
 }
-.duck-stage .weather-ducks {
-  position: static;
-  height: 100%;
-  width: 88%;
-  margin: auto;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: end;
-}
-.duck-stage .weather-ducks button {
-  align-self: end;
-  width: 100%;
-  max-width: 145px;
-  justify-self: center;
-}
-.duck-stage .weather-ducks button :is(canvas, img) {
-  max-height: calc(var(--stage-height) - 5px);
-  width: auto;
-  max-width: 100%;
-}
-.duck-stage .awning {
-  inset: auto 6% 0;
-  width: 88%;
-  pointer-events: none;
-}
 .planner-side {
   display: grid;
   gap: 14px;
@@ -643,12 +618,6 @@
     height: 24px;
     font-size: 12px;
   }
-  .duck-stage .weather-ducks {
-    width: 90%;
-  }
-  .duck-stage .weather-ducks button :is(canvas, img) {
-    max-height: 72px;
-  }
   .calendar-month {
     padding: 15px 8px 12px;
     border-radius: 19px;
@@ -827,4 +796,146 @@ body:has(.day-sheet[data-state='open']) .phone-dock {
   inset: 1px;
   border-radius: inherit;
   border: 1px solid #e7bb8580;
+}
+
+.toy-stage {
+  position: relative;
+  isolation: isolate;
+  width: 88%;
+  height: 100%;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+}
+.toy-stage > canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.toy-stage button {
+  position: relative;
+  justify-self: center;
+  height: 100%;
+  width: min(100%, 114px);
+  display: grid;
+  place-items: end center;
+  padding: 0;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+.toy-stage button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+.toy-stage img {
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+.toy-stage [aria-disabled='true'] {
+  cursor: default;
+}
+@media (max-width: 768px) {
+  .toy-stage {
+    width: 90%;
+  }
+}
+
+.planner-side .stage-floor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(64px, 34%);
+  gap: 6px;
+  padding: 0 8px;
+  color: #384837;
+  background:
+    radial-gradient(ellipse at 35% 87%, #c4d5af 0%, transparent 46%),
+    linear-gradient(155deg, #f1f4df, #e1ead4);
+}
+.patrol-track {
+  position: relative;
+  height: 90px;
+  overflow: hidden;
+}
+.planner-side .patrol-track .duty-sprite {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  width: min(70px, 75%);
+  height: auto;
+  aspect-ratio: 1;
+  z-index: 1;
+  padding: 0;
+}
+.patrol-track::before {
+  content: '';
+  position: absolute;
+  inset: auto 5px 6px;
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #8ca57e80 16%,
+    #94ac8580 82%,
+    transparent
+  );
+  border-radius: 50%;
+}
+.patrol-track[data-step='react']::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  width: 51px;
+  height: 13px;
+  border: 2px solid #fff4ba;
+  border-radius: 50%;
+  animation: patrol-ring 600ms ease-out both;
+}
+.patrol-track[data-step='walkLeft']::after {
+  content: '';
+  position: absolute;
+  right: 20px;
+  left: 20px;
+  bottom: 7px;
+  height: 5px;
+  background: radial-gradient(ellipse, #fff8cb 0 28%, transparent 52%) repeat-x
+    left center / 13px 5px;
+  animation: patrol-steps 1.4s ease-in-out both;
+}
+@keyframes patrol-ring {
+  from {
+    transform: scale(0.4);
+    opacity: 0.85;
+  }
+  to {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+@keyframes patrol-steps {
+  from {
+    clip-path: inset(0 0 0 100%);
+  }
+  to {
+    clip-path: inset(0);
+  }
+}
+.interaction-dust {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.stage-floor > div:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }

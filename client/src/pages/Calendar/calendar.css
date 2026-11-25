@@ -148,55 +148,6 @@ a {
   color: white;
   border-color: transparent;
 }
-.weather-ducks {
-  position: absolute;
-  z-index: 2;
-  bottom: calc(100% - 6px);
-  left: 3%;
-  right: 3%;
-  height: 76px;
-  display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  align-items: end;
-}
-.weather-ducks button {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  align-items: end;
-  justify-items: center;
-  min-width: 0;
-  border: 0;
-  background: none;
-  height: 100%;
-  padding: 0;
-}
-.weather-ducks button canvas,
-.weather-ducks button img {
-  width: 100%;
-  max-width: 103px;
-  max-height: 87px;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-.awning {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  height: 85%;
-  image-rendering: pixelated;
-}
-.weather-ducks output {
-  position: absolute;
-  left: 50%;
-  bottom: 72%;
-  padding: 4px 13px;
-  border-radius: 14px;
-  background: #fffbed;
-  box-shadow: 0 2px 9px #264d3d26;
-  font-size: 12px;
-  z-index: 3;
-}
 .card {
   background: #fffdf5f7;
   color: #304738;
@@ -278,13 +229,6 @@ a {
   border: 0;
   background: none;
   color: #436b54;
-}
-.duck-queue {
-  display: flex;
-}
-.duck-queue img {
-  width: 16%;
-  height: auto;
 }
 .section-label {
   gap: 6px;
@@ -506,9 +450,6 @@ a {
   color: #71583c;
 }
 @media (max-width: 1023px) {
-  .weather-ducks {
-    height: 65px;
-  }
   .book-layout {
     grid-template-columns: 180px minmax(0, 1fr);
   }
@@ -521,12 +462,6 @@ a {
     width: 24px;
     height: 24px;
     font-size: 11px;
-  }
-  .weather-ducks {
-    height: 40px;
-    left: 0;
-    right: 0;
-    bottom: calc(100% - 3px);
   }
   .book-layout {
     grid-template-columns: 1fr;

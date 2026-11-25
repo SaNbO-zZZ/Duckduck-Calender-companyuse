@@ -1,3 +1,4 @@
+import { scatter } from './scene/InteractionDust';
 import { TreePalm, CalendarDays, BriefcaseBusiness, NotebookPen, Thermometer, Coffee } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
@@ -96,6 +97,8 @@ export function RegisterForm({
     [hint, setHint] = useState(''),
     key = useRef(initial.id),
     snapshot = useRef<RegistrationRequest | null>(null);
+  const submitButton = useRef<HTMLButtonElement>(null);
+  const submitOrigin = useRef<DOMRect | null>(null);
   const progressAbort = useRef<AbortController | null>(null),
     observedRecord = useRef(false);
   const showProgress = useCallback((r: RegistrationResult) => {
@@ -106,6 +109,7 @@ export function RegisterForm({
       onBusy(false);
       if (!observedRecord.current) {
         observedRecord.current = true;
+        scatter('registration', submitOrigin.current || document.querySelector('[role="dialog"]'));
         onDone();
       }
     }
@@ -192,6 +196,7 @@ export function RegisterForm({
   }, []);
   const submit = async (data: Values) => {
     if (busy || progressAbort.current || checkOnly || result) return;
+    submitOrigin.current = submitButton.current?.getBoundingClientRect() ?? null;
     if (!snapshot.current) {
       const request: RegistrationRequest = {
         requestKey: key.current ?? crypto.randomUUID(),
@@ -438,6 +443,7 @@ export function RegisterForm({
             </Button>
           ) : !result && (
             <Button
+              ref={submitButton}
               type="submit"
               disabled={busy}
               className="rounded-full bg-gradient-to-r from-[#ff7952] to-[#ff5186] text-white"
