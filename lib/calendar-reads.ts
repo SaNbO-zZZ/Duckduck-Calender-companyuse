@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { beijingDate, parseBeijingDate } from '../shared/duty-calendar.js';
 import type { CalendarPerson, CalendarEvent, CalendarData } from '../shared/api.interface.js';
-import { db } from './feishu-auth.js';
+import { db, MissingColumnError } from './feishu-auth.js';
 import { input, query } from './business-http.js';
 import { Feishu, openId, tables } from './feishu-platform.js';
 
@@ -84,7 +84,11 @@ async function monthBirthdays(month: string): Promise<CalendarData['birthdays']>
       is_active: 'eq.true', birth_month: 'eq.' + number, birth_day: 'not.is.null',
       order: 'birth_day.asc,open_id.asc',
     }),
-  );
+  ).catch((error: unknown) => {
+    if (error instanceof MissingColumnError &&
+      ['feishu_users.birth_month', 'feishu_users.birth_day'].includes(error.column)) return [];
+    throw error;
+  });
   return members.map((member) => ({
     date: month + '-' + String(Math.min(lastDay, member.birth_day)).padStart(2, '0'),
     userId: member.open_id, name: member.name || '团队成员', avatar: member.avatar_url ?? undefined,

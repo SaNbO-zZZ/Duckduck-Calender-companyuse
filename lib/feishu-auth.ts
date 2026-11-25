@@ -15,6 +15,10 @@ export class HttpError extends Error {
   constructor(readonly status: number, message: string) { super(message); }
 }
 
+export class MissingColumnError extends Error {
+  constructor(readonly column: string) { super('Database column is unavailable'); }
+}
+
 export function setting(name: string) {
   const value = process.env[name];
   if (!value) throw new Error('Missing server configuration');
@@ -117,6 +121,10 @@ async function jsonRequest(url: URL | string, init: RequestInit) {
   if (!result.ok) {
     const error = await result.json().catch(() => ({}));
     if (['PT400','PT403','PT404','PT409'].includes(error.code)) throw new HttpError(Number(error.code.slice(2)), error.message);
+    if (result.status === 400 && error.code === '42703') {
+      const column = /^column ([a-z_]+\.[a-z_]+) does not exist$/.exec(error.message);
+      if (column) throw new MissingColumnError(column[1]);
+    }
     throw new Error('Upstream unavailable');
   }
   if (result.status === 204) return null;

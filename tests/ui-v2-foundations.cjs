@@ -82,6 +82,21 @@ test('month read selects only active birthdays for that month and observes leap 
   }
 });
 
+test('pre-migration month stays readable, while other database failures propagate', async (t) => {
+  process.env.SUPABASE_URL = 'https://birthday.example.test';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'fixture';
+  let code = '42703', column = 'birth_day', status = 400;
+  t.mock.method(global, 'fetch', async () => Response.json(
+    { code, message: 'column feishu_users.' + column + ' does not exist' }, { status },
+  ));
+  const read = () => monthData({ search: async () => [] }, '2026-11');
+  for (column of ['birth_month', 'birth_day']) assert.deepEqual((await read()).birthdays, []);
+  column = 'is_active';
+  await assert.rejects(read);
+  code = '42501'; status = 403; column = 'birth_day';
+  await assert.rejects(read);
+});
+
 test('missing NMC description keeps usable wind and temperature, without claiming observed sunshine', async (t) => {
   t.mock.method(Date, 'now', () => Date.parse('2026-11-25T14:20:00+08:00'));
   t.mock.method(global, 'fetch', async () => Response.json({ code: 0, data: { real: {
