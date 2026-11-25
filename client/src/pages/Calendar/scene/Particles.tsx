@@ -226,7 +226,7 @@ export function Particles({
     };
     const observer = new ResizeObserver(refresh);
     observer.observe(document.body);
-    window.addEventListener('scroll', measure, { passive: true });
+    window.addEventListener('scroll', measure, { passive: true, capture: true });
     window.addEventListener('resize', refresh);
     window.addEventListener('duck-celebrate', burst);
     document.addEventListener('visibilitychange', start);
@@ -234,7 +234,7 @@ export function Particles({
     return () => {
       cancelAnimationFrame(raf);
       observer.disconnect();
-      window.removeEventListener('scroll', measure);
+      window.removeEventListener('scroll', measure, true);
       window.removeEventListener('resize', refresh);
       window.removeEventListener('duck-celebrate', burst);
       document.removeEventListener('visibilitychange', start);

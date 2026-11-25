@@ -9,6 +9,7 @@ import RoutesComponent from './app';
 import { Directory, Session, type Person, type User } from './lib/client';
 import './index.css';
 import './pages/Calendar/calendar.css';
+import './pages/Calendar/planner.css';
 function App() {
   const [user, setUser] = useState<User | null>(null),
     [people, setPeople] = useState<Person[]>([]),

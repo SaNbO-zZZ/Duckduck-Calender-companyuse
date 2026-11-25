@@ -80,32 +80,12 @@ a {
 .particle-layer {
   z-index: 2;
 }
-.planner {
-  position: relative;
-  z-index: 10;
-  max-width: 1192px;
-  padding: 25px 40px 28px;
-  margin: auto;
-}
-.topbar,
-.topbar nav,
-.brand,
-.topbar nav a,
-.topbar nav button,
-.weather-pill,
-.hero-date,
-.hero-actions,
-.hero-actions button,
 .card-heading,
-.month-nav,
 .stage-footer,
 .stage-footer button,
 .stage-caption,
-.month-top,
 .button-row,
 .section-label,
-.planner footer,
-.planner footer a,
 .book-nav,
 .book-nav a,
 .book-nav button,
@@ -115,47 +95,6 @@ a {
 .highlight {
   display: flex;
   align-items: center;
-}
-.topbar {
-  gap: 22px;
-  min-height: 58px;
-  padding: 6px 15px 6px 13px;
-  background: #fffff1ef;
-  color: #233f33;
-  border: 1px solid #fffef4;
-  border-radius: 18px;
-  box-shadow: 0 4px 24px #1f45320d;
-  backdrop-filter: blur(14px);
-}
-.brand {
-  gap: 7px;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  font-size: 20px;
-}
-.brand img {
-  width: 39px;
-  height: 39px;
-  object-fit: contain;
-}
-.weather-pill {
-  gap: 7px;
-  border-left: 1px solid #cbd6c6;
-  padding-left: 18px;
-  font-size: 12px;
-  color: #496457;
-}
-.topbar nav {
-  margin-left: auto;
-  gap: 17px;
-}
-.topbar nav a,
-.topbar nav button {
-  gap: 7px;
-  font-weight: 650;
-  font-size: 13px;
-  border: 0;
-  background: transparent;
 }
 .avatar {
   display: grid;
@@ -173,48 +112,12 @@ a {
   height: 100%;
   object-fit: cover;
 }
-.hero,
 .card,
 .book-cover {
   border: 1px solid #fffcf3;
   border-radius: 24px;
   box-shadow: 0 8px 24px #3843300c;
 }
-.hero {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 22px;
-  margin: 94px 0 20px;
-  padding: 34px 44px;
-  background:
-    radial-gradient(circle at 82% 45%, var(--wash), transparent 48%),
-    linear-gradient(112deg, #fffdf3 28%, #edf2df 90%);
-  border-bottom-color: #a6bca14f;
-}
-.hero-copy {
-  position: relative;
-  z-index: 1;
-}
-.hero-date {
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  color: #466452;
-}
-.hero-date b {
-  color: var(--accent);
-}
-.dot,
-.availability i {
-  width: 7px;
-  height: 7px;
-  background: #648b55;
-  border-radius: 50%;
-}
-.hero h1,
 .book-cover h1 {
   font-size: clamp(28px, 3.55vw, 52px);
   line-height: 1.23;
@@ -223,23 +126,6 @@ a {
   font-weight: 800;
   color: #263f31;
 }
-.hero h1 span {
-  color: #91a66f;
-}
-.hero-copy > p {
-  font-size: 14px;
-  color: #617164;
-  margin: 0;
-}
-.hero-copy > p strong {
-  color: #2d6044;
-}
-.hero-actions {
-  gap: 9px;
-  flex-wrap: wrap;
-  margin-top: 23px;
-}
-.hero-actions button,
 .primary,
 .button-row button,
 .book-nav button,
@@ -255,64 +141,12 @@ a {
   font-size: 13px;
   font-weight: 650;
 }
-.hero-actions button:last-child,
 .primary,
 .festival-panel > .primary {
   background: linear-gradient(120deg, var(--accent, #386a52), #578367, var(--accent, #386a52));
   background-size: 200%;
   color: white;
   border-color: transparent;
-}
-.hero-actions button:hover {
-  background-position: 100%;
-}
-.date-ticket {
-  flex: none;
-  position: relative;
-  margin: 4px 5% 0 0;
-  display: grid;
-  place-items: center;
-  width: 123px;
-  padding: 15px 0 12px;
-  background: #fffdf0;
-  border: 1px solid #c8caae;
-  border-radius: 8px;
-  box-shadow:
-    3px 4px #e2e5cf,
-    5px 6px #b8c5a1,
-    8px 12px 10px #667e5a22;
-  transform: rotate(7deg);
-  color: #3f634a;
-}
-.date-ticket div {
-  position: absolute;
-  top: -6px;
-  display: flex;
-  justify-content: space-between;
-  width: 58%;
-}
-.date-ticket i {
-  display: block;
-  width: 7px;
-  height: 13px;
-  background: #7a896e;
-  border-radius: 5px;
-}
-.date-ticket small {
-  font-size: 12px;
-  letter-spacing: 0.17em;
-  font-weight: 800;
-}
-.date-ticket b {
-  font:
-    700 53px/1.05 Georgia,
-    serif;
-  letter-spacing: -2px;
-}
-.date-ticket em {
-  font-style: normal;
-  font-size: 10px;
-  letter-spacing: 0.15em;
 }
 .weather-ducks {
   position: absolute;
@@ -363,23 +197,12 @@ a {
   font-size: 12px;
   z-index: 3;
 }
-.workspace-grid {
-  display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: 20px;
-  align-items: start;
-}
-.left-stack {
-  display: grid;
-  gap: 18px;
-}
 .card {
   background: #fffdf5f7;
   color: #304738;
   padding: 22px;
 }
 .card-heading,
-.month-top,
 .stage-footer,
 .book-nav,
 .chapter-heading {
@@ -399,41 +222,13 @@ a {
 .little-date,
 .section-label,
 .stage-caption,
-.stage-footer,
-.day-summary span,
-.quiet p {
+.stage-footer {
   font-size: 12px;
   color: #677568;
 }
 .little-date {
   font-family: monospace;
   letter-spacing: 0.05em;
-}
-.quiet {
-  padding: 19px 0 1px;
-}
-.quiet p {
-  margin: 9px 0 0;
-}
-.availability {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  background: #e8f0df;
-  color: #4d6e47;
-  border: 1px solid #d6e3c9;
-  border-radius: 99px;
-  padding: 3px 9px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.notice-row {
-  display: flex;
-  justify-content: space-between;
-  margin: 10px 0;
-}
-.notice-row span {
-  color: #8b6744;
 }
 .stage-floor {
   position: relative;
@@ -491,145 +286,15 @@ a {
   width: 16%;
   height: auto;
 }
-.month-card {
-  padding: 25px 29px 19px;
-}
-.month-top {
-  margin-bottom: 16px;
-}
 .section-label {
   gap: 6px;
   letter-spacing: 0.045em;
 }
-.month-top h2 {
-  font-size: 31px;
-  letter-spacing: -0.06em;
-  line-height: 1.15;
-  margin: 6px 0 0;
-  font-weight: 780;
-}
-.month-top h2 small {
-  font:
-    italic 20px Georgia,
-    serif;
-  color: #85907c;
-  letter-spacing: 0;
-}
-.month-nav {
-  border: 1px solid #d9dfcd;
-  border-radius: 12px;
-  overflow: hidden;
-}
-.month-nav button {
-  padding: 5px 8px;
-  background: transparent;
-  border: 0;
-  font-size: 12px;
-  min-height: 32px;
-}
-.month-nav svg {
-  width: 16px;
-  height: 16px;
-}
-.month-nav button:hover,
 .theme-picks button:hover {
   background: #ebefdf;
 }
-.week-row,
-.month-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  text-align: center;
-}
-.week-row {
-  font-size: 11px;
-  color: #71816d;
-  border-bottom: 1px solid #dce2d2;
-  padding-bottom: 8px;
-}
-.month-grid {
-  gap: 3px;
-  margin-top: 5px;
-}
-.month-grid button {
-  position: relative;
-  min-height: 43px;
-  border: 0;
-  border-radius: 10px;
-  background: none;
-  color: #3b4d39;
-  display: grid;
-  place-items: center;
-  font-size: 15px;
-}
-.month-grid b {
-  position: relative;
-  font-weight: 560;
-}
-.month-grid .muted {
-  color: #9daba0;
-}
-.month-grid .today b {
-  font-weight: 800;
-}
-.month-grid .selected {
-  color: #fff;
-}
-.selected-ring {
-  position: absolute;
-  inset: 2px 10%;
-  background: var(--accent);
-  border-radius: 10px;
-}
-.event-dot {
-  position: absolute;
-  bottom: 4px;
-  width: 4px;
-  height: 4px;
-  background: #d79843;
-  border-radius: 50%;
-}
-.month-grid small {
-  position: absolute;
-  right: 3px;
-  top: 3px;
-  color: #925f29;
-  font-size: 9px;
-}
-.day-summary {
-  border-top: 1px dashed #cad2c0;
-  margin-top: 9px;
-  padding-top: 12px;
-}
-.day-summary div {
-  display: flex;
-  gap: 9px;
-  align-items: center;
-}
-.day-summary strong {
-  font-size: 13px;
-}
-.day-summary p {
-  font-size: 12px;
-  color: #6a786c;
-  margin: 4px 0 0;
-}
-.planner footer {
-  gap: 12px;
-  justify-content: flex-start;
-  color: #526052;
-  font-size: 11px;
-  padding: 21px 3px 0;
-}
 .is-night footer {
   color: #fff8e7;
-}
-.planner footer span {
-  opacity: 0.85;
-}
-.planner footer a {
-  gap: 4px;
-  margin-left: auto;
 }
 .preview-strip {
   display: flex;
@@ -841,19 +506,6 @@ a {
   color: #71583c;
 }
 @media (max-width: 1023px) {
-  .workspace-grid {
-    grid-template-columns: 1fr;
-  }
-  .left-stack {
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
-  .planner {
-    padding: 18px 24px;
-  }
-  .hero {
-    margin-top: 78px;
-  }
   .weather-ducks {
     height: 65px;
   }
@@ -862,101 +514,13 @@ a {
   }
 }
 @media (max-width: 680px) {
-  .planner,
   .book-shell {
     padding: 12px;
-  }
-  .topbar {
-    gap: 5px;
-    padding: 4px 9px;
-    min-height: 48px;
-  }
-  .brand {
-    font-size: 16px;
-    gap: 3px;
-  }
-  .brand img {
-    width: 28px;
-    height: 28px;
-  }
-  .weather-pill {
-    font-size: 10px;
-    padding-left: 5px;
-    gap: 3px;
-  }
-  .weather-pill svg {
-    width: 13px;
-  }
-  .topbar nav {
-    gap: 9px;
-  }
-  .topbar nav a,
-  .topbar nav button {
-    font-size: 11px;
-    gap: 3px;
-  }
-  .topbar nav button span {
-    display: none;
   }
   .avatar {
     width: 24px;
     height: 24px;
     font-size: 11px;
-  }
-  .hero {
-    margin: 51px 0 12px;
-    padding: 21px 16px;
-    gap: 3px;
-    border-radius: 19px;
-  }
-  .hero-date {
-    font-size: 10px;
-    letter-spacing: 0;
-    gap: 4px;
-  }
-  .hero h1 {
-    font-size: 26px;
-  }
-  .hero-copy > p {
-    font-size: 12px;
-  }
-  .date-ticket {
-    position: absolute;
-    right: 13px;
-    top: 13px;
-    margin: 0;
-    width: 58px;
-    padding: 8px 0 3px;
-  }
-  .date-ticket small,
-  .date-ticket em {
-    font-size: 7px;
-  }
-  .date-ticket b {
-    font-size: 28px;
-  }
-  .date-ticket i {
-    width: 4px;
-    height: 8px;
-  }
-  .hero-copy {
-    width: 100%;
-  }
-  .hero-copy h1,
-  .hero-copy > p {
-    max-width: calc(100% - 58px);
-  }
-  .hero-actions {
-    gap: 5px;
-    margin-top: 17px;
-  }
-  .hero-actions button {
-    font-size: 11px;
-    padding: 7px 9px;
-    gap: 4px;
-  }
-  .hero-actions svg {
-    width: 13px;
   }
   .weather-ducks {
     height: 40px;
@@ -964,8 +528,6 @@ a {
     right: 0;
     bottom: calc(100% - 3px);
   }
-  .workspace-grid,
-  .left-stack,
   .book-layout {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -973,15 +535,6 @@ a {
   .card {
     padding: 17px;
     border-radius: 18px;
-  }
-  .quiet {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding-top: 10px;
-  }
-  .quiet p {
-    margin: 0;
   }
   .stage-floor {
     min-height: 75px;
@@ -996,12 +549,6 @@ a {
   }
   .stage-footer {
     padding-top: 7px;
-  }
-  .month-grid button {
-    min-height: 36px;
-  }
-  .month-top h2 {
-    font-size: 27px;
   }
   .book-cover {
     padding: 18px;
@@ -1028,40 +575,6 @@ a {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-.calendar-app:not([data-festival='regular']) .hero {
-  border: 2px solid color-mix(in srgb, var(--accent) 48%, #fff4cf);
-}
-[data-festival='spring'] .date-ticket {
-  background: #ae3d30;
-  color: #fff0bd;
-  border-color: #f5c967;
-}
-[data-festival='dragon'] .hero {
-  background:
-    repeating-linear-gradient(109deg, transparent 0 51px, #51714c0b 52px 54px),
-    linear-gradient(120deg, #f8faea, #c9e4af);
-}
-[data-festival='moon'] .date-ticket {
-  border-radius: 50%;
-  box-shadow: 0 0 23px #f3bd5766;
-  background: #fff0bd;
-}
-[data-festival='winter'] .hero::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 15px;
-  right: 15px;
-  height: 9px;
-  background: radial-gradient(circle at 8px 3px, #e8ad47 2px, transparent 4px) 0 0/23px 9px;
-  filter: drop-shadow(0 1px 3px #efb855);
-  pointer-events: none;
-}
-.weather-ducks.snowy button canvas {
-  clip-path: inset(0 0 5%);
-  transform: translateY(3%);
 }
 .chapter table {
   width: 100%;
@@ -1100,8 +613,7 @@ a {
   border-radius: 20px;
   animation: greeting-fade 1.05s both;
 }
-.opening-greeting small,
-.daily-quote small { display: block; }
+.opening-greeting small { display: block; }
 .opening-greeting i {
   position: absolute;
   top: 50%;
@@ -1125,34 +637,4 @@ a {
   .opening-greeting { animation: none; }
   .opening-greeting i { display: none; }
 }
-.daily-quote {
-  margin: 16px 0 0;
-  padding-top: 12px;
-  border-top: 1px solid #86998b45;
-  font-size: 13px;
-  line-height: 1.6;
-}
-.daily-quote small { margin-bottom: 4px; }
-.calendar-app :is(.hero, .card, .topbar) {
-  background: rgb(255 251 238 / 79%);
-  backdrop-filter: blur(18px) saturate(160%);
-  border: 1px solid rgb(255 255 255 / 72%);
-  box-shadow: inset 0 1px 0 #ffffff85, 0 10px 34px #28364418;
-}
-.is-night :is(.hero, .card, .topbar) {
-  background: rgb(34 43 72 / 82%);
-  border-color: #adb9dd50;
-  color: #f4f1e8;
-  box-shadow: inset 0 1px 0 #f8f2ff24, 0 10px 34px #10162b3d;
-}
-.is-night :is(.hero h1, .hero-copy > p, .hero-date, .weather-pill, .month-grid button, .week-row,
-  .section-label, .little-date, .stage-caption, .stage-footer, .stage-footer button, .quiet p,
-  .day-summary span, .notice-row span, .month-top small, .topbar nav a, .topbar nav button) { color: #e5e6ed; }
-.is-night .month-grid .muted { color: #adbbce; }
 .is-night .stage-floor { color: #344337; }
-.is-night :is(.month-nav button:hover, .topbar nav button:hover) { background: #505c79; }
-.topbar :is(.brand, nav a) { flex-shrink: 0; white-space: nowrap; }
-@media (max-width: 680px) {
-  .weather-pill { min-width: 0; line-height: 1.45; }
-  .weather-pill svg { flex-shrink: 0; }
-}

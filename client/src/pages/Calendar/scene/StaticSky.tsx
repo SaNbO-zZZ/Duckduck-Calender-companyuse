@@ -1,12 +1,13 @@
-import { projectSun, skyAt } from '../../../../../shared/hefei-sky';
+import { projectSkyBodies, type SkyBand, skyAt } from '../../../../../shared/hefei-sky';
 import React, { useEffect, useRef } from 'react';
 import type { WeatherData } from '../../../../../shared/api.interface';
 export function StaticSky({
-  sky,
+  sky, band,
   night,
   weather,
   moon,
 }: {
+  band: SkyBand;
   sky: ReturnType<typeof skyAt>;
   night: boolean;
   weather?: WeatherData;
@@ -25,10 +26,10 @@ export function StaticSky({
       gradient.addColorStop(1, night ? '#4b5073' : sky.warmth > 0.3 ? '#f9c6a8' : '#f1ecda');
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, w, h);
-      const sun = projectSun(sky.elev, sky.az, w, h);
-      const x = w * (night ? (moon ? 0.94 : sky.moonX) : sun.x);
-      const y = h * (1 - (night ? sky.moonY : sun.y));
-      const r = moon && night ? 29 : 16;
+      const bodies = projectSkyBodies(sky, w, h, band, night && moon);
+      const body = night ? bodies.moon : bodies.sun;
+      const x = w * body.x, y = h * (1 - body.y);
+      const r = h * (night ? bodies.moonScale * 0.0155 : 0.021);
       if (night && (weather?.cloudCover ?? 0) < 0.85) {
         for (let i = 1; i <= 75; i++) {
           ctx.fillStyle = i % 3 ? '#d9dcf29c' : '#fff1db';
@@ -81,6 +82,6 @@ export function StaticSky({
     draw();
     window.addEventListener('resize', draw);
     return () => window.removeEventListener('resize', draw);
-  }, [sky, night, moon, weather]);
+  }, [sky, night, moon, weather, band]);
   return <canvas ref={ref} aria-hidden />;
 }

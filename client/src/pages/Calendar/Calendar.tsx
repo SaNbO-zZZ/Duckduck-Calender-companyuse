@@ -1,29 +1,35 @@
 import { displayText } from '../../lib/display-text';
-import { dayInfo, skyAt } from '../../../../shared/hefei-sky';
+import { type SkyBand, skyAt } from '../../../../shared/hefei-sky';
 import { dailyQuote } from '../../../../shared/daily-quotes';
 import { classifyPresence } from '../../../../shared/calendar-presence';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { Link } from 'react-router-dom';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowUpRight,
   BookOpen,
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   Clock3,
+  Cloud,
+  CloudRain,
+  CloudSnow,
   CloudSun,
-  Palette,
+  Moon,
   Plane,
+  Sun,
   Sunrise,
   UsersRound,
+  Quote,
+  Wind,
+  ClipboardPenLine,
 } from 'lucide-react';
-import {
-  addBeijingDays,
-  beijingDate,
-  parseBeijingDate,
-  weekdayOf,
-} from '../../../../shared/duty-calendar';
+import { beijingDate } from '../../../../shared/duty-calendar';
 import type {
   CalendarData,
   CalendarConfig,
@@ -45,7 +51,19 @@ import { ThemeRow, FestivalPanel, Preview } from './FestivalPanel';
 import { Sky } from './scene/Sky';
 import { Particles } from './scene/Particles';
 import { WeatherDucks } from './scene/WeatherDucks';
-const weekdays = '一二三四五六日';
+import { MonthCard } from './MonthCard';
+import {
+  WeatherMenu,
+  livePreview,
+  previewTime,
+  previewWeather,
+} from './WeatherMenu';
+
+const phone = matchMedia('(max-width: 768px)');
+const subscribeSize = (listener: () => void) => {
+  phone.addEventListener('change', listener);
+  return () => phone.removeEventListener('change', listener);
+};
 const kinds = [
   { id: 'late', label: '英雄总是最后才到', Icon: Clock3 },
   { id: 'early', label: '我先去拯救世界了', Icon: Sunrise },
@@ -57,12 +75,12 @@ function changeMonth(value: string, delta: number) {
   return d.toISOString().slice(0, 7);
 }
 export default function Calendar() {
+  const mobile = useSyncExternalStore(subscribeSize, () => phone.matches);
   const user = useUser(),
     [now, setNow] = useState(Date.now),
     today = beijingDate(now);
   const [month, setMonth] = useState(today.slice(0, 7)),
-    [date, setDate] = useState(today),
-    [direction, setDirection] = useState(1);
+    [date, setDate] = useState(today);
   const [rev, refresh] = useState(0),
     [weatherRev, refreshWeather] = useState(0),
     [kind, setKind] = useState<RegistrationKind | null>(null),
@@ -73,10 +91,17 @@ export default function Calendar() {
   }, []);
   const [panel, setPanel] = useState(false),
     [preview, setPreview] = useState<Preview | null>(null),
+    [atmosphere, setAtmosphere] = useState(livePreview),
     reduce = useReducedMotion();
-  const cal = useResource<CalendarData>('/api/calendar/month?month=' + month, rev),
+  const cal = useResource<CalendarData>(
+      '/api/calendar/month?month=' + month,
+      rev,
+    ),
     cfg = useResource<CalendarConfig>('/api/calendar/config', rev),
-    weather = useResource<WeatherData>('/api/calendar/weather', weatherRev).data,
+    liveWeather = useResource<WeatherData>(
+      '/api/calendar/weather',
+      weatherRev,
+    ).data,
     settings = useResource<ThemeRow[]>('/api/festivals', rev);
   useEffect(() => {
     const clock = setInterval(() => setNow(Date.now()), 15000),
@@ -90,17 +115,62 @@ export default function Calendar() {
       clearInterval(w);
     };
   }, []);
-  const hour = new Date(now + 28800000).getUTCHours();
-  const sky = useMemo(() => {
-    if (!preview) return skyAt(now);
-    const { midnight, noon } = dayInfo(now);
-    return skyAt(midnight + (preview.night ? 22 * 60 : noon) * 60000);
-  }, [now, preview]);
-  const phase = sky.phase, night = phase === 'night';
+  const time =
+    atmosphere.time === '实时' && preview
+      ? preview.night
+        ? '夜晚'
+        : '正午'
+      : atmosphere.time;
+  const sky = useMemo(() => skyAt(previewTime(now, time)), [now, time]);
+  const weather = useMemo(
+    () => previewWeather(liveWeather, atmosphere),
+    [liveWeather, atmosphere],
+  );
+  const phase = sky.phase,
+    night = phase === 'night';
+  const localWeather =
+    atmosphere.time !== '实时' ||
+    atmosphere.sky !== '实时' ||
+    atmosphere.wind >= 0;
+  const WeatherIcon =
+    weather?.precipType === 'rain'
+      ? CloudRain
+      : weather?.precipType === 'snow'
+        ? CloudSnow
+        : weather?.scene === 'overcast'
+          ? Cloud
+          : night
+            ? Moon
+            : weather?.scene === 'partly'
+              ? CloudSun
+              : Sun;
+  const bar = useRef<HTMLElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
+  const [skyBand, setSkyBand] = useState<SkyBand>({ top: 74, bottom: 170 });
+  useEffect(() => {
+    const el = bar.current!;
+    const measure = () => {
+      const planner = el.parentElement!;
+      const scroll = window.scrollY + planner.scrollTop;
+      const top = Math.ceil(el.getBoundingClientRect().bottom + scroll);
+      const bottom = Math.floor(
+        stage.current!.getBoundingClientRect().top + scroll,
+      );
+      setSkyBand((old) =>
+        old.top === top && old.bottom === bottom ? old : { top, bottom },
+      );
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    observer.observe(el.parentElement!);
+    measure();
+    return () => observer.disconnect();
+  }, [preview]);
   const theme = festivals.find((f) =>
     preview
       ? f.key === preview.key
-      : settings.data?.some((r) => r.key === f.key && r.enabled) && inFestival(f.key, today),
+      : settings.data?.some((r) => r.key === f.key && r.enabled) &&
+        inFestival(f.key, today),
   );
   const presence = classifyPresence(cal.data?.todayEvents || [], now),
     active = presence.people,
@@ -111,7 +181,9 @@ export default function Calendar() {
     early && `${early} 位同事先去拯救世界了`,
     trips && `${trips} 位同事正在出差途中`,
     away > trips && `${away - trips} 位同事正在休整充电中`,
-  ].filter(Boolean).join('，');
+  ]
+    .filter(Boolean)
+    .join('，');
   useEffect(() => {
     if (Number.isFinite(presence.nextTransition)) {
       const t = setTimeout(
@@ -121,35 +193,35 @@ export default function Calendar() {
       return () => clearTimeout(t);
     }
   }, [presence.nextTransition]);
-  const monthStart = month + '-01',
-    first = addBeijingDays(monthStart, 1 - weekdayOf(monthStart)),
-    days = Array.from({ length: 42 }, (_, i) => addBeijingDays(first, i));
-  const person = (id: string) => displayText(cal.data?.people.find((p) => p.id === id)?.name || '') || '账号资料待同步';
-  const onDay = (d: string) =>
-    cal.data?.events.filter(
-      (e) => e.start < parseBeijingDate(d) + 86400000 && e.end > parseBeijingDate(d),
-    ) || [];
-  const chosen = onDay(date);
+  const person = (id: string) =>
+    displayText(cal.data?.people.find((p) => p.id === id)?.name || '') ||
+    '团队成员';
   function select(d: string) {
     setDate(d);
-    if (!d.startsWith(month)) {
-      setDirection(d < monthStart ? -1 : 1);
-      setMonth(d.slice(0, 7));
-    }
+    setMonth(d.slice(0, 7));
   }
-  function move(n: number) {
-    const m = changeMonth(month, n);
-    setDirection(n);
-    setMonth(m);
-    setDate(m === today.slice(0, 7) ? today : m + '-01');
+  function move(delta: number) {
+    const m = changeMonth(month, delta);
+    select(m === today.slice(0, 7) ? today : m + '-01');
   }
+  const actions = kinds.map(({ id, label, Icon }) => (
+    <button key={id} onClick={() => setKind(id)}>
+      <Icon size={18} />
+      <span>{label}</span>
+    </button>
+  ));
   const stagger = {
     hidden: { opacity: 1, y: reduce ? 0 : 8 },
-    show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 26 } },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: { type: 'spring' as const, stiffness: 300, damping: 26 },
+    },
   };
   return (
     <div
       className={'calendar-app ' + (night ? 'is-night' : '')}
+      data-night={night}
       data-festival={theme?.key || 'regular'}
       style={{
         '--accent': theme?.color || '#407c67',
@@ -157,47 +229,87 @@ export default function Calendar() {
         '--night': theme?.night || '#263b49',
       }}
     >
-      <Sky sky={sky} theme={theme?.key} weather={weather} night={night} />
+      <Sky
+        band={skyBand}
+        sky={sky}
+        theme={theme?.key}
+        weather={weather}
+        night={night}
+      />
       <Particles
         theme={theme?.key}
         night={night}
-        ambient dusk={phase === 'dusk'}
+        ambient
+        dusk={phase === 'dusk'}
         wind={(weather?.windSpeed ?? 0) * (weather?.windDir ?? 1)}
         rain={weather?.precipType === 'rain' ? weather.precipLevel : 0}
         snow={weather?.precipType === 'snow' ? weather.precipLevel : 0}
       />
-      <motion.main
-        className="planner"
-        initial="hidden"
-        animate="show"
-        variants={{ show: { transition: { staggerChildren: reduce ? 0 : 0.06 } } }}
-      >
-        <motion.header variants={stagger} className="topbar">
-          <Link className="brand" to="/">
-            <img src="/assets/duty-ducks-v2/caishen/idle-00.png" alt="" />
+      <main className="planner-shell">
+        <header ref={bar} className="planner-bar">
+          <Link className="planner-brand" to="/">
+            <svg
+              viewBox="0 0 40 40"
+              aria-hidden="true"
+              width="37"
+              height="37"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6 22c3 2 5 2 8 1-2-2-3-5-2-8 1-4 5-7 9-6 4 0 7 3 7 7l6 2-6 3c-1 7-6 11-13 10-6 0-10-5-9-9Z" />
+              <path d="M12 24c2 3 6 4 10 1" />
+              <circle
+                cx="23.5"
+                cy="15"
+                r="1.25"
+                fill="currentColor"
+                stroke="none"
+              />
+            </svg>
             <strong>鸭鸭日历</strong>
           </Link>
-          <span className="weather-pill" title={weather?.available ? undefined : '天气更新时，天空暂以暖晴呈现'}>
-            <CloudSun size={17} />
-            合肥 · {weather?.temperature != null && `${Math.round(weather.temperature)}°C `}{weather?.description || '暖晴'}
-            {weather?.windLevel >= 2 && (weather.windLevel === 3 ? ' · 强风' : ' · 大风')}
-          </span>
+          <div className="planner-weather" aria-label="合肥天气">
+            <WeatherIcon size={19} />
+            <span>
+              {localWeather ? '预览' : '合肥'} ·{' '}
+              {weather?.temperature != null &&
+                Math.round(weather.temperature) + '°C '}
+              {weather?.description || '暖晴'}
+            </span>
+            {weather?.windLevel >= 2 && (
+              <span className="wind-tag">
+                <Wind size={13} />
+                {weather.windLevel === 3 ? '强风' : '大风'}
+              </span>
+            )}
+          </div>
           <nav>
-            <Link to="/charter">
-              <BookOpen size={17} />
+            <Link className="desktop-charter" to="/charter">
+              <BookOpen size={16} />
               鸭鸭公约
             </Link>
-            {user.role === 'admin' && (
-              <button aria-label="节日预览" onClick={() => setPanel(true)}>
-                <Palette size={17} />
-                <span>节日预览</span>
-              </button>
-            )}
+            <WeatherMenu
+              value={atmosphere}
+              onChange={(v) => {
+                setAtmosphere(v);
+                if (v === livePreview) setPreview(null);
+              }}
+              night={night}
+              admin={user.role === 'admin'}
+              onFestival={() => setPanel(true)}
+            />
             <span className="avatar" title={user.name}>
-              {user.avatar_url ? <img alt={user.name} src={user.avatar_url} /> : user.name?.slice(0, 1)}
+              {user.avatar_url ? (
+                <img alt={user.name} src={user.avatar_url} />
+              ) : (
+                user.name?.slice(0, 1)
+              )}
             </span>
           </nav>
-        </motion.header>
+        </header>
         {preview && (
           <aside className="preview-strip">
             {theme?.name} · {night ? '夜晚' : '白天'}预览
@@ -205,184 +317,103 @@ export default function Calendar() {
             <button onClick={() => setPreview(null)}>结束预览</button>
           </aside>
         )}
-        <motion.section variants={stagger} className="hero">
-          <WeatherDucks weather={weather} phase={phase} halloween={theme?.key === 'halloween'} />
-          <div className="hero-copy">
-            <div className="hero-date">
-              <span className="dot" />
-              {today.slice(0, 4)} 年 {Number(today.slice(5, 7))} 月 {Number(today.slice(8))} 日 星期
-              {weekdays[weekdayOf(today) - 1]}
-              {theme && <b>{theme.name}</b>}
+        <div className="planner-columns">
+          <div className="month-column">
+            <div ref={stage} className="duck-stage" aria-label="天气鸭舞台">
+              <WeatherDucks
+                weather={weather}
+                phase={phase}
+                halloween={theme?.key === 'halloween'}
+              />
             </div>
-            <h1>
-              {hour < 6
-                ? '夜深了'
-                : hour < 11
-                  ? '早上好'
-                  : hour < 14
-                    ? '中午好'
-                    : hour < 18
-                      ? '下午好'
-                      : '晚上好'}
-              ，{user.name || '同事'}
-              <span>。</span>
-            </h1>
-            <p>
-              {cal.data ? (
-                summary || '全员在岗，一切安好～'
-              ) : (
-                cal.error || '正在读取团队知会…'
-              )}
-            </p>
-            <div className="hero-actions">
-              {kinds.map(({ id, label, Icon }) => (
-                <motion.button
-                  key={id}
-                  whileHover={reduce ? {} : { y: -2, scale: 1.02 }}
-                  whileTap={{ scale: reduce ? 1 : 0.96 }}
-                  onClick={() => setKind(id)}
-                >
-                  <Icon size={16} />
-                  {label}
-                </motion.button>
-              ))}
-            </div>
+            <MonthCard
+              month={month}
+              date={date}
+              today={today}
+              data={cal.data}
+              error={cal.error}
+              mobile={mobile}
+              night={night}
+              select={select}
+              move={move}
+              retry={() => refresh((i) => i + 1)}
+            />
           </div>
-          <div className="date-ticket" aria-hidden>
-            <div>
-              <i />
-              <i />
-            </div>
-            <small>
-              {new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'Asia/Shanghai' })
-                .format(now)
-                .toUpperCase()}
-            </small>
-            <b>{today.slice(8)}</b>
-            <em>星期{weekdays[weekdayOf(today) - 1]}</em>
-          </div>
-        </motion.section>
-        <div className="workspace-grid">
-          <motion.aside variants={stagger} className="left-stack">
-            <section className="card now-card">
+          <motion.aside
+            className="planner-side"
+            initial="hidden"
+            animate="show"
+            variants={stagger}
+          >
+            <DutyDuckStage key={date} selectedDate={date} />
+            <section className="card team-card">
               <div className="card-heading">
-                <h2>此刻的团队动态</h2>
+                <h2>此刻团队动态</h2>
                 <UsersRound size={18} />
               </div>
               {active.length ? (
-                active.map((e) => (
-                  <p className="notice-row" key={e.id}>
-                    <b>{person(e.id)}</b>
-                    <span>{displayText(e.event.type)}</span>
-                  </p>
-                ))
+                <>
+                  <p className="team-summary">{summary}</p>
+                  <ul>
+                    {active.map((e) => (
+                      <li key={e.id}>
+                        <b>{person(e.id)}</b>
+                        <span>{displayText(e.event.type)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
               ) : (
-                <div className="quiet">
-                  <span className="availability">
-                    <Sunrise size={14} />
-                    {cal.data ? '全员在岗，一切安好～' : cal.error ? '读取失败' : '读取中'}
-                  </span>
-                  <p>{cal.data ? 'Alpha Pulse 一定会更大更强' : cal.error || '正在读取知会…'}</p>
+                <div className="team-empty">
+                  <strong>
+                    {cal.data
+                      ? 'Alpha Pulse 一定会更大更强'
+                      : cal.error || '正在读取团队知会…'}
+                  </strong>
+                  {cal.data && <small>全员在岗，一切安好～</small>}
                 </div>
               )}
-              <p className="daily-quote"><small>今日暖心语录</small>{dailyQuote(now)}</p>
+              <div className="quote-line">
+                <Quote size={16} />
+                <p>
+                  <small>今日暖心语录</small>
+                  {dailyQuote(now)}
+                </p>
+              </div>
             </section>
-            <DutyDuckStage key={date} selectedDate={date} />
+            {!mobile && (
+              <section className="card quick-card">
+                <div className="card-heading">
+                  <h2>今日状态</h2>
+                  <ClipboardPenLine size={18} />
+                </div>
+                <div className="register-actions">{actions}</div>
+              </section>
+            )}
           </motion.aside>
-          <motion.section variants={stagger} className="card month-card">
-            <div className="month-top">
-              <div>
-                <span className="section-label">
-                  <CalendarDays size={15} />
-                  团队月历
-                </span>
-                <h2>
-                  {Number(month.slice(5))}月 <small>{month.slice(0, 4)}</small>
-                </h2>
-              </div>
-              <div className="month-nav">
-                <button aria-label="上个月" onClick={() => move(-1)}>
-                  <ChevronLeft />
-                </button>
-                <button onClick={() => select(today)}>今天</button>
-                <button aria-label="下个月" onClick={() => move(1)}>
-                  <ChevronRight />
-                </button>
-              </div>
-            </div>
-            <div className="week-row">
-              {[...weekdays].map((w) => (
-                <span key={w}>{w}</span>
-              ))}
-            </div>
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                className="month-grid"
-                key={month}
-                initial={{ opacity: 0, x: reduce ? 0 : direction * 24 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: reduce ? 0 : -direction * 24 }}
-                transition={{ duration: reduce ? 0 : 0.22 }}
-              >
-                {days.map((d) => {
-                  const holiday = cal.data?.holidays.find((h) => h.date === d),
-                    listed = onDay(d);
-                  return (
-                    <button
-                      key={d}
-                      className={
-                        (d.startsWith(month) ? '' : 'muted ') +
-                        (d === today ? 'today ' : '') +
-                        (d === date ? 'selected' : '')
-                      }
-                      onClick={() => select(d)}
-                      aria-label={d}
-                      aria-pressed={d === date}
-                    >
-                      {d === date && <motion.i className="selected-ring" layoutId="selected-day-ring" />}
-                      <b>{Number(d.slice(8))}</b>
-                      {holiday && <small>{displayText(holiday.type)}</small>}
-                      {listed.length > 0 && <i className="event-dot" />}
-                    </button>
-                  );
-                })}
-              </motion.div>
-            </AnimatePresence>
-            <div className="day-summary">
-              <div>
-                <strong>
-                  {Number(date.slice(5, 7))} 月 {Number(date.slice(8))} 日
-                </strong>
-                <span>星期{weekdays[weekdayOf(date) - 1]}</span>
-              </div>
-              {cal.error ? (
-                <button onClick={() => refresh((i) => i + 1)}>加载失败 · 重试</button>
-              ) : chosen.length ? (
-                chosen.map((e) => (
-                  <p key={e.id}>
-                    {e.userIds.map(person).join('、')} · {displayText(e.type)}
-                  </p>
-                ))
-              ) : (
-                <p>{cal.data ? '这一天还没有知会。' : '正在读取登记…'}</p>
-              )}
-            </div>
-          </motion.section>
         </div>
-        <footer>
-          鸭鸭日历 <span>北京时间 UTC+8</span>
+        <footer className="planner-foot">
+          <span>北京时间 UTC+8</span>
           {user.role === 'admin' && (
             <Link to="/release-announcement">
-              版本知会 <ArrowUpRight size={12} />
+              版本知会 <ArrowUpRight size={13} />
             </Link>
           )}
         </footer>
-      </motion.main>
+      </main>
+      {mobile && (
+        <nav className="phone-dock" aria-label="今日状态">
+          <div className="register-actions">{actions}</div>
+        </nav>
+      )}
       <FestivalPanel
         open={panel}
         close={() => setPanel(false)}
         preview={preview}
-        onPreview={setPreview}
+        onPreview={(v) => {
+          setPreview(v);
+          setAtmosphere((a) => ({ ...a, time: '实时' }));
+        }}
         rows={settings.data || []}
         onSaved={() => refresh((i) => i + 1)}
       />
@@ -395,8 +426,13 @@ export default function Calendar() {
         <DialogContent className="registration-panel">
           <DialogHeader>
             <DialogTitle>{kind && title[kind]}</DialogTitle>
-            <DialogDescription>{kind === 'late' ? '10 点以后到达公司，可提前选好日期和预计到达时间'
-              : kind === 'early' ? '今天提前出发，记得和 Mentor 打声招呼' : '请假或出差前，给 Mentor 和人事捎个信。'}</DialogDescription>
+            <DialogDescription>
+              {kind === 'late'
+                ? '10 点以后到达公司，可提前选好日期和预计到达时间'
+                : kind === 'early'
+                  ? '今天提前出发，记得和 Mentor 打声招呼'
+                  : '请假或出差前，给 Mentor 和人事捎个信。'}
+            </DialogDescription>
           </DialogHeader>
           {kind && cfg.data ? (
             <RegisterForm

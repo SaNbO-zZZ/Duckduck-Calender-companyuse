@@ -1,4 +1,4 @@
-import { projectSun, skyAt } from '../../../../../shared/hefei-sky';
+import { projectSkyBodies, type SkyBand, skyAt } from '../../../../../shared/hefei-sky';
 import React, { useEffect, useRef } from 'react';
 import { StaticSky } from './StaticSky';
 import vertex from './sky.vert?raw';
@@ -6,19 +6,21 @@ import fragment from './sky.frag?raw';
 import type { WeatherData } from '../../../../../shared/api.interface';
 import type { FestivalKey } from '../../../../../shared/festivals';
 export function Sky({
+  band,
   weather,
   sky,
   night,
   theme,
 }: {
+  band: SkyBand;
   weather?: WeatherData;
   sky: ReturnType<typeof skyAt>;
   night: boolean;
   theme?: FestivalKey;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
-  const current = useRef({ sky, weather });
-  useEffect(() => { current.current = { sky, weather }; }, [sky, weather]);
+  const current = useRef({ sky, weather, band });
+  useEffect(() => { current.current = { sky, weather, band }; }, [sky, weather, band]);
   useEffect(() => {
     const canvas = ref.current!,
       gl = canvas.getContext('webgl', { alpha: true, antialias: false });
@@ -87,7 +89,7 @@ export function Sky({
         gl.viewport(0, 0, w, h);
       }
       const { sky: light, weather: observation } = current.current;
-      const sun = projectSun(light.elev, light.az, innerWidth, innerHeight);
+      const { sun, moon, moonScale } = projectSkyBodies(light, innerWidth, innerHeight, current.current.band, theme === 'moon' && night);
       const strength = Math.min(1, (observation?.windSpeed ?? 0) / 65);
       const direction = observation?.windDir ?? 1;
       const blend = reduce.matches || !dt ? 1 : 1 - Math.exp(-dt * 2);
@@ -107,11 +109,9 @@ export function Sky({
       one('uDaylight', light.daylight);
       one('uWarmth', light.warmth);
       one('uTwilight', light.twilight);
-      const harvestMoon = theme === 'moon' && night;
-      three('uMoon', harvestMoon ? 0.94 : light.moonX,
-        harvestMoon ? (small.matches ? 0.91 : 0.79) : light.moonY, 1);
+      three('uMoon', moon.x, moon.y, 1);
       one('uFullMoon', theme === 'moon' ? 1 : 0);
-      one('uMoonScale', theme === 'moon' ? 3.8 : 1.35);
+      one('uMoonScale', moonScale);
       one('uCloudCover', cover);
       one('uWindStretch', strength);
       one('uScud', strength * strength);
@@ -163,7 +163,7 @@ export function Sky({
   }, [night, theme]);
   return (
     <div aria-hidden className={'sky-back ' + (night ? 'night' : 'day')}>
-      <StaticSky sky={sky} night={night} weather={weather} moon={theme === 'moon'} />
+      <StaticSky band={band} sky={sky} night={night} weather={weather} moon={theme === 'moon'} />
       <canvas ref={ref} />
       {theme === 'halloween' && (
         <picture>

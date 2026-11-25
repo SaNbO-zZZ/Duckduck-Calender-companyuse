@@ -65,3 +65,21 @@ export function projectSun(elev: number, az: number, width: number, height: numb
   return { x: 0.5 + 0.47 * Math.sign(off) * Math.pow(Math.abs(off), 0.8),
     y: horizon + (1 - 0.42 * band - horizon) * rise };
 }
+
+// Keep the astronomical motion visible between the measured toolbar and the ducks.
+export interface SkyBand { top: number; bottom: number }
+export function projectSkyBodies(sky: ReturnType<typeof skyAt>, width: number, height: number, band: SkyBand, harvest: boolean) {
+  const sun = projectSun(sky.elev, sky.az, Math.max(width, height * 1.2), height);
+  const space = Math.max(1, band.bottom - band.top);
+  const moonScale = Math.min(harvest ? 3.8 : 1.35, space * 0.31 / (height * 0.016));
+  function projectHeight(lift: number, radius: number) {
+    const padding = Math.min(space / 2, radius + 4);
+    const screenY = band.bottom - padding - (space - 2 * padding) * Math.max(0, Math.min(1, lift));
+    return 1 - screenY / height;
+  }
+  return {
+    sun: { x: sun.x, y: projectHeight(sun.y, height * 0.021) },
+    moon: { x: harvest ? 0.91 : sky.moonX, y: projectHeight((sky.moonY - 0.73) / 0.13, height * 0.016 * moonScale) },
+    moonScale,
+  };
+}

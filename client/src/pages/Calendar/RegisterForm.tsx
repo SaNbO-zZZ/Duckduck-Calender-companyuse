@@ -370,14 +370,14 @@ export function RegisterForm({
             <>
               {dateField('arrivalDate', '到达')}
               {timeField('arrivalTime', '预计到达时间')}
-              <p className="text-sm text-[#8d8074]">
+              <p className="registration-note text-sm">
                 按北京时间登记。请选择所选日期 10:00 之后、尚未到达的时刻。
               </p>
             </>
           ) : (
             <div>
               <p className="mb-2 font-medium">当前时间</p>
-              <p className="rounded-2xl bg-[#f6f4f1] p-3 text-sm" role="timer">
+              <p className="registration-readout rounded-2xl bg-[#f6f4f1] p-3 text-sm" role="timer">
                 {timeText(now)}
               </p>
             </div>
@@ -403,10 +403,10 @@ export function RegisterForm({
           />
           <div>
             <p className="mb-2 font-medium">人事</p>
-            <div className="rounded-2xl bg-[#f6f4f1] p-3">
+            <div className="registration-readout rounded-2xl bg-[#f6f4f1] p-3">
               <PersonName id={config.hrUserId} />
             </div>
-            <p className="mt-2 text-xs text-[#8d8074]">后台固定同步人事 · 仅知会，无审批</p>
+            <p className="registration-note mt-2 text-xs">后台固定同步人事 · 仅知会，无审批</p>
           </div>
         </fieldset>
         {hint && <p role="status" className="text-sm">{hint}</p>}
@@ -419,7 +419,7 @@ export function RegisterForm({
           <p role="status" className="rounded-2xl bg-[#f4f4ed] p-3 text-sm">
             {result?.message || '正在核对上次登记。'}
             <br />
-            <span className="break-all text-xs text-[#8d8074]">登记编号：{key.current}</span>
+            <span className="registration-note break-all text-xs">登记编号：{key.current}</span>
           </p>
         )}
         <div className="flex justify-end gap-3">

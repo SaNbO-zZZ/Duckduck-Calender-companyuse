@@ -56,7 +56,7 @@ export function WeatherDucks({
     night = phase === 'night';
   const pool = DuckArt.ACTIONS.filter((a) => a.families.includes(family) && a.phases.includes(phase)),
     actions = Array.from(
-      { length: 9 },
+      { length: 3 },
       (_, i) =>
         (pool.length ? pool : DuckArt.ACTIONS)[
           (i + Math.floor((Date.now() + 28800000) / 86400000)) % (pool.length || DuckArt.ACTIONS.length)
@@ -67,7 +67,7 @@ export function WeatherDucks({
       -1,
       Math.min(
         1,
-        ((weather?.windSpeed || 0) / 40) * Math.cos(((weather?.windFrom || 0) * Math.PI) / 180),
+        ((weather?.windSpeed || 0) / 40) * (weather?.windDir ?? 1),
       ),
     );
   useEffect(() => {
