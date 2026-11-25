@@ -6,6 +6,8 @@
 
 自 2026-11-24 起，员工可从桌面飞书原左栏和手机「更多 → 工作台 → 我的常用 → 鸭鸭日历」进入新版。正式站使用 Vercel 与 Supabase，登记继续写入原飞书多维表格。飞书企业应用版本为 1.0.5。[打开鸭鸭日历](https://calendar.alphapulsex.online/) · [切流实测记录](docs/VERCEL_CUTOVER_CHECKLIST.md)
 
+旧妙搭项目已于 2026-11-25 移入回收站。最后的线上版本与数据已归档。[退役验收](docs/VERCEL_CUTOVER_CHECKLIST.md#旧妙搭退役)
+
 ## 妙搭历史修复
 
 `v3.3.2` 已于 2026-11-06 发布：兼容中央气象台合肥站实况中偶发的未知天气描述，避免误显示“天气暂不可用”；背景进入视觉降级时仍保留轻量鸭鸭动画。妙搭 release `7704718438245649675` 已回读 `finished`，完整工程说明见 [`docs/engineering/v3.3.2-天气实况与鸭鸭动画修复.md`](docs/engineering/v3.3.2-天气实况与鸭鸭动画修复.md)。
@@ -28,7 +30,7 @@
 | `assets/halloween-2026/` | 2026 年万圣节限时主题的桌面与手机日夜场景素材。 |
 | `archive/visual-review/` | 天气、九只鸭鸭、窄屏和性能的截图与视频证据。 |
 | `docs/engineering/` | 各次排障、发布和性能优化的工程记录。 |
-| `scripts/refresh_release_roster.py` | 发版前从飞书正式通讯录核对全员，并向妙搭写入该版私聊名单；不保存名单到 Git。 |
+| `scripts/refresh_release_roster.py` | 旧妙搭版本的历史名单工具。现行版本知会使用 Supabase 批次。 |
 
 原始 60 MiB ZIP 与解压素材重复，因此未提交 ZIP；`node_modules/`、构建产物、日志、环境变量和本机授权文件也不进入仓库。首次运行请参考 `.env.example`，真实配置只放本机或飞书平台的安全配置中。
 
