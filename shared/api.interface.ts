@@ -12,11 +12,30 @@ export interface CalendarData {
   /** @deprecated Historical all-day set. Do not use for current presence. */
   todayUserIds: string[];
   holidays: Holiday[];
+  birthdays: Array<{ date: string; userId: string; name: string; avatar?: string }>;
   serverTime: number;
 }
 export interface RegistrationRequest { requestKey: string; kind: RegistrationKind; mentorId: string; leaveType: string; start: string; end: string; arrivalTime: string; arrivalDate?: string; }
 export interface RegistrationResult { recorded: boolean; recordId: string | null; notifications: 'sent' | 'sending' | 'pending_review'; processing: boolean; message: string; }
-export interface WeatherData { available: boolean; scene: string; windSpeed: number; windFrom: number; cloud: number; validTime: string; updatedAt: string; source: string; }
+export interface WeatherData {
+  available: boolean;
+  scene: string;
+  description: string;
+  temperature: number | null;
+  cloud: number;
+  cloudCover: number;
+  precipType: 'rain' | 'snow' | 'none';
+  precipLevel: number;
+  windLevel: number;
+  windSpeed: number;
+  windFrom: number;
+  windDir: 1 | -1;
+  sunrise: string;
+  sunset: string;
+  validTime: string;
+  updatedAt: string;
+  source: string;
+}
 export interface RegistrationStatus { result: RegistrationResult | null; }
 export interface CompanyNoticePreview { recipientCount: number; title: string; content: string; }
 export interface CompanyNoticeResult {

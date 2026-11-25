@@ -1,3 +1,4 @@
+import { displayText } from '../../lib/display-text';
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeftRight, Play } from 'lucide-react';
 import {
@@ -79,7 +80,7 @@ export function DutyDuckStage({ selectedDate }: { selectedDate: string }) {
       setBusy(false);
     }
   }
-  const label = day?.personName || (error ? '排班加载失败' : day ? '暂无值日安排' : '读取中…');
+  const label = displayText(day?.personName || '') || (error ? '排班加载失败' : day ? '暂无值日安排' : '读取中…');
   return (
     <section className="card duty" data-duty-stage>
       <div className="card-heading">
@@ -133,7 +134,7 @@ export function DutyDuckStage({ selectedDate }: { selectedDate: string }) {
         </div>
       )}
       <div className="stage-footer">
-        <span>下班次 · {tomorrow?.personName || '待排班'}</span>
+        <span>下班次 · {displayText(tomorrow?.personName || '') || '待排班'}</span>
         <button
           disabled={!canInvite}
           onClick={() => {

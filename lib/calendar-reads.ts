@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { beijingDate, parseBeijingDate } from '../shared/duty-calendar.js';
 import type { CalendarPerson, CalendarEvent, CalendarData } from '../shared/api.interface.js';
-import { input } from './business-http.js';
+import { db } from './feishu-auth.js';
+import { input, query } from './business-http.js';
 import { Feishu, openId, tables } from './feishu-platform.js';
 
 const DAY = 86400000;
@@ -74,6 +75,21 @@ async function events(api: Feishu, start: number, end: number, people: Map<strin
   }
   return output;
 }
+async function monthBirthdays(month: string): Promise<CalendarData['birthdays']> {
+  const [year, number] = month.split('-').map(Number);
+  const lastDay = new Date(Date.UTC(year, number, 0)).getUTCDate();
+  const members = await db<Array<{open_id: string; name: string | null; avatar_url: string | null; birth_day: number}>>(
+    query('feishu_users', {
+      select: 'open_id,name,avatar_url,birth_day',
+      is_active: 'eq.true', birth_month: 'eq.' + number, birth_day: 'not.is.null',
+      order: 'birth_day.asc,open_id.asc',
+    }),
+  );
+  return members.map((member) => ({
+    date: month + '-' + String(Math.min(lastDay, member.birth_day)).padStart(2, '0'),
+    userId: member.open_id, name: member.name || '团队成员', avatar: member.avatar_url ?? undefined,
+  }));
+}
 export async function monthData(
   api: Feishu,
   month: string | null,
@@ -82,12 +98,15 @@ export async function monthData(
   const { start, end } = bounds(month);
   const today = parseBeijingDate(beijingDate(now)),
     people = new Map<string, CalendarPerson>();
-  const [monthly, days] = await Promise.all([events(api, start, end, people), holidays(api, month)]);
+  const [monthly, days, birthdays] = await Promise.all([
+    events(api, start, end, people), holidays(api, month), monthBirthdays(beijingDate(start).slice(0, 7)),
+  ]);
   const current =
     today >= start && today < end
       ? monthly.filter((e) => e.start < today + DAY && e.end > today)
       : await events(api, today, today + DAY, people);
   return {
+    birthdays,
     events: monthly,
     todayEvents: current,
     activeEvents: current.filter((e) => e.start <= now && e.end > now),

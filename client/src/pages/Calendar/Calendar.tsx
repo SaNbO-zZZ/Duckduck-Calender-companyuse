@@ -1,5 +1,8 @@
+import { displayText } from '../../lib/display-text';
+import { dayInfo, skyAt } from '../../../../shared/hefei-sky';
+import { dailyQuote } from '../../../../shared/daily-quotes';
 import { classifyPresence } from '../../../../shared/calendar-presence';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
@@ -42,21 +45,10 @@ import { ThemeRow, FestivalPanel, Preview } from './FestivalPanel';
 import { Sky } from './scene/Sky';
 import { Particles } from './scene/Particles';
 import { WeatherDucks } from './scene/WeatherDucks';
-const labels: Record<string, string> = {
-  clear: '晴',
-  partly: '多云',
-  overcast: '阴',
-  lightRain: '小雨',
-  heavyRain: '大雨',
-  storm: '暴雨',
-  lightSnow: '小雪',
-  snow: '雪',
-  heavySnow: '大雪',
-};
 const weekdays = '一二三四五六日';
 const kinds = [
-  { id: 'late', label: '晚到登记', Icon: Clock3 },
-  { id: 'early', label: '提前离开', Icon: Sunrise },
+  { id: 'late', label: '英雄总是最后才到', Icon: Clock3 },
+  { id: 'early', label: '我先去拯救世界了', Icon: Sunrise },
   { id: 'leave', label: '请假 / 出差', Icon: Plane },
 ] as const;
 function changeMonth(value: string, delta: number) {
@@ -98,9 +90,13 @@ export default function Calendar() {
       clearInterval(w);
     };
   }, []);
-  const hour = new Date(now + 28800000).getUTCHours(),
-    night = preview?.night ?? (hour < 6 || hour >= 18),
-    phase = night ? 'night' : preview ? 'day' : hour < 8 ? 'dawn' : hour >= 16 ? 'dusk' : 'day';
+  const hour = new Date(now + 28800000).getUTCHours();
+  const sky = useMemo(() => {
+    if (!preview) return skyAt(now);
+    const { midnight, noon } = dayInfo(now);
+    return skyAt(midnight + (preview.night ? 22 * 60 : noon) * 60000);
+  }, [now, preview]);
+  const phase = sky.phase, night = phase === 'night';
   const theme = festivals.find((f) =>
     preview
       ? f.key === preview.key
@@ -108,7 +104,14 @@ export default function Calendar() {
   );
   const presence = classifyPresence(cal.data?.todayEvents || [], now),
     active = presence.people,
-    away = active.length;
+    { onWay, early, away } = presence.counts;
+  const trips = active.filter((p) => p.event.type === '出差').length;
+  const summary = [
+    onWay && `此刻有 ${onWay} 位英雄正在赶来的路上`,
+    early && `${early} 位同事先去拯救世界了`,
+    trips && `${trips} 位同事正在出差途中`,
+    away > trips && `${away - trips} 位同事正在休整充电中`,
+  ].filter(Boolean).join('，');
   useEffect(() => {
     if (Number.isFinite(presence.nextTransition)) {
       const t = setTimeout(
@@ -121,7 +124,7 @@ export default function Calendar() {
   const monthStart = month + '-01',
     first = addBeijingDays(monthStart, 1 - weekdayOf(monthStart)),
     days = Array.from({ length: 42 }, (_, i) => addBeijingDays(first, i));
-  const person = (id: string) => cal.data?.people.find((p) => p.id === id)?.name || '账号资料待同步';
+  const person = (id: string) => displayText(cal.data?.people.find((p) => p.id === id)?.name || '') || '账号资料待同步';
   const onDay = (d: string) =>
     cal.data?.events.filter(
       (e) => e.start < parseBeijingDate(d) + 86400000 && e.end > parseBeijingDate(d),
@@ -141,8 +144,8 @@ export default function Calendar() {
     setDate(m === today.slice(0, 7) ? today : m + '-01');
   }
   const stagger = {
-    hidden: { opacity: 0, y: reduce ? 0 : 18 },
-    show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 260, damping: 24 } },
+    hidden: { opacity: 1, y: reduce ? 0 : 8 },
+    show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 26 } },
   };
   return (
     <div
@@ -154,13 +157,14 @@ export default function Calendar() {
         '--night': theme?.night || '#263b49',
       }}
     >
-      <Sky theme={theme?.key} weather={weather} night={night} />
+      <Sky sky={sky} theme={theme?.key} weather={weather} night={night} />
       <Particles
         theme={theme?.key}
         night={night}
-        wind={weather?.windSpeed}
-        rain={/rain|storm/i.test(weather?.scene || '')}
-        snow={/snow/i.test(weather?.scene || '')}
+        ambient dusk={phase === 'dusk'}
+        wind={(weather?.windSpeed ?? 0) * (weather?.windDir ?? 1)}
+        rain={weather?.precipType === 'rain' ? weather.precipLevel : 0}
+        snow={weather?.precipType === 'snow' ? weather.precipLevel : 0}
       />
       <motion.main
         className="planner"
@@ -173,9 +177,10 @@ export default function Calendar() {
             <img src="/assets/duty-ducks-v2/caishen/idle-00.png" alt="" />
             <strong>鸭鸭日历</strong>
           </Link>
-          <span className="weather-pill">
+          <span className="weather-pill" title={weather?.available ? undefined : '天气更新时，天空暂以暖晴呈现'}>
             <CloudSun size={17} />
-            {weather?.available ? '合肥 · ' + (labels[weather.scene] || '天气') : '合肥 · 天气待更新'}
+            合肥 · {weather?.temperature != null && `${Math.round(weather.temperature)}°C `}{weather?.description || '暖晴'}
+            {weather?.windLevel >= 2 && (weather.windLevel === 3 ? ' · 强风' : ' · 大风')}
           </span>
           <nav>
             <Link to="/charter">
@@ -224,9 +229,7 @@ export default function Calendar() {
             </h1>
             <p>
               {cal.data ? (
-                <>
-                  此刻有 <strong>{away}</strong> 位同事不在岗。
-                </>
+                summary || '全员在岗，一切安好～'
               ) : (
                 cal.error || '正在读取团队知会…'
               )}
@@ -263,25 +266,26 @@ export default function Calendar() {
           <motion.aside variants={stagger} className="left-stack">
             <section className="card now-card">
               <div className="card-heading">
-                <h2>此刻的知会</h2>
+                <h2>此刻的团队动态</h2>
                 <UsersRound size={18} />
               </div>
               {active.length ? (
                 active.map((e) => (
                   <p className="notice-row" key={e.id}>
                     <b>{person(e.id)}</b>
-                    <span>{e.event.type}</span>
+                    <span>{displayText(e.event.type)}</span>
                   </p>
                 ))
               ) : (
                 <div className="quiet">
                   <span className="availability">
-                    <i />
-                    {cal.data ? '全员在岗' : cal.error ? '读取失败' : '读取中'}
+                    <Sunrise size={14} />
+                    {cal.data ? '全员在岗，一切安好～' : cal.error ? '读取失败' : '读取中'}
                   </span>
-                  <p>{cal.data ? '当前没有进行中的知会。' : cal.error || '正在读取知会…'}</p>
+                  <p>{cal.data ? 'Alpha Pulse 一定会更大更强' : cal.error || '正在读取知会…'}</p>
                 </div>
               )}
+              <p className="daily-quote"><small>今日暖心语录</small>{dailyQuote(now)}</p>
             </section>
             <DutyDuckStage key={date} selectedDate={date} />
           </motion.aside>
@@ -337,7 +341,7 @@ export default function Calendar() {
                     >
                       {d === date && <motion.i className="selected-ring" layoutId="selected-day-ring" />}
                       <b>{Number(d.slice(8))}</b>
-                      {holiday && <small>{holiday.type}</small>}
+                      {holiday && <small>{displayText(holiday.type)}</small>}
                       {listed.length > 0 && <i className="event-dot" />}
                     </button>
                   );
@@ -356,11 +360,11 @@ export default function Calendar() {
               ) : chosen.length ? (
                 chosen.map((e) => (
                   <p key={e.id}>
-                    {e.userIds.map(person).join('、')} · {e.type}
+                    {e.userIds.map(person).join('、')} · {displayText(e.type)}
                   </p>
                 ))
               ) : (
-                <p>{cal.data ? '当天没有登记' : '正在读取登记…'}</p>
+                <p>{cal.data ? '这一天还没有知会。' : '正在读取登记…'}</p>
               )}
             </div>
           </motion.section>
@@ -391,7 +395,8 @@ export default function Calendar() {
         <DialogContent className="registration-panel">
           <DialogHeader>
             <DialogTitle>{kind && title[kind]}</DialogTitle>
-            <DialogDescription>登记后会向 Mentor 和人事发送知会。</DialogDescription>
+            <DialogDescription>{kind === 'late' ? '10 点以后到达公司，可提前选好日期和预计到达时间'
+              : kind === 'early' ? '今天提前出发，记得和 Mentor 打声招呼' : '请假或出差前，给 Mentor 和人事捎个信。'}</DialogDescription>
           </DialogHeader>
           {kind && cfg.data ? (
             <RegisterForm

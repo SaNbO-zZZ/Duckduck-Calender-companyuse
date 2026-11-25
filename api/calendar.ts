@@ -13,13 +13,14 @@ export default handler(
     // Only public weather and the designated non-personal holiday fields are shared by the CDN.
     if (route === 'weather' || route === 'holidays') {
       method(ctx, 'GET');
-      return json(
-        ctx,
-        route === 'weather'
-          ? await hefeiWeather()
-          : await holidays(api, ctx.url.searchParams.get('month')),
-        true,
-      );
+      if (route === 'weather') {
+        const weather = await hefeiWeather();
+        ctx.res.setHeader('Cache-Control', weather.available
+          ? 'public, s-maxage=900, stale-while-revalidate=60'
+          : 'public, s-maxage=60');
+        return json(ctx, weather);
+      }
+      return json(ctx, await holidays(api, ctx.url.searchParams.get('month')), true);
     }
     const user = await currentUser(ctx);
     if (/^(release-announcement|entry-notice)\/(preview|status|publish)$/.test(route))

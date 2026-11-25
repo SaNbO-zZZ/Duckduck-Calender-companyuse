@@ -51,9 +51,9 @@ test('移动端断网、重开、回执核对与存储禁用', async () => {
               : receipt,
       });
     });
-    const open = () => page.getByRole('button', { name: '提前离开', exact: true }).click();
+    const open = () => page.getByRole('button', { name: '我先去拯救世界了', exact: true }).click();
     const fill = () => page.getByRole('combobox', { name: '选择 Mentor' }).selectOption('demo1');
-    const submit = () => page.getByRole('button', { name: '登记并通知', exact: true }).click();
+    const submit = () => page.getByRole('button', { name: '确认知会', exact: true }).click();
     const again = () => page.getByRole('button', { name: '核对本次登记结果', exact: true }).click();
     const close = () => page.getByRole('button', { name: /^(取消|完成)$/ }).click();
     const storage = () =>

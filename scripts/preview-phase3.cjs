@@ -107,6 +107,7 @@ http
             activeEvents: events,
             people,
             holidays: [],
+            birthdays: [],
             serverTime: now,
           });
         case '/api/calendar/people':
@@ -114,7 +115,7 @@ http
         case '/api/calendar/config':
           return send({ hrUserId: people[1].id, serverTime: now });
         case '/api/calendar/weather':
-          return send({ available: true, scene: 'partly', windSpeed: 5, windFrom: 20, cloud: 0.36 });
+          return send({ available: true, scene: 'partly', description: '多云', temperature: 18, windSpeed: 5, windFrom: 20, windDir: -1, windLevel: 0, cloud: 0.48, cloudCover: 0.48, precipType: 'none', precipLevel: 0 });
         case '/api/calendar/register': {
           const receipt = {
             recorded: true,

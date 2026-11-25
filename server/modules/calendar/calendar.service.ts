@@ -113,7 +113,7 @@ export class CalendarService {
    const batch=ids.slice(i,i+100),users=await this.authn.listUsersByIds(batch);
    users.forEach((u,j)=>people.push({id:batch[j],name:u?.name?.zh_cn||u?.name?.en_us||'帐号暂不可用',avatar:u?.avatar?.image?.large}));
   }
-  return {events,todayEvents,activeEvents,people,holidays:holidayData,todayUserIds:[...new Set(todayEvents.flatMap(e=>e.userIds))],serverTime:Date.now()};
+  return {birthdays:[],events,todayEvents,activeEvents,people,holidays:holidayData,todayUserIds:[...new Set(todayEvents.flatMap(e=>e.userIds))],serverTime:Date.now()};
  }
  private result(row:typeof calendarSubmission.$inferSelect):RegistrationResult {
   const recorded=!!row.recordId&&row.recordState==='created';

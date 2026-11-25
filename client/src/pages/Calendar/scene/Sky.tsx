@@ -1,3 +1,4 @@
+import { projectSun, skyAt } from '../../../../../shared/hefei-sky';
 import React, { useEffect, useRef } from 'react';
 import { StaticSky } from './StaticSky';
 import vertex from './sky.vert?raw';
@@ -6,14 +7,18 @@ import type { WeatherData } from '../../../../../shared/api.interface';
 import type { FestivalKey } from '../../../../../shared/festivals';
 export function Sky({
   weather,
+  sky,
   night,
   theme,
 }: {
   weather?: WeatherData;
+  sky: ReturnType<typeof skyAt>;
   night: boolean;
   theme?: FestivalKey;
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const current = useRef({ sky, weather });
+  useEffect(() => { current.current = { sky, weather }; }, [sky, weather]);
   useEffect(() => {
     const canvas = ref.current!,
       gl = canvas.getContext('webgl', { alpha: true, antialias: false });
@@ -56,7 +61,9 @@ export function Sky({
     let raf = 0,
       last = 0,
       slow = 0,
-      staticSky = false;
+      staticSky = false, t = 0, drift = 0, fall = 0;
+    let cover = current.current.weather?.cloudCover ?? 0.12;
+    let rain = 0, snow = 0;
     function paint(now: number) {
       const target = small.matches ? 1000 / 30 : 1000 / 60;
       if (last && now - last < target - 1) {
@@ -65,6 +72,7 @@ export function Sky({
       }
       if (last && now - last > 90) slow++;
       else slow = Math.max(0, slow - 1);
+      const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
       last = now;
       if (slow > 12 || gl.isContextLost() || !gl.getProgramParameter(prog, gl.LINK_STATUS)) {
         staticSky = true;
@@ -78,39 +86,47 @@ export function Sky({
         canvas.height = h;
         gl.viewport(0, 0, w, h);
       }
-      const t = now / 1000,
-        hr = (Date.now() / 3600000 + 8) % 24,
-        arc = night
-          ? (hr >= 18 ? (hr - 18) / 12 : (hr + 6) / 12) % 1
-          : Math.max(0.03, Math.min(0.97, (hr - 6) / 12)),
-        sunY = 0.3 + 0.57 * Math.sin(arc * Math.PI),
-        wind = (weather?.windSpeed || 4) * Math.cos(((weather?.windFrom || 0) * Math.PI) / 180);
+      const { sky: light, weather: observation } = current.current;
+      const sun = projectSun(light.elev, light.az, innerWidth, innerHeight);
+      const strength = Math.min(1, (observation?.windSpeed ?? 0) / 65);
+      const direction = observation?.windDir ?? 1;
+      const blend = reduce.matches || !dt ? 1 : 1 - Math.exp(-dt * 2);
+      const level = observation?.precipLevel ?? 0;
+      cover += ((observation?.cloudCover ?? 0.12) - cover) * blend;
+      rain += ((observation?.precipType === 'rain' ? level : 0) - rain) * blend;
+      snow += ((observation?.precipType === 'snow' ? level : 0) - snow) * blend;
+      t += dt;
+      drift += dt * direction * (0.08 + strength);
+      fall += dt * (1 + (rain + snow) * 0.14);
       two('uResolution', w, h);
       one('uAspect', w / h);
       one('uPxScale', w / innerWidth);
       one('uTime', t);
-      two('uSunPos', arc, sunY);
-      one('uSunVis', night ? 0 : 1);
-      one('uDaylight', night ? 0.05 : 0.94);
-      one('uWarmth', night ? 0.1 : 0.48);
+      two('uSunPos', sun.x, sun.y);
+      one('uSunVis', light.vis);
+      one('uDaylight', light.daylight);
+      one('uWarmth', light.warmth);
+      one('uTwilight', light.twilight);
       const harvestMoon = theme === 'moon' && night;
-      // The festival moon sits in the margin outside the opaque planner cards.
-      three('uMoon', harvestMoon ? 0.94 : 0.17 + 0.64 * arc,
-        harvestMoon ? (small.matches ? 0.91 : 0.79) : night ? Math.max(0.65, sunY) : 0.55, night ? 1 : 0);
+      three('uMoon', harvestMoon ? 0.94 : light.moonX,
+        harvestMoon ? (small.matches ? 0.91 : 0.79) : light.moonY, 1);
       one('uFullMoon', theme === 'moon' ? 1 : 0);
       one('uMoonScale', theme === 'moon' ? 3.8 : 1.35);
-      one('uCloudCover', weather?.cloud ?? 0.3);
-      one('uWindStretch', 0.25);
-      two('uCloudFar', t * 0.001, 0);
-      two('uCloudNear', t * 0.002, 0);
-      two('uScudShift', t * 0.003, 0);
-      const scene = weather?.scene || '';
-      one('uRain', /rain|storm/i.test(scene) ? (/heavy|storm/i.test(scene) ? 2.5 : 1) : 0);
-      one('uSnow', /snow/i.test(scene) ? 1.8 : 0);
-      one('uRainSlope', wind / 50 + 0.04 * Math.sin(t));
-      three('uRainFall', t * 550, t * 420, t * 300);
-      three('uSnowFall', t * 0.08, t * 0.05, t * 0.03);
-      three('uSnowDrift', t * 0.006, t * 0.009, t * 0.014);
+      one('uCloudCover', cover);
+      one('uWindStretch', strength);
+      one('uScud', strength * strength);
+      two('uCloudFar', -drift * 0.009, 0);
+      two('uCloudNear', -drift * 0.018, 0);
+      two('uScudShift', -drift * 0.035, 0);
+      const pass = Math.sin(drift * 0.28 - 0.9);
+      three('uHeroCloud', sun.x * w / h + 0.54 * pass, sun.y + 0.012,
+        Math.max(0, 1 - Math.abs(cover - 0.48) * 4));
+      one('uRain', rain * 0.6);
+      one('uSnow', snow * 0.6);
+      one('uRainSlope', direction * strength * (0.75 + 0.10 * Math.sin(t)));
+      three('uRainFall', fall * 270, fall * 420, fall * 550);
+      three('uSnowFall', fall * 0.028, fall * 0.052, fall * 0.08);
+      three('uSnowDrift', drift * 0.035, drift * 0.08, drift * 0.14);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       canvas.style.opacity = '1';
       if (!reduce.matches && !document.hidden) raf = requestAnimationFrame(paint);
@@ -129,9 +145,12 @@ export function Sky({
     document.addEventListener('visibilitychange', restart);
     window.addEventListener('resize', restart);
     reduce.addEventListener('change', restart);
+    // Still frames also follow the clock and observations when motion is reduced.
+    const stillClock = window.setInterval(() => { if (reduce.matches) restart(); }, 1000);
     restart();
     return () => {
       cancelAnimationFrame(raf);
+      clearInterval(stillClock);
       canvas.removeEventListener('webglcontextlost', lost);
       document.removeEventListener('visibilitychange', restart);
       window.removeEventListener('resize', restart);
@@ -141,10 +160,10 @@ export function Sky({
       gl.deleteShader(vs);
       gl.deleteShader(fs);
     };
-  }, [weather, night, theme]);
+  }, [night, theme]);
   return (
     <div aria-hidden className={'sky-back ' + (night ? 'night' : 'day')}>
-      <StaticSky night={night} weather={weather} moon={theme === 'moon'} />
+      <StaticSky sky={sky} night={night} weather={weather} moon={theme === 'moon'} />
       <canvas ref={ref} />
       {theme === 'halloween' && (
         <picture>

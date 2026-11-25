@@ -1,3 +1,4 @@
+import { TreePalm, CalendarDays, BriefcaseBusiness, NotebookPen, Thermometer, Coffee } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -28,6 +29,10 @@ import type {
   RegistrationResult,
   RegistrationStatus,
 } from '../../../../shared/api.interface';
+const leaveOptions = [
+  ['年假', TreePalm], ['调休', CalendarDays], ['出差', BriefcaseBusiness],
+  ['事假', NotebookPen], ['病假', Thermometer], ['今天不想上班', Coffee],
+] as const;
 const today = (ms = Date.now()) => new Date(ms + 480 * 60000).toISOString().slice(0, 10);
 const dateLabel = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -61,7 +66,7 @@ const schema = z.object({
   arrivalTime: z.string().regex(/^\d{2}:\d{2}$/, '请选择预计到达时刻'),
 });
 type Values = z.infer<typeof schema>;
-export const title = { leave: '请假 / 出差知会', late: '天才总是晚到', early: '我先去拯救世界了' };
+export const title = { leave: '请假 / 出差知会', late: '英雄总是最后才到', early: '我先去拯救世界了' };
 export function RegisterForm({
   actor,
   kind,
@@ -327,8 +332,8 @@ export function RegisterForm({
                     </FormLabel>
                     <FormControl>
                       <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="不在岗类型">
-                        {(['年假', '调休', '出差', '事假', '病假', '今天不想上班'] as const).map(
-                          (name, i) => (
+                        {leaveOptions.map(
+                          ([name, Icon]) => (
                             <Button
                               type="button"
                               key={name}
@@ -342,7 +347,7 @@ export function RegisterForm({
                                   : 'bg-[#f5f3f0] text-[#38332e] hover:bg-[#eee9e3]')
                               }
                             >
-                              {['🌴', '🗓', '🧳', '📝', '🤒', '📌'][i]} {name}
+                              <Icon size={15} aria-hidden /> {name}
                             </Button>
                           ),
                         )}
@@ -401,7 +406,7 @@ export function RegisterForm({
             <div className="rounded-2xl bg-[#f6f4f1] p-3">
               <PersonName id={config.hrUserId} />
             </div>
-            <p className="mt-2 text-xs text-[#8d8074]">后台固定人事 · 仅通知，无审批</p>
+            <p className="mt-2 text-xs text-[#8d8074]">后台固定同步人事 · 仅知会，无审批</p>
           </div>
         </fieldset>
         {hint && <p role="status" className="text-sm">{hint}</p>}
@@ -441,7 +446,7 @@ export function RegisterForm({
                 ? result?.recorded
                   ? '正在发送通知…'
                   : '正在保存登记…'
-                : '登记并通知'}
+                : '确认知会'}
             </Button>
           )}
         </div>

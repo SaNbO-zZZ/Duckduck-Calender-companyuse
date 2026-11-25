@@ -38,7 +38,6 @@ export function WeatherDucks({
   halloween: boolean;
 }) {
   const root = useRef<HTMLDivElement>(null),
-    [bubble, setBubble] = useState(''),
     [ready, setReady] = useState(false);
   useEffect(() => {
     const ac = new AbortController();
@@ -118,19 +117,16 @@ export function WeatherDucks({
     }, 165);
     return () => clearInterval(timer);
   }, [key, wind, phase, ready, halloween]);
-  useEffect(() => {
-    if (bubble) {
-      const t = setTimeout(() => setBubble(''), 2200);
-      return () => clearTimeout(t);
-    }
-  }, [bubble]);
   return (
     <div className={'weather-ducks ' + (/snow/i.test(family) ? 'snowy' : '')} ref={root}>
       {!halloween && actions.some((a) => DuckArt.support(a.id, family, phase) === 'awning') && (
         <canvas className="awning" />
       )}
       {actions.map((a, i) => (
-        <button key={i} onClick={() => setBubble(a.name)} aria-label={'天气鸭 · ' + a.name}>
+        <button key={i} onClick={(event) => {
+          if (!matchMedia('(prefers-reduced-motion: reduce)').matches)
+            event.currentTarget.animate([{ translate: '0 0' }, { translate: '0 -5px' }, { translate: '0 0' }], 240);
+        }} aria-label={'天气鸭 · ' + a.name}>
           {halloween ? (
             <img src={'/assets/festivals/halloween/ducks/' + costumes[i] + '.webp'} alt="" />
           ) : (
@@ -138,7 +134,6 @@ export function WeatherDucks({
           )}
         </button>
       ))}
-      {bubble && <output>{bubble}</output>}
     </div>
   );
 }

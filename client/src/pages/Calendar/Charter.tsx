@@ -1,3 +1,4 @@
+import { displayText } from '../../lib/display-text';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -76,6 +77,16 @@ export function OriginalDuckSprite({ id, size = 64 }: { id: string; size?: numbe
     />
   );
 }
+// Walk Markdown text nodes only, preserving original link and image destinations.
+function cleanHandbookText() {
+  type Node = { type: string; value?: string; children?: Node[]; alt?: string };
+  function clean(node: Node) {
+    if (node.type === 'text' && node.value) node.value = displayText(node.value);
+    if (node.alt) node.alt = displayText(node.alt);
+    node.children?.forEach(clean);
+  }
+  return clean;
+}
 export default function Charter() {
   const user = useUser(),
     [rev, refresh] = useState(0),
@@ -86,7 +97,9 @@ export default function Charter() {
     [message, setMessage] = useState(''),
     [justRead, setRead] = useState(''),
     reduce = useReducedMotion();
-  const docs = (data?.docs || []).map((c) => (c.category === '章节' ? { ...c, category: c.title } : c)),
+  const docs = (data?.docs || []).map((c) => ({
+    ...c, category: displayText(c.category === '章节' ? c.title : c.category), title: displayText(c.title),
+  })),
     matches = docs.filter(
       (c) =>
         (category === '全部' || c.category === category) &&
@@ -199,7 +212,7 @@ export default function Charter() {
                     鸭鸭划重点
                   </div>
                 )}
-                <Markdown remarkPlugins={[gfm]}>{c.markdown_content}</Markdown>
+                <Markdown remarkPlugins={[gfm, cleanHandbookText]}>{c.markdown_content}</Markdown>
                 {user.role === 'admin' && (
                   <details>
                     <summary>章节设置</summary>

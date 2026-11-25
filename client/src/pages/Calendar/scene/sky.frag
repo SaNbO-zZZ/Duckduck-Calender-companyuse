@@ -74,7 +74,7 @@
 
     // 降水时天空不应透出太阳；晴/多云保持原云量；风不参与此处计算。
     float clearness() {
-      float c = 1.0 - smoothstep(0.55, 0.95, uCloudCover);
+      float c = 1.0 - smoothstep(0.55, 0.92, uCloudCover);
       return c * (1.0 - smoothstep(0.0, 0.6, uRain + uSnow));
     }
 
@@ -275,15 +275,16 @@
     // ===== 天空底色：随太阳高度、云量、降水连续变化 =====
     vec3 skyColor(vec2 uv, float clear) {
       float h = clamp(uv.y, 0.0, 1.0);
-      vec3 dayTop = mix(vec3(0.17, 0.44, 0.80), vec3(0.32, 0.45, 0.68), uWarmth);
+      vec3 dayTop = mix(vec3(0.27, 0.53, 0.79), vec3(0.32, 0.45, 0.68), uWarmth);
       vec3 dayBot = mix(vec3(0.62, 0.78, 0.93), vec3(0.95, 0.79, 0.62), uWarmth);
-      vec3 top = mix(vec3(0.020, 0.035, 0.075), dayTop, uDaylight);
-      vec3 bot = mix(vec3(0.060, 0.090, 0.160), dayBot, uDaylight);
+      vec3 top = mix(vec3(0.105, 0.130, 0.290), dayTop, uDaylight);
+      vec3 bot = mix(vec3(0.255, 0.270, 0.435), dayBot, uDaylight);
       top = mix(top, vec3(0.10, 0.14, 0.30), uTwilight * 0.65);
       bot = mix(bot, vec3(0.80, 0.50, 0.46), uTwilight * 0.75);
       vec3 sky = mix(bot, top, pow(h, 0.7));
       // 朝霞/晚霞：只在太阳一侧的低空，且需天空足够通透
-      float side = exp(-pow((uv.x - uSunPos.x) * uAspect, 2.0) * 0.9);
+      float horizontal = (uv.x - uSunPos.x) * uAspect;
+      float side = exp(-horizontal * horizontal * 0.9);
       float band = 1.0 - smoothstep(0.0, 0.55, h);
       sky += vec3(0.30, 0.13, 0.02) * (uWarmth * uDaylight + uTwilight * 0.6) * side * band * clear;
       // 阴、雨、雪：连续灰色云盖
@@ -294,8 +295,8 @@
       greyTop = mix(greyTop, vec3(0.50, 0.56, 0.64), snow);
       greyBot = mix(greyBot, vec3(0.70, 0.74, 0.80), snow);
       vec3 grey = mix(greyBot, greyTop, h);
-      grey = mix(vec3(0.050, 0.065, 0.095) + grey * 0.06, grey, uDaylight);
-      float overcast = smoothstep(0.55, 0.95, uCloudCover);
+      grey = mix(vec3(0.105, 0.130, 0.205) + grey * 0.06, grey, uDaylight);
+      float overcast = smoothstep(0.55, 0.92, uCloudCover);
       return mix(sky, grey, overcast * 0.88);
     }
 
@@ -311,7 +312,12 @@
       float tight = mix(0.0025, 0.0045, uWarmth);
       float wide = mix(0.040, 0.10, uWarmth);
       float glow = exp(-r2 / tight) * 0.30 + exp(-r2 / wide) * mix(0.13, 0.18, uWarmth);
-      sky += sunCol * glow * vis * through;
+      vec2 rayAxis = normalize(vec2((0.5 - uSunPos.x) * 0.55, -1.0));
+      float along = dot(d, rayAxis);
+      float across = abs(d.x * rayAxis.y - d.y * rayAxis.x);
+      float shaft = smoothstep(0.02, 0.12, along) * exp(-along * along * 9.0)
+        * exp(-across / (0.014 + 0.08 * max(along, 0.0)));
+      sky += sunCol * (glow + shaft * 0.055) * vis * through;
       // 一个克制的光学残影，沿太阳—画面中心轴
       vec2 ghost = (uv - (uSunPos + (vec2(0.5) - uSunPos) * 1.4)) * vec2(uAspect, 1.0);
       sky += sunCol * (1.0 - smoothstep(0.012, 0.030, length(ghost))) * 0.035 * vis * through;
@@ -329,7 +335,7 @@
       vec2 starUv = gl_FragCoord.xy / uPxScale / 26.0;
       vec2 starId = floor(starUv);
       float seed = hash12(starId);
-      if (seed > 0.991) {
+      if (seed > 0.952) {
         float star = 1.0 - smoothstep(0.03, 0.09, length(fract(starUv) - 0.5));
         float twinkle = 0.78 + 0.22 * sin(uTime * 0.6 + seed * 20.0);
         sky += vec3(0.55, 0.60, 0.70) * star * twinkle * vis * smoothstep(0.15, 0.6, uv.y);
@@ -511,6 +517,9 @@
         if (dot(ds, ds) < 0.9 || dot(dg, dg) < 0.002) occl = cloudSample(uSunPos, false).x;
       }
       vec3 color = skyScene(vUv, occl);
+      // Distant cloud illumination in the two strongest rain bands.
+      float flash = pow(max(0.0, cos(uTime * 0.19 - 2.6)), 640.0) * smoothstep(1.85, 2.8, uRain);
+      color += vec3(0.065, 0.073, 0.095) * flash * smoothstep(0.25, 0.85, vUv.y);
       color = addRain(color);
       color = addSnow(color, vUv);
       color = addGlassDrops(color, vUv, occl);

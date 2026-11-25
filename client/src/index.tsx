@@ -1,8 +1,10 @@
+import { displayText } from './lib/display-text';
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { MotionConfig } from 'framer-motion';
 import axios from 'axios';
+import { OpeningGreeting } from './pages/Calendar/OpeningGreeting';
 import RoutesComponent from './app';
 import { Directory, Session, type Person, type User } from './lib/client';
 import './index.css';
@@ -18,9 +20,9 @@ function App() {
       const me = await axios.get('/api/auth/me', { signal: ac.signal });
       if (!me.data?.user?.open_id) throw Error();
       setReadOnly(me.data.readOnly === true);
-      setUser(me.data.user);
+      setUser({ ...me.data.user, name: displayText(me.data.user.name || '') });
       const { data } = await axios.get<Person[]>('/api/calendar/people', { signal: ac.signal });
-      setPeople(data);
+      setPeople(data.map((person) => ({ ...person, name: displayText(person.name || '') })));
     })().catch((e) => {
       if (ac.signal.aborted) return;
       if (e.response?.status === 401) {
@@ -57,4 +59,4 @@ function App() {
     </Session.Provider>
   );
 }
-createRoot(document.getElementById('root')!).render(<App />);
+createRoot(document.getElementById('root')!).render(<><OpeningGreeting /><App /></>);
